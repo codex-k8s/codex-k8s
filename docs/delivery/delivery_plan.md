@@ -6,7 +6,7 @@ status: active
 owner_role: EM
 created_at: 2026-02-06
 updated_at: 2026-03-27
-related_issues: [1, 19, 74, 100, 106, 112, 154, 155, 170, 171, 184, 185, 187, 189, 195, 197, 199, 201, 210, 212, 216, 218, 220, 222, 223, 225, 226, 227, 228, 229, 230, 238, 241, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 262, 263, 265, 274, 281, 282, 320, 333, 335, 337, 340, 351, 360, 361, 363, 366, 369, 370, 371, 372, 373, 374, 375, 378, 383, 385, 387, 389, 391, 392, 393, 394, 395, 413, 416, 418, 420, 423, 425, 426, 427, 428, 429, 430, 431, 444, 447, 448, 452, 454, 456, 458, 469, 471, 476, 480, 484, 490, 492, 494, 496, 500, 510, 512, 516, 519, 521, 522, 523, 524, 525, 537, 541, 542, 543, 544, 545, 546, 547, 554, 557, 559, 561, 562, 563, 565, 567, 571]
+related_issues: [1, 19, 74, 100, 106, 112, 154, 155, 170, 171, 184, 185, 187, 189, 195, 197, 199, 201, 210, 212, 216, 218, 220, 222, 223, 225, 226, 227, 228, 229, 230, 238, 241, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 262, 263, 265, 274, 281, 282, 320, 333, 335, 337, 340, 351, 360, 361, 363, 366, 369, 370, 371, 372, 373, 374, 375, 378, 383, 385, 387, 389, 391, 392, 393, 394, 395, 413, 416, 418, 420, 423, 425, 426, 427, 428, 429, 430, 431, 444, 447, 448, 452, 454, 456, 458, 469, 471, 476, 480, 484, 490, 492, 494, 496, 500, 510, 512, 516, 519, 521, 522, 523, 524, 525, 537, 541, 542, 543, 544, 545, 546, 547, 554, 557, 559, 561, 562, 563, 565, 567, 568, 571]
 
 related_prs: []
 approvals:
@@ -488,9 +488,16 @@ approvals:
   - зафиксирован blocking baseline: same live pod / same `codex` session как primary happy-path, max timeout/TTL built-in `codex_k8s` MCP wait path не ниже owner wait window, snapshot-resume только как recovery fallback, long human-wait target `>=24h`, delivery-before-wait lifecycle, Telegram pending inbox, staff-console fallback и `run:self-improve` exclusion;
   - дополнительные каналы, reminders/escalations, attachments, multi-party routing, richer conversation UX и detached resume-run как равноправный happy-path сохранены в later-wave scope и не блокируют core MVP;
   - создана follow-up issue `#559` для stage `run:arch` без trigger-лейбла и с continuity-требованием сохранить цепочку `arch -> design -> plan -> dev`.
-- Day 4 (planned): architecture package для owner feedback loop (Issue `#559`).
-  - Цель: зафиксировать service boundaries, ownership split, lifetime policy и persisted state truth для unified owner feedback loop.
-  - Ожидаемый результат: follow-up issue для `run:design` и continuity-требование сохранить цепочку `design -> plan -> dev` без разрывов.
+- Day 4 (in-review): architecture package для owner feedback loop (`docs/delivery/epics/s17/epic-s17-day4-unified-user-interaction-waits-and-owner-feedback-inbox-arch.md`, `docs/architecture/initiatives/s17_unified_owner_feedback_loop/*`, Issue `#559`).
+- Результат Day 4 (факт):
+  - зафиксированы service boundaries и ownership split для `control-plane`, `worker`, `agent-runner`, `api-gateway`, `staff web-console` и `telegram-interaction-adapter`;
+  - подтверждён execution model: same live pod / same `codex` session остаётся primary happy-path, snapshot-resume допускается только как recovery fallback, а effective max timeout/TTL built-in `codex_k8s` MCP wait path не ниже owner wait window;
+  - закреплён единый persisted backend truth для Telegram inbox и staff-console fallback, а deterministic text/voice/callback binding и visibility для `overdue / expired / manual-fallback` оформлены как platform-owned outcomes;
+  - оформлены ADR-0017 и ALT-0009 с trade-offs по live wait primary model, channel ownership и отказом от premature dedicated service split;
+  - создана follow-up issue `#568` для stage `run:design` без trigger-лейбла и с continuity-требованием сохранить цепочку `design -> plan -> dev`.
+- Day 5 (planned): design package для owner feedback loop (Issue `#568`).
+  - Цель: выпустить implementation-ready API/data/runtime contracts, migration notes и rollout order без пересмотра Day4 boundaries.
+  - Ожидаемый результат: follow-up issue для `run:plan` и continuity-требование сохранить цепочку `plan -> dev` без разрывов.
 
 ### Sprint S18: Frontend-first Mission Control canvas UX on fake data (Issue #562)
 - Day 1 (in-review): intake package для frontend-first Mission Control reset (`docs/delivery/epics/s18/epic-s18-day1-mission-control-frontend-first-canvas-intake.md`, Issue `#562`).
