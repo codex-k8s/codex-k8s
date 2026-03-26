@@ -2,11 +2,11 @@
 doc_id: EPC-CK8S-S16-D5-MISSION-CONTROL-GRAPH
 type: epic
 title: "Epic S16 Day 5: Design для Mission Control graph workspace и rollout policy (Issues #519/#537)"
-status: in-review
+status: superseded
 owner_role: SA
 created_at: 2026-03-16
-updated_at: 2026-03-16
-related_issues: [480, 490, 492, 496, 510, 516, 519, 537]
+updated_at: 2026-03-25
+related_issues: [480, 490, 492, 496, 510, 516, 519, 537, 561, 562, 563]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -17,9 +17,9 @@ approvals:
 # Epic S16 Day 5: Design для Mission Control graph workspace и rollout policy (Issues #519/#537)
 
 ## TL;DR
-- Подготовлен design package Sprint S16 для Mission Control graph workspace: detailed design, typed API contract, data model и migrations policy.
-- Зафиксирован implementation-ready переход от Sprint S9 dashboard foundation к graph-first workspace без reopening Day4 ownership.
-- Подготовлен handover в `run:plan` без premature code/schema changes.
+- 2026-03-25 issue `#561` перевела этот design package в historical superseded state.
+- Зафиксированные здесь transport/data/migration decisions больше не являются текущим source of truth для Mission Control.
+- Новый path: frontend-first UX `#562` и отдельный backend rebuild `#563`; текущий файл нужен только как historical evidence отклонённого design baseline.
 
 ## Priority
 - `P0`.

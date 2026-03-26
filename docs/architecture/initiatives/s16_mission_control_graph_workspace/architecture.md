@@ -2,11 +2,11 @@
 doc_id: ARC-S16-0001
 type: architecture-design
 title: "Sprint S16 Day 4 — Mission Control graph workspace architecture (Issue #516)"
-status: in-review
+status: superseded
 owner_role: SA
 created_at: 2026-03-16
-updated_at: 2026-03-16
-related_issues: [480, 490, 492, 496, 510, 516, 519]
+updated_at: 2026-03-25
+related_issues: [480, 490, 492, 496, 510, 516, 519, 561, 562, 563]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -17,9 +17,9 @@ approvals:
 # Sprint S16 Day 4 — Mission Control graph workspace architecture
 
 ## TL;DR
-- `control-plane` становится единственным владельцем canonical graph truth для Mission Control: node classification `discussion/work_item/run/pull_request`, continuity relations, continuity gaps, typed metadata/watermarks и platform-canonical launch surfaces живут в одном доменном контуре.
-- `worker` закрепляется за bounded provider inventory foundation и background reconciliation: freshness sweeps, bounded recent closed history sync, relation enrichment/backfill и lifecycle tasks идут только под policy `control-plane`; сам `worker` не владеет hybrid truth merge и не вычисляет следующий шаг.
-- `api-gateway` и `web-console` остаются thin ingress/visibility surfaces, а Sprint S16 Day5 (`#519`) получает право проектировать только typed contracts и rollout notes поверх Day4 ownership split без reopening Wave 1 baseline.
+- 2026-03-25 issue `#561` перевела этот architecture baseline в historical superseded state.
+- Зафиксированная здесь ownership-модель S16 больше не является текущим Mission Control source of truth и не должна автоматически переноситься в новые спринты.
+- Текущий agreed path: сначала новый UX baseline `#562`, затем новый backend architecture package `#563`.
 
 ## Контекст и входные артефакты
 - Delivery-цепочка: `#492 (intake) -> #496 (vision) -> #510 (prd) -> #516 (arch)`.

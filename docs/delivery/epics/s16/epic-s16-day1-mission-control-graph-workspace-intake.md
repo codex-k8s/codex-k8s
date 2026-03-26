@@ -2,11 +2,11 @@
 doc_id: EPC-CK8S-S16-D1-MISSION-CONTROL-GRAPH
 type: epic
 title: "Epic S16 Day 1: Intake для Mission Control graph workspace и continuity control plane (Issue #492)"
-status: in-review
+status: superseded
 owner_role: PM
 created_at: 2026-03-15
-updated_at: 2026-03-15
-related_issues: [480, 490, 492, 496]
+updated_at: 2026-03-25
+related_issues: [480, 490, 492, 496, 561, 562, 563]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -17,10 +17,10 @@ approvals:
 # Epic S16 Day 1: Intake для Mission Control graph workspace и continuity control plane (Issue #492)
 
 ## TL;DR
-- Текущий Mission Control не соответствует ожиданиям Owner: нужен не улучшенный board/list, а новый primary workspace платформы с fullscreen canvas, detached top toolbar, правым drawer/chat и явным lineage `discussion/work_item -> run -> PR/follow-up issue -> next run`.
-- Sprint S16 поглощает foundation issue `#480`: persisted GitHub inventory mirror и bounded reconcile остаются обязательным нижним слоем, при этом foundation coverage contract сохраняется как `all open Issues/PR + bounded recent closed history`, а не заменяется расплывчатым backlog mirror.
-- Intake фиксирует hybrid truth matrix, filtered multi-root workspace с точным Wave 1 filter baseline `open_only`, `assigned_to_me_or_unassigned` и active-state presets, закрытый Wave 1 node set `discussion/work_item/run/pull_request`, typed metadata/watermark contract, platform-canonical launch params и continuity-rule `PR + follow-up issue` для каждого stage до `run:dev` включительно.
-- Создана continuity issue `#496` для stage `run:vision`; на следующем этапе нельзя возвращаться к GitHub-first single-root board framing или превращать voice path в blocking scope.
+- 2026-03-25 issue `#561` пометила этот intake-пакет как historical superseded artifact.
+- Зафиксированный здесь baseline `discussion/work_item/run/pull_request`, hybrid truth matrix Sprint S16 и execution continuity в сторону `#542..#547` больше не являются текущим Mission Control source of truth.
+- Текущий reset path зафиксирован в issues `#562` (frontend-first fake-data UX) и `#563` (backend rebuild после owner approval UX).
+- Все следующие разделы файла сохраняются только как evidence того, какой intake baseline был подготовлен и затем отклонён.
 
 ## Контекст
 - Sprint S9 (`#333`, `#335`, `#337`, `#340`, `#351`, `#363`, `#369..#375`) уже построил первый Mission Control baseline: active-set dashboard, typed projection, core transport/UI foundations и execution backlog.

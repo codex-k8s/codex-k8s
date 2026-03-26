@@ -2,11 +2,11 @@
 doc_id: ADR-0016
 type: adr
 title: "Mission Control graph workspace: control-plane-owned hybrid graph truth with worker-managed inventory foundation"
-status: proposed
+status: superseded
 owner_role: SA
 created_at: 2026-03-16
-updated_at: 2026-03-16
-related_issues: [480, 490, 492, 496, 510, 516, 519]
+updated_at: 2026-03-25
+related_issues: [480, 490, 492, 496, 510, 516, 519, 561, 562, 563]
 related_prs: []
 supersedes: []
 superseded_by: []
@@ -19,9 +19,20 @@ approvals:
 # ADR-0016: Mission Control graph workspace — control-plane-owned hybrid graph truth with worker-managed inventory foundation
 
 ## TL;DR
+- 2026-03-25 issue `#561` перевела ADR-0016 в historical superseded state.
+- Документ сохраняется как evidence отклонённого Sprint S16 baseline и не является текущим architecture candidate для следующего backend sprint `#563`.
+- Новый baseline после rethink требует сначала утвердить frontend-first UX и workflow editor contour в issue `#562`, а backend truth/model переопределять только после owner approval.
 - Контекст: Sprint S16 PRD требует primary multi-root graph workspace, bounded provider foundation `#480`, exact Wave 1 filters/nodes, typed metadata/watermarks, platform-canonical launch params и continuity rule `PR + linked follow-up issue`.
 - Решение: выбираем `control-plane` как единственного owner canonical graph truth и continuity state; `worker` исполняет bounded provider inventory sync, recent-closed-history backfill и enrichment/reconcile jobs, а `api-gateway` / `web-console` / `agent-runner` остаются adapters над typed surfaces.
 - Последствия: появляется один domain owner для hybrid truth merge и next-step policy, но design-stage обязан отдельно зафиксировать transport/data contracts, rollout/backfill notes и watermark taxonomy.
+
+## Status after rethink
+- ADR-0016 больше не описывает текущий source of truth для Mission Control.
+- Superseded assumptions:
+  - lane/column-oriented Sprint S16 graph workspace как целевой UX baseline;
+  - taxonomy `discussion/work_item/run/pull_request` как Wave 1 node model;
+  - backend-first sequencing вокруг execution handover `#542..#547`.
+- Historical value документа сохраняется только как evidence того, какой ownership split и hybrid-truth lifecycle были предложены до owner reset.
 
 ## Контекст
 - Проблема:

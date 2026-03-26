@@ -2,11 +2,11 @@
 doc_id: EPC-CK8S-S16-D2-MISSION-CONTROL-GRAPH
 type: epic
 title: "Epic S16 Day 2: Vision для Mission Control graph workspace и continuity control plane (Issues #496/#510)"
-status: in-review
+status: superseded
 owner_role: PM
 created_at: 2026-03-15
-updated_at: 2026-03-16
-related_issues: [480, 490, 492, 496, 510]
+updated_at: 2026-03-25
+related_issues: [480, 490, 492, 496, 510, 561, 562, 563]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -17,10 +17,10 @@ approvals:
 # Epic S16 Day 2: Vision для Mission Control graph workspace и continuity control plane (Issues #496/#510)
 
 ## TL;DR
-- Для Issue `#496` сформирован vision-package: mission, north star, persona outcomes, KPI/guardrails, wave boundaries и product principles для Sprint S16.
-- Mission Control зафиксирован как primary multi-root graph workspace/control plane: пользователь должен видеть continuity `discussion/work_item -> run -> pull_request/follow-up issue -> next run`, работать с несколькими инициативами одновременно и запускать platform-safe next steps без возврата к board/list-only модели.
-- Day1 baseline сохранён без reopening: issue `#480` остаётся mandatory inventory foundation с coverage contract `all open Issues/PR + bounded recent closed history`, hybrid truth matrix остаётся обязательной, Wave 1 по-прежнему ограничен `discussion/work_item/run/pull_request`, а typed metadata/watermarks/launch params и continuity rule `PR + follow-up issue` остаются non-negotiable.
-- Создана follow-up issue `#510` для stage `run:prd` без trigger-лейбла; continuity остаётся owner-managed.
+- 2026-03-25 issue `#561` перевела этот vision-package в historical superseded state.
+- Зафиксированная здесь vision-модель больше не описывает текущий Mission Control baseline: вместо неё действует reset path `#562` -> `#563`.
+- Больше не считать source of truth: lane/column shell, taxonomy `discussion/work_item/run/pull_request` и старую S16 continuity модель.
+- Остальной текст файла сохраняется только как historical evidence отклонённого vision baseline.
 
 ## Priority
 - `P0`.

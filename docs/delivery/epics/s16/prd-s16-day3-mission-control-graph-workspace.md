@@ -2,11 +2,11 @@
 doc_id: PRD-CK8S-S16-D3-MISSION-CONTROL-GRAPH
 type: prd
 title: "Mission Control graph workspace and continuity control plane — PRD Sprint S16 Day 3"
-status: in-review
+status: superseded
 owner_role: PM
 created_at: 2026-03-16
-updated_at: 2026-03-16
-related_issues: [480, 490, 492, 496, 510, 516]
+updated_at: 2026-03-25
+related_issues: [480, 490, 492, 496, 510, 516, 561, 562, 563]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -17,11 +17,10 @@ approvals:
 # PRD: Mission Control graph workspace and continuity control plane
 
 ## TL;DR
-- Что строим: Mission Control как primary fullscreen graph workspace/control plane для active delivery, а не board/list refresh над частичной platform evidence.
-- Для кого: Owner/product lead, delivery operator / engineer / manager и discussion-driven пользователь.
-- Почему: текущий Mission Control не даёт multi-root continuity по нескольким инициативам, не объединяет provider inventory с platform state в доверяемую truth model и заставляет вручную искать следующий шаг в GitHub.
-- MVP: filtered multi-root graph workspace, inventory-backed foundation из `#480`, typed metadata/watermarks, platform-canonical launch params, platform-safe inline actions и continuity contract `discussion/work_item -> run -> pull_request/follow-up issue -> next run`.
-- Критерии успеха: пользователь в одном workspace понимает lineage и следующий безопасный шаг по 2-3 инициативам, coverage contract `all open Issues/PR + bounded recent closed history` соблюдается, а stage continuity сохраняет правило `PR + linked follow-up issue`.
+- 2026-03-25 issue `#561` пометила этот PRD как historical superseded artifact.
+- Зафиксированный здесь MVP больше не является текущим Mission Control baseline: его заменяет reset path `#562` (frontend-first UX) и `#563` (backend rebuild).
+- Больше не считать source of truth taxonomy `discussion/work_item/run/pull_request`, lane/column shell и старую freshness/continuity модель Sprint S16.
+- Остальной текст файла сохраняется как historical evidence отклонённого product contract.
 
 ## Проблема и цель
 - Problem statement:

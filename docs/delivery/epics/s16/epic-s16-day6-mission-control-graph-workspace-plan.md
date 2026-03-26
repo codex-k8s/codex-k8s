@@ -2,11 +2,11 @@
 doc_id: EPC-CK8S-S16-D6-MISSION-CONTROL-GRAPH
 type: epic
 title: "Epic S16 Day 6: Plan для Mission Control graph workspace, execution waves и rollout gates (Issue #537)"
-status: in-review
+status: superseded
 owner_role: EM
 created_at: 2026-03-16
-updated_at: 2026-03-16
-related_issues: [480, 490, 492, 496, 510, 516, 519, 537, 542, 543, 544, 545, 546, 547]
+updated_at: 2026-03-25
+related_issues: [480, 490, 492, 496, 510, 516, 519, 537, 542, 543, 544, 545, 546, 547, 561, 562, 563]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -17,10 +17,10 @@ approvals:
 # Epic S16 Day 6: Plan для Mission Control graph workspace, execution waves и rollout gates (Issue #537)
 
 ## TL;DR
-- Подготовлен execution package Sprint S16 для перехода в `run:dev` по Mission Control graph workspace.
-- Созданы owner-managed handover issues `#542..#547` для schema/backfill foundation, `control-plane` graph truth, `worker` reconcile, typed transport, `web-console` graph workspace и финального readiness gate.
-- Зафиксированы sequencing-waves, quality-gates, DoR/DoD и owner decisions для rollout order `migrations -> control-plane -> worker -> api-gateway -> web-console -> readiness gate`.
-- Сохранены design guardrails Sprint S16: issue `#480` остаётся foundation layer, exact Wave 1 filters `open_only` и `assigned_to_me_or_unassigned` не меняются, active-state presets и secondary/dimmed semantics работают только для graph integrity, nodes ограничены `discussion/work_item/run/pull_request`, launch preview остаётся read-only поверх existing command ledger, новый deployable сервис запрещён.
+- 2026-03-25 issue `#561` перевела этот plan-package в historical superseded state.
+- Handover issues `#542..#547` больше не являются текущим execution path и не должны запускаться как активный Mission Control backlog.
+- Issue `#547`, закрытая как not planned, сохраняется только как historical readiness artifact отклонённого S16 baseline.
+- Актуальный sequencing после rethink: `#562` frontend-first fake-data sprint, затем `#563` backend rebuild после owner approval UX.
 
 ## Контекст
 - Stage continuity: `#492 -> #496 -> #510 -> #516 -> #519 -> #537`.

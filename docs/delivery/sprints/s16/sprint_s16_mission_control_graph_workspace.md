@@ -2,11 +2,11 @@
 doc_id: SPR-CK8S-0016
 type: sprint-plan
 title: "Sprint S16: Mission Control graph workspace and continuity control plane (Issues #492/#516/#519/#537)"
-status: in-review
+status: superseded
 owner_role: PM
 created_at: 2026-03-15
-updated_at: 2026-03-16
-related_issues: [480, 490, 492, 496, 510, 516, 519, 537, 542, 543, 544, 545, 546, 547]
+updated_at: 2026-03-25
+related_issues: [480, 490, 492, 496, 510, 516, 519, 537, 542, 543, 544, 545, 546, 547, 561, 562, 563]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -14,13 +14,33 @@ approvals:
   request_id: "owner-2026-03-15-issue-492-intake"
 ---
 
-# Sprint S16: Mission Control graph workspace and continuity control plane (Issues #492/#516/#519/#537)
+# Sprint S16: Mission Control graph workspace and continuity control plane (historical superseded baseline)
 
 ## TL;DR
-- Цель спринта: перепроектировать Mission Control в primary graph workspace/control plane, где Owner может вести несколько инициатив, видеть lineage `discussion/work_item -> run -> PR/follow-up issue -> next run` и управлять следующими шагами без возврата к board/list-only модели.
-- Sprint S16 прошёл Day1 intake в Issue `#492`, Day2 vision в Issue `#496`, Day3 PRD в Issue `#510`, Day4 architecture в Issue `#516`, Day5 design в Issue `#519` и Day6 plan в Issue `#537`; execution backlog разложен на owner-managed issues `#542..#547`.
-- Foundation issue `#480` поглощена как обязательный нижний слой: persisted GitHub inventory mirror и bounded reconcile становятся частью продукта, но не заменяют новый workspace.
-- Базовые ограничения спринта: hybrid truth matrix, filtered multi-root workspace с точными Wave 1 filters `open_only`, `assigned_to_me_or_unassigned` и active-state presets, foundation coverage contract `all open Issues/PR + bounded recent closed history`, Wave 1 nodes `discussion/work_item/run/pull_request`, typed metadata/watermarks, platform-canonical launch params, platform-safe inline actions, continuity rule `PR + follow-up issue` и non-blocking voice later-wave.
+- 2026-03-25 issue `#561` перевела Sprint S16 в historical superseded baseline по owner decision из discussion `#480`.
+- Day1-Day6 и handover `#542..#547` сохраняются как historical evidence и больше не являются текущим source of truth для Mission Control UX, data model и sequencing.
+- Актуальный reset path: `#561` (`run:rethink`) -> `#562` (frontend-first sprint на fake data) -> `#563` (backend rebuild после owner approval UX).
+- Новый baseline after rethink: fullscreen свободный canvas, node taxonomy `Issue/PR/Run`, workflow editor/policy как часть нового UX-направления, repo-seed prompts + deterministic `workflow-policy block`, `stale/freshness` только как доказанный lag provider mirror/reconcile path.
+
+## Статус после rethink
+- Больше не считать source of truth:
+  - lane/column shell и обязательную иерархию `root-group -> column -> stack`;
+  - Wave 1 taxonomy `discussion/work_item/run/pull_request`;
+  - rollout `#542..#547` как обязательный следующий execution path;
+  - `#547` как readiness gate перед `run:qa`;
+  - трактовку `stale/freshness` как возраста проекции.
+- Historical evidence, которое сохраняется:
+  - Day1-Day6 chain `#492 -> #496 -> #510 -> #516 -> #519 -> #537`;
+  - reasoning по ownership split, continuity и scope boundaries;
+  - ссылки на отклонённый execution backlog `#542..#547`.
+- Текущий sequencing после doc-reset:
+  - `#562` вести как frontend-first flow `intake -> vision -> prd -> arch -> design -> plan -> dev`;
+  - `#563` запускать только после owner approval результата `#562`;
+  - `#522` и `#523` можно продолжать независимо;
+  - `#524` и `#525` не стартовать до approval `#562`;
+  - `#470` продолжать только в части `release safety`, `observability contract` и stop/rollback criteria без фиксации финального cockpit UI.
+- Дополнительный reset guardrail:
+  - workflow editor не выпадает из нового baseline: он должен проектироваться вместе с canvas UX и policy авто-ревью/follow-up propagation, но без превращения в DB prompt editor.
 
 ## Scope спринта
 ### In scope

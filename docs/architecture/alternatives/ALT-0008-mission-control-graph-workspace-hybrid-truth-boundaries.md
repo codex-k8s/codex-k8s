@@ -2,11 +2,11 @@
 doc_id: ALT-0008
 type: alternatives
 title: "Mission Control graph workspace — hybrid truth and ownership trade-offs"
-status: in-review
+status: superseded
 owner_role: SA
 created_at: 2026-03-16
-updated_at: 2026-03-16
-related_issues: [480, 490, 492, 496, 510, 516, 519]
+updated_at: 2026-03-25
+related_issues: [480, 490, 492, 496, 510, 516, 519, 561, 562, 563]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -17,9 +17,17 @@ approvals:
 # Alternatives & Trade-offs: Mission Control graph workspace
 
 ## TL;DR
+- 2026-03-25 issue `#561` перевела ALT-0008 в historical superseded state вместе со всем Sprint S16 architecture package.
+- Документ сохраняется как evidence отклонённых ownership trade-offs и не должен использоваться как текущий architecture baseline для backend sprint `#563`.
+- Новый reset path требует сначала утвердить frontend-first canvas UX и workflow editor contour в issue `#562`, а уже потом выбирать актуальные backend trade-offs.
 - Рассмотрели: GitHub/UI-defined graph / dedicated graph service now / control-plane-owned graph truth with worker-managed inventory foundation.
 - Рекомендуем: `control-plane` как owner graph truth + `worker` для bounded provider foundation and reconcile execution.
 - Почему: лучший баланс архитектурной консистентности, bounded scope Sprint S16, auditability и скорости handover в `run:design`.
+
+## Status after rethink
+- ALT-0008 больше не описывает актуальный набор кандидатов для Mission Control reset.
+- Варианты A/B/C сформулированы вокруг отклонённого S16 baseline: lane/column shell, taxonomy `discussion/work_item/run/pull_request` и backend-first sequencing.
+- Историческая ценность документа сохраняется только как evidence того, какие trade-offs были рассмотрены до owner reset.
 
 ## Контекст
 - PRD Sprint S16 требует:

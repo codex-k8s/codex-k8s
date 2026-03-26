@@ -2,11 +2,11 @@
 doc_id: EPC-CK8S-S16-D3-MISSION-CONTROL-GRAPH
 type: epic
 title: "Epic S16 Day 3: PRD для Mission Control graph workspace и continuity control plane (Issues #510/#516)"
-status: in-review
+status: superseded
 owner_role: PM
 created_at: 2026-03-16
-updated_at: 2026-03-16
-related_issues: [480, 490, 492, 496, 510, 516]
+updated_at: 2026-03-25
+related_issues: [480, 490, 492, 496, 510, 516, 561, 562, 563]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -17,10 +17,10 @@ approvals:
 # Epic S16 Day 3: PRD для Mission Control graph workspace и continuity control plane (Issues #510/#516)
 
 ## TL;DR
-- Подготовлен PRD-пакет Sprint S16 для Mission Control graph workspace: `epic-s16-day3-mission-control-graph-workspace-prd.md` и `prd-s16-day3-mission-control-graph-workspace.md`.
-- Зафиксированы user stories, FR/AC/NFR, scenario matrix, edge cases и expected evidence для fullscreen graph workspace, filtered multi-root continuity, inventory-backed foundation, typed metadata/watermarks, platform-canonical launch params и platform-safe inline actions.
-- Принято продуктовое решение: core Wave 1 остаётся вокруг `discussion/work_item/run/pull_request`, hybrid truth matrix и continuity rule `PR + follow-up issue`; voice/STT, dashboard orchestrator agent, отдельная `agent` node taxonomy, full-history/archive и richer provider enrichment остаются later-wave scope.
-- Создана follow-up issue `#516` для stage `run:arch` без trigger-лейбла.
+- 2026-03-25 issue `#561` перевела этот PRD-пакет в historical superseded state.
+- Зафиксированный здесь product contract больше не является текущим baseline для Mission Control и не должен использоваться для новых sprint issues.
+- Актуальный baseline после rethink: frontend-first UX в `#562`, node taxonomy `Issue/PR/Run`, repo-seed prompts без DB prompt editor и backend rebuild в `#563`.
+- Следующие разделы файла сохранены только как historical evidence отклонённого PRD.
 
 ## Priority
 - `P0`.

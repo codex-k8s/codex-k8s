@@ -2,11 +2,11 @@
 doc_id: MIG-S16-MISSION-CONTROL-0001
 type: migrations-policy
 title: "Mission Control graph workspace — DB migrations policy Sprint S16 Day 5"
-status: in-review
+status: superseded
 owner_role: SA
 created_at: 2026-03-16
-updated_at: 2026-03-16
-related_issues: [480, 490, 492, 496, 510, 516, 519]
+updated_at: 2026-03-25
+related_issues: [480, 490, 492, 496, 510, 516, 519, 561, 562, 563]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -17,11 +17,9 @@ approvals:
 # DB Migrations Policy: Mission Control graph workspace
 
 ## TL;DR
-- Подход: additive expand -> shadow backfill -> read switch -> command preview exposure -> cleanup.
-- Владелец схемы/миграций: `services/internal/control-plane`.
-- Новые миграции лежат в `services/internal/control-plane/cmd/cli/migrations/*.sql`.
-- Rollback ограничен после cutover на graph-first transport, но destructive schema rollback не требуется: additive schema can stay while app images roll back.
-- Existing Sprint S9 Mission Control foundation is not discarded; it is evolved in place with new continuity-gap and watermark storage.
+- 2026-03-25 issue `#561` перевела этот migrations policy в historical superseded state.
+- Зафиксированный здесь migration/cutover plan больше не является текущим Mission Control execution baseline.
+- Новый migration policy должен быть сформирован заново после approval frontend-first UX в `#562` и backend rethink в `#563`.
 
 ## Размещение миграций и владелец схемы
 - Schema owner: `services/internal/control-plane`.

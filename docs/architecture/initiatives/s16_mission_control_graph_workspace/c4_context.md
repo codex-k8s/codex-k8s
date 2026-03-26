@@ -2,11 +2,11 @@
 doc_id: ARC-C4C-S16-0001
 type: c4-context
 title: "Sprint S16 Day 4 — C4 Context overlay for Mission Control graph workspace"
-status: in-review
+status: superseded
 owner_role: SA
 created_at: 2026-03-16
-updated_at: 2026-03-16
-related_issues: [480, 490, 492, 496, 510, 516, 519]
+updated_at: 2026-03-25
+related_issues: [480, 490, 492, 496, 510, 516, 519, 561, 562, 563]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -17,8 +17,8 @@ approvals:
 # C4 Context: Sprint S16 Day 4 Mission Control graph workspace
 
 ## TL;DR
-- Mission Control graph workspace остаётся capability slice внутри `codex-k8s`, а не отдельной внешней graph-платформой.
-- GitHub остаётся canonical provider for issue/PR/comment/review state, а platform domain остаётся owner graph truth, continuity lineage и next-step policy.
+- 2026-03-25 issue `#561` перевела этот C4 context overlay в historical superseded state.
+- Диаграмма ниже нужна только как evidence отклонённого S16 architecture baseline; текущий Mission Control reset идёт через issues `#562` и `#563`.
 
 ## Диаграмма (Mermaid C4Context)
 ```mermaid

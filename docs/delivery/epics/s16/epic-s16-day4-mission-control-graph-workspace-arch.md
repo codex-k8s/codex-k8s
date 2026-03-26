@@ -2,11 +2,11 @@
 doc_id: EPC-CK8S-S16-D4-MISSION-CONTROL-GRAPH
 type: epic
 title: "Epic S16 Day 4: Architecture для Mission Control graph workspace и hybrid truth ownership (Issues #516/#519)"
-status: in-review
+status: superseded
 owner_role: SA
 created_at: 2026-03-16
-updated_at: 2026-03-16
-related_issues: [480, 490, 492, 496, 510, 516, 519]
+updated_at: 2026-03-25
+related_issues: [480, 490, 492, 496, 510, 516, 519, 561, 562, 563]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -17,9 +17,9 @@ approvals:
 # Epic S16 Day 4: Architecture для Mission Control graph workspace и hybrid truth ownership (Issues #516/#519)
 
 ## TL;DR
-- Подготовлен architecture package Sprint S16 для Mission Control graph workspace: architecture decomposition, C4 overlays, ADR-0016 и alternatives по hybrid truth ownership, continuity state и bounded provider foundation.
-- Зафиксирован ownership split для graph truth, provider inventory foundation, next-step surfaces, typed watermarks и continuity gaps.
-- Подготовлен handover в `run:design` без premature transport/schema lock-in.
+- 2026-03-25 issue `#561` перевела этот architecture package в historical superseded state.
+- Зафиксированные здесь ownership/boundary decisions больше не являются текущим Mission Control baseline и не должны автоматически переноситься в новые спринты.
+- Актуальный sequencing: сначала `#562` утверждает новый frontend-first UX, затем `#563` формирует новый backend architecture/design package.
 
 ## Priority
 - `P0`.

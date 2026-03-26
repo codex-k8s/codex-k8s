@@ -2,11 +2,11 @@
 doc_id: UI-SMOKE-S16-CK8S-0001
 type: readiness-handover
 title: "Sprint S16 Day 7 — UI smoke criteria for Mission Control graph workspace (Issue #546)"
-status: in-review
+status: superseded
 owner_role: Dev
 created_at: 2026-03-19
-updated_at: 2026-03-19
-related_issues: [519, 537, 545, 546, 547]
+updated_at: 2026-03-25
+related_issues: [519, 537, 545, 546, 547, 561, 562, 563]
 related_prs: []
 related_adrs: ["ADR-0016"]
 approvals:
@@ -18,9 +18,9 @@ approvals:
 # UI Smoke Criteria: Mission Control graph workspace
 
 ## TL;DR
-- Документ фиксирует минимальный UI-level evidence bundle, который Wave `S16-E06` должен использовать перед handover в `run:qa`.
-- Smoke ориентирован на graph-first workspace, continuity visibility, read-only launch preview и transport-driven list projection без локальной policy logic.
-- Критерии предполагают candidate runtime после rollout order `migrations -> control-plane -> worker -> api-gateway -> web-console`.
+- 2026-03-25 issue `#561` перевела этот readiness artifact в historical superseded state.
+- Wave `S16-E06` / issue `#547` больше не является текущим Mission Control gate и не должна использоваться как prerequisite перед `run:qa`.
+- Этот файл сохранён только как evidence отклонённого UI/readiness baseline Sprint S16.
 
 ## Scope
 

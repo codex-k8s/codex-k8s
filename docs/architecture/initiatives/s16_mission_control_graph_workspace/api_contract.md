@@ -2,11 +2,11 @@
 doc_id: API-S16-MISSION-CONTROL-0001
 type: api-contract
 title: "Mission Control graph workspace — API contract Sprint S16 Day 5"
-status: in-review
+status: superseded
 owner_role: SA
 created_at: 2026-03-16
-updated_at: 2026-03-16
-related_issues: [480, 490, 492, 496, 510, 516, 519]
+updated_at: 2026-03-25
+related_issues: [480, 490, 492, 496, 510, 516, 519, 561, 562, 563]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -17,11 +17,9 @@ approvals:
 # API Contract: Mission Control graph workspace
 
 ## TL;DR
-- Тип API: staff/private REST + internal gRPC + WebSocket realtime stream.
-- Аутентификация: staff JWT + project RBAC; preview stays read-only, mutating actions remain in `control-plane` command admission.
-- Версионирование: `/api/v1` for HTTP and `v1` package for gRPC/realtime payloads.
-- Основные операции: workspace snapshot, node details, node activity, launch preview, command submit/status, realtime graph delta.
-- Compatibility decision: S16 supersedes Sprint S9 `dashboard/entities/timeline` contract in the same Mission Control namespace; no parallel long-lived HTTP surface is introduced.
+- 2026-03-25 issue `#561` перевела этот API contract в historical superseded state.
+- Зафиксированные здесь transport contracts не являются текущим source of truth для новых Mission Control потоков.
+- Новый transport baseline должен формироваться только после owner approval UX в `#562` и backend rethink в `#563`.
 
 ## Спецификации (source of truth)
 - OpenAPI (обновляется в `run:dev`): `services/external/api-gateway/api/server/api.yaml`

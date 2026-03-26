@@ -2,11 +2,11 @@
 doc_id: TRH-CK8S-S16-0001
 type: traceability-history
 title: "Sprint S16 Traceability History"
-status: in-review
+status: superseded
 owner_role: KM
 created_at: 2026-03-15
-updated_at: 2026-03-16
-related_issues: [480, 490, 492, 496, 510, 516, 519, 537, 542, 543, 544, 545, 546, 547]
+updated_at: 2026-03-25
+related_issues: [480, 490, 492, 496, 510, 516, 519, 537, 542, 543, 544, 545, 546, 547, 561, 562, 563]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -20,6 +20,26 @@ approvals:
 - Этот файл хранит historical delta для Sprint S16.
 - Текущая master-карта связей остаётся в `docs/delivery/issue_map.md`.
 - Текущее покрытие FR/NFR остаётся в `docs/delivery/requirements_traceability.md`.
+- С 2026-03-25 Sprint S16 хранится только как historical superseded baseline; активный reset path вынесен в issues `#561`, `#562`, `#563`.
+
+## Актуализация по Issue #561 (`run:rethink`, 2026-03-25)
+- Выполнен doc-reset Mission Control:
+  - обновлены `docs/delivery/delivery_plan.md`, `docs/delivery/issue_map.md`, `docs/delivery/sprints/README.md`, `docs/delivery/epics/README.md`;
+  - Sprint S16 и `docs/architecture/initiatives/s16_mission_control_graph_workspace/*` переведены в `status: superseded`;
+  - Day1-Day6 и execution handover `#542..#547` зафиксированы только как historical evidence.
+- Явно зафиксирован новый agreed baseline из discussion `#480`:
+  - fullscreen свободный canvas без lane/column shell и без обязательной root-group модели;
+  - минимальная node taxonomy Wave 1: `Issue`, `PR`, `Run`;
+  - frontend-first sprint `#562` на fake data для утверждения UX;
+  - workflow editor и workflow policy остаются частью нового направления, но сначала проходят frontend-first UX-валидацию на fake data;
+  - backend rebuild вынесен в отдельный sprint `#563` после owner approval UX;
+  - repo-seed prompt policy остаётся каноничной, а workflow behavior допускается только через deterministic generated `workflow-policy block`;
+  - `stale/freshness` теперь означает только доказанный lag provider mirror/reconcile path.
+- Зафиксирован порядок по соседнему backlog:
+  - `#522` и `#523` можно продолжать независимо;
+  - `#524` и `#525` не стартовать до approval `#562`;
+  - `#470` продолжать только в части `release safety`, `observability contract` и stop/rollback criteria без финального cockpit UI.
+- Issue `#547`, закрытая как not planned, сохранена только как historical superseded readiness handover и не является gate перед `run:qa`.
 
 ## Актуализация по Issue #492 (`run:intake`, 2026-03-15)
 - Подготовлен intake package:

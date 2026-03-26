@@ -2,11 +2,11 @@
 doc_id: ARC-C4N-S16-0001
 type: c4-container
 title: "Sprint S16 Day 4 — C4 Container overlay for Mission Control graph workspace"
-status: in-review
+status: superseded
 owner_role: SA
 created_at: 2026-03-16
-updated_at: 2026-03-16
-related_issues: [480, 490, 492, 496, 510, 516, 519]
+updated_at: 2026-03-25
+related_issues: [480, 490, 492, 496, 510, 516, 519, 561, 562, 563]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -17,8 +17,8 @@ approvals:
 # C4 Container: Sprint S16 Day 4 Mission Control graph workspace
 
 ## TL;DR
-- Container baseline платформы не меняется: capability реализуется внутри существующих `agent-runner`, `control-plane`, `worker`, `api-gateway`, `web-console`, `postgres`.
-- Day4 фиксирует ownership split для canonical graph truth, bounded provider inventory foundation, next-step surfaces и continuity-gap state.
+- 2026-03-25 issue `#561` перевела этот C4 container overlay в historical superseded state.
+- Контейнерные границы и ownership из этого файла больше не являются текущим Mission Control source of truth; они сохранены только как evidence отклонённого S16 baseline.
 
 ## Диаграмма (Mermaid C4Container)
 ```mermaid

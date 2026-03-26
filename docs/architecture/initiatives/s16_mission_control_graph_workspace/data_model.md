@@ -2,11 +2,11 @@
 doc_id: DM-S16-MISSION-CONTROL-0001
 type: data-model
 title: "Mission Control graph workspace — Data model Sprint S16 Day 5"
-status: in-review
+status: superseded
 owner_role: SA
 created_at: 2026-03-16
-updated_at: 2026-03-16
-related_issues: [480, 490, 492, 496, 510, 516, 519]
+updated_at: 2026-03-25
+related_issues: [480, 490, 492, 496, 510, 516, 519, 561, 562, 563]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -17,10 +17,9 @@ approvals:
 # Data Model: Mission Control graph workspace
 
 ## TL;DR
-- Schema owner remains `services/internal/control-plane`.
-- Sprint S16 intentionally reuses the existing Mission Control foundation tables for nodes, edges, activity and commands, then extends them with continuity gaps and workspace watermarks.
-- Target Wave 1 node kinds are `discussion`, `work_item`, `run`, `pull_request`; `agent` leaves the canvas and survives only as transitional migration residue until cleanup.
-- Main migration risks: backfilling `run` nodes from existing runtime evidence, replacing `agent` node materialization, and keeping bounded recent closed history explicit instead of implicit heuristics.
+- 2026-03-25 issue `#561` перевела этот data model в historical superseded state.
+- Node kinds `discussion/work_item/run/pull_request`, continuity-gap schema Sprint S16 и reuse path из этого файла больше не являются текущим Mission Control baseline.
+- Новый agreed Wave 1 baseline после rethink: `Issue`, `PR`, `Run`; соответствующий data model должен быть заново определён после `#562`.
 
 ## Entities
 ### Entity: `mission_control_entities`

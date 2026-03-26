@@ -6,7 +6,7 @@ status: active
 owner_role: EM
 created_at: 2026-02-06
 updated_at: 2026-03-25
-related_issues: [1, 19, 74, 100, 106, 112, 154, 155, 170, 171, 184, 185, 187, 189, 195, 197, 199, 201, 210, 212, 216, 218, 220, 222, 223, 225, 226, 227, 228, 229, 230, 238, 241, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 262, 263, 265, 274, 281, 282, 320, 333, 335, 337, 340, 351, 360, 361, 363, 366, 369, 370, 371, 372, 373, 374, 375, 378, 383, 385, 387, 389, 391, 392, 393, 394, 395, 413, 416, 418, 420, 423, 425, 426, 427, 428, 429, 430, 431, 444, 447, 448, 452, 454, 456, 458, 469, 471, 476, 480, 484, 490, 492, 494, 496, 500, 510, 512, 516, 519, 521, 522, 523, 524, 525, 537, 541, 542, 543, 544, 545, 546, 547, 554, 557, 559]
+related_issues: [1, 19, 74, 100, 106, 112, 154, 155, 170, 171, 184, 185, 187, 189, 195, 197, 199, 201, 210, 212, 216, 218, 220, 222, 223, 225, 226, 227, 228, 229, 230, 238, 241, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 262, 263, 265, 274, 281, 282, 320, 333, 335, 337, 340, 351, 360, 361, 363, 366, 369, 370, 371, 372, 373, 374, 375, 378, 383, 385, 387, 389, 391, 392, 393, 394, 395, 413, 416, 418, 420, 423, 425, 426, 427, 428, 429, 430, 431, 444, 447, 448, 452, 454, 456, 458, 469, 471, 476, 480, 484, 490, 492, 494, 496, 500, 510, 512, 516, 519, 521, 522, 523, 524, 525, 537, 541, 542, 543, 544, 545, 546, 547, 554, 557, 559, 561, 562, 563]
 
 related_prs: []
 approvals:
@@ -440,48 +440,30 @@ approvals:
   - Цель: поэтапно реализовать foundation, worker lifecycle, transport/mirror, UI visibility и readiness evidence без нарушения design guardrails.
   - Ожидаемый результат: PR-потоки по waves с обязательным traceability sync и переходом в `state:in-review`.
 
-### Sprint S16: Mission Control graph workspace and continuity control plane (Issue #492)
-- Day 1 (in-review): intake-пакет для полного redesign Mission Control (`docs/delivery/epics/s16/epic-s16-day1-mission-control-graph-workspace-intake.md`, Issue `#492`).
-- Результат Day 1 (факт):
-  - Mission Control зафиксирован как новый graph workspace/control plane, а не как incremental refresh Sprint S9 dashboard;
-  - issue `#480` поглощена как mandatory foundation layer для persisted GitHub inventory mirror, bounded reconcile, coverage contract `all open Issues/PR + bounded recent closed history` и future hybrid warmup/lazy repair;
-  - hybrid truth matrix, filtered multi-root workspace с точными Wave 1 filters `open_only`, `assigned_to_me_or_unassigned`, active-state presets, left-to-right graph baseline и Wave 1 nodes `discussion/work_item/run/pull_request` закреплены как intake baseline;
-  - typed metadata/watermark contract, platform-canonical launch params и continuity rule `PR + linked follow-up issue` через `run:dev` закреплены как обязательный product contract;
-  - создана continuity issue `#496` для stage `run:vision` без trigger-лейбла.
-- Day 2 (in-review): vision-пакет для Mission Control graph workspace (`docs/delivery/epics/s16/epic-s16-day2-mission-control-graph-workspace-vision.md`, Issue `#496`).
-- Результат Day 2 (факт):
-  - Mission Control закреплён как primary multi-root graph workspace/control plane для continuity `discussion/work_item -> run -> pull_request/follow-up issue -> next run`, а не как board/list-first refresh;
-  - mission, north star, persona outcomes, KPI/guardrails и wave boundaries определены без reopening Day1 baseline;
-  - inventory foundation из `#480`, exact Wave 1 filters `open_only`, `assigned_to_me_or_unassigned`, `active-state presets`, secondary/dimmed semantics только для graph integrity, Wave 1 nodes `discussion/work_item/run/pull_request`, typed metadata/watermarks, platform-canonical launch params и continuity rule `PR + follow-up issue` повторно зафиксированы как non-negotiable;
-  - voice/STT, dashboard orchestrator agent и отдельная `agent` node taxonomy оставлены в later-wave scope и не блокируют core Wave 1;
-  - создана follow-up issue `#510` для stage `run:prd` без trigger-лейбла.
-- Day 3 (in-review): PRD package для Mission Control graph workspace (`docs/delivery/epics/s16/epic-s16-day3-mission-control-graph-workspace-prd.md`, `docs/delivery/epics/s16/prd-s16-day3-mission-control-graph-workspace.md`, Issue `#510`).
-- Результат Day 3 (факт):
-  - user stories, FR/AC/NFR, scenario matrix и expected evidence зафиксированы для fullscreen graph workspace, filtered multi-root continuity, inventory-backed foundation, typed metadata/watermarks, platform-canonical launch params и platform-safe inline actions;
-  - explicit continuity contract сохранён: stage through `run:dev` считается complete только при наличии `PR + linked follow-up issue`, а later-wave contours voice/STT, dashboard orchestrator agent, отдельная `agent` node taxonomy, full-history/archive и richer provider enrichment не блокируют core Wave 1;
-  - создана continuity issue `#516` для stage `run:arch` без trigger-лейбла.
-- Day 4 (in-review): architecture issue `#516` (`docs/delivery/epics/s16/epic-s16-day4-mission-control-graph-workspace-arch.md`, `docs/architecture/initiatives/s16_mission_control_graph_workspace/{README.md,architecture.md,c4_context.md,c4_container.md}`, `docs/architecture/adr/ADR-0016-mission-control-graph-workspace-hybrid-truth-and-continuity-ownership.md`, `docs/architecture/alternatives/ALT-0008-mission-control-graph-workspace-hybrid-truth-boundaries.md`).
-- Результат Day 4 (факт):
-  - `control-plane` закреплён как owner canonical graph truth, continuity state, typed metadata/watermarks и launch surfaces;
-  - `worker` закреплён за bounded provider inventory freshness, recent-closed-history backfill и reconcile execution без ownership graph semantics;
-  - hybrid truth lifecycle `provider mirror -> graph truth -> workspace projection` и boundary `thin-edge UI/API` сохранены без reopening Sprint S16 baseline;
-  - создана continuity issue `#519` для stage `run:design` без trigger-лейбла.
-- Day 5 (in-review): design package для Mission Control graph workspace (`docs/delivery/epics/s16/epic-s16-day5-mission-control-graph-workspace-design.md`, `docs/architecture/initiatives/s16_mission_control_graph_workspace/{design_doc.md,api_contract.md,data_model.md,migrations_policy.md}`, Issue `#519`).
-- Результат Day 5 (факт):
-  - зафиксирован graph-first interaction model поверх existing Mission Control bounded context без отдельного сервиса и без второго command path;
-  - typed transport baseline определён как `workspace -> node details -> activity -> launch preview -> existing command ledger`, а Sprint S9 dashboard contract переводится в superseded state без отдельного long-lived namespace;
-  - persisted continuity gaps и workspace watermarks оформлены как отдельные domain constructs `control-plane`, а `run` node закреплён как Wave 1 canvas kind вместо `agent`;
-  - rollout path зафиксирован как `expand schema -> shadow backfill -> read switch -> preview exposure -> cleanup last`, сохранив order `migrations -> control-plane -> worker -> api-gateway -> web-console`;
-  - через `gh issue create` создана continuity issue `#537` для stage `run:plan` без trigger-лейбла.
-- Day 6 (in-review): plan package для Mission Control graph workspace (`docs/delivery/epics/s16/epic-s16-day6-mission-control-graph-workspace-plan.md`, Issue `#537`).
-- Результат Day 6 (факт):
-  - execution package разложен на issues `#542..#547` с sequencing `schema/backfill foundation -> control-plane graph truth -> worker reconcile/freshness -> transport/preview -> web-console graph workspace -> readiness gate`;
-  - зафиксированы quality-gates, DoR/DoD и owner-managed launch policy: `run:dev` triggers ставятся только по wave-sequencing;
-  - сохранены non-negotiables Sprint S16: issue `#480`, exact Wave 1 filters/nodes, secondary/dimmed only for graph integrity, read-only launch preview и запрет на новый deployable сервис;
-  - удержан boundary относительно Sprint S9: dashboard-first model не возвращается, voice/STT и richer provider enrichment остаются вне Day6 execution package.
-- Day 7 (planned): owner-managed `run:dev` execution waves через issues `#542..#547`.
-  - Цель: поэтапно реализовать foundation, graph truth, reconcile, transport, UI visibility и readiness evidence без нарушения design guardrails.
-  - Ожидаемый результат: PR-потоки по waves с обязательным traceability sync и переходом в `state:in-review`.
+### Sprint S16: Mission Control graph workspace and continuity control plane (historical superseded baseline)
+- 2026-03-25 issue `#561` выполнила doc-reset по owner decision из discussion `#480`: Sprint S16 и execution handover `#542..#547` больше не считаются текущим source of truth для Mission Control.
+- S16 сохраняется только как historical evidence: документация показывает, какой baseline был подготовлен и почему он отклонён до старта новых спринтов.
+- Superseded assumptions Sprint S16:
+  - lane/column shell и обязательная иерархия `root-group -> column -> stack`;
+  - Wave 1 taxonomy `discussion/work_item/run/pull_request`;
+  - backend-first sequencing `#542..#547` как обязательный следующий шаг;
+  - `stale/freshness` как возраст проекции сам по себе, а не доказанный lag provider mirror/reconcile path;
+  - трактовка `#547` как обязательного readiness gate перед `run:qa`.
+- Новый baseline после rethink:
+  - fullscreen свободный canvas без lane/column shell;
+  - минимальная node taxonomy Wave 1: `Issue`, `PR`, `Run`;
+  - frontend-first sprint на fake data для утверждения canvas, density и interaction model;
+  - workflow editor и workflow policy остаются частью нового Mission Control направления: на frontend-first этапе они утверждаются как UX/interaction contour на fake data, а backend implementation выносится в отдельный follow-up sprint;
+  - repo-seed prompts остаются каноничными; вместо DB prompt editor допускается только deterministic generated `workflow-policy block`;
+  - backend rebuild выделяется в отдельный sprint после owner approval нового UX.
+- Новый sequencing для Mission Control:
+  - `#561` (`run:rethink`) фиксирует doc-reset и переводит S16 в historical superseded state;
+  - `#562` запускается следующим `run:intake` и ведёт отдельный frontend-first flow `intake -> vision -> prd -> arch -> design -> plan -> dev`;
+  - `#563` запускается только после owner approval результата `#562` и оформляет backend rebuild под утверждённый UX.
+- Порядок по соседнему backlog после rethink:
+  - `#522` и `#523` можно продолжать независимо от нового Mission Control UX;
+  - `#524` и `#525` не запускать до утверждения frontend baseline из `#562`;
+  - `#470` можно продолжать только в части `release safety`, `observability contract` и stop/rollback criteria, без фиксации финального cockpit UI до завершения `#562`.
 
 ### Sprint S17: Unified long-lived user interaction waits and owner feedback inbox (Issue #541)
 - Day 1 (in-review): intake package для unified owner feedback loop (`docs/delivery/epics/s17/epic-s17-day1-unified-user-interaction-waits-and-owner-feedback-inbox-intake.md`, Issue `#541`).

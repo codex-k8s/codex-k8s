@@ -2,11 +2,11 @@
 doc_id: IDX-CK8S-ARCH-S16-0001
 type: initiative-index
 title: "Initiative Package: s16_mission_control_graph_workspace"
-status: in-review
+status: superseded
 owner_role: SA
 created_at: 2026-03-16
-updated_at: 2026-03-19
-related_issues: [480, 490, 492, 496, 510, 516, 519, 537, 546, 547]
+updated_at: 2026-03-25
+related_issues: [480, 490, 492, 496, 510, 516, 519, 537, 546, 547, 561, 562, 563]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -17,9 +17,9 @@ approvals:
 # s16_mission_control_graph_workspace
 
 ## TL;DR
-- Пакет объединяет Day4-Day5 architecture/design артефакты Sprint S16 для Mission Control graph workspace и continuity control plane.
-- Внутри зафиксированы ownership split для `control-plane` / `worker` / `api-gateway` / `web-console` / `agent-runner`, graph-first interaction model, typed transport/data/migration contracts и rollout notes.
-- Следующий обязательный этап после review этого пакета: owner-managed issue `#537` для `run:plan`, где baseline Day5 должен быть разложен в execution waves без reopening product scope.
+- 2026-03-25 issue `#561` перевела весь пакет `s16_mission_control_graph_workspace` в historical superseded state.
+- Эти architecture/design артефакты сохранены как evidence отклонённого baseline и больше не являются текущим source of truth для Mission Control.
+- Актуальный sequencing: `#562` фиксирует новый frontend-first UX, `#563` готовит новый backend package после owner approval UX.
 
 ## Содержимое
 - `docs/architecture/initiatives/s16_mission_control_graph_workspace/README.md`
@@ -32,7 +32,7 @@ approvals:
 - `docs/architecture/initiatives/s16_mission_control_graph_workspace/migrations_policy.md`
 - `docs/architecture/initiatives/s16_mission_control_graph_workspace/ui_smoke_criteria.md`
 
-## Связанные source-of-truth документы
+## Связанные документы и historical refs
 - `docs/architecture/adr/ADR-0016-mission-control-graph-workspace-hybrid-truth-and-continuity-ownership.md`
 - `docs/architecture/alternatives/ALT-0008-mission-control-graph-workspace-hybrid-truth-boundaries.md`
 - `docs/delivery/epics/s16/epic-s16-day4-mission-control-graph-workspace-arch.md`
@@ -44,7 +44,9 @@ approvals:
 - `docs/architecture/initiatives/s9_mission_control_dashboard/README.md`
 - `docs/architecture/initiatives/s16_mission_control_graph_workspace/ui_smoke_criteria.md`
 
-## Continuity after `run:design`
+ADR-0016 и ALT-0008 также переведены в historical superseded state: они остаются evidence отклонённого S16 architecture baseline и не должны использоваться как текущий кандидат для backend sprint `#563`.
+
+## Historical continuity before rethink
 - Документный контур `intake -> vision -> prd -> arch -> design` согласован и доведён до review-ready design package.
 - Day5 зафиксировал:
   - graph-first workspace поверх Day4 ownership split без нового deployable сервиса;

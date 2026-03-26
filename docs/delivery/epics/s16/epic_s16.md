@@ -2,11 +2,11 @@
 doc_id: EPC-CK8S-0016
 type: epic
 title: "Epic Catalog: Sprint S16 (Mission Control graph workspace and continuity control plane)"
-status: in-review
+status: superseded
 owner_role: PM
 created_at: 2026-03-15
-updated_at: 2026-03-16
-related_issues: [480, 490, 492, 496, 510, 516, 519, 537, 542, 543, 544, 545, 546, 547]
+updated_at: 2026-03-25
+related_issues: [480, 490, 492, 496, 510, 516, 519, 537, 542, 543, 544, 545, 546, 547, 561, 562, 563]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -14,18 +14,19 @@ approvals:
   request_id: "owner-2026-03-15-issue-492-intake"
 ---
 
-# Epic Catalog: Sprint S16 (Mission Control graph workspace and continuity control plane)
+# Epic Catalog: Sprint S16 (historical superseded Mission Control baseline)
 
 ## TL;DR
-- Sprint S16 открывает новый product stream вокруг полного redesign Mission Control: staff console должна стать graph workspace/control plane, а не оставаться board/list слоем над частичной platform evidence.
-- Day1 intake (`#492`) зафиксировал fullscreen workspace, hybrid truth matrix, filtered multi-root graph с точными Wave 1 filters `open_only`, `assigned_to_me_or_unassigned` и active-state presets, закрытый Wave 1 node set `discussion/work_item/run/pull_request`, platform-canonical metadata/watermarks/launch params и continuity rule `PR + follow-up issue`.
-- Day2 vision (`#496`) зафиксировал mission, north star, persona outcomes, KPI/guardrails и wave boundaries для primary multi-root graph workspace/control plane, не переоткрывая intake baseline.
-- Issue `#480` не исчезает, а становится обязательным foundation layer внутри S16: persisted GitHub inventory mirror и bounded reconcile с coverage contract `all open Issues/PR + bounded recent closed history` должны питать новый workspace.
-- Day3 PRD (`#510`) зафиксировал user stories, FR/AC/NFR, scenario matrix, expected evidence и boundary core Wave 1 vs deferred contours; создана follow-up issue `#516` для `run:arch`.
-- Day4 Architecture (`#516`) зафиксировал ownership split, hybrid truth lifecycle `provider mirror -> graph truth -> workspace projection`, continuity gaps и bounded provider foundation; создана follow-up issue `#519` для `run:design`.
-- Day5 Design (`#519`) зафиксировал graph-first interaction model, typed transport/data contracts, persisted continuity gaps/workspace watermarks и rollout path без нового сервиса; создана continuity issue `#537` для `run:plan`.
-- Day6 Plan (`#537`) зафиксировал execution package `S16-E01..S16-E06`, sequencing-waves, quality-gates и owner-managed handover issues `#542..#547` для `run:dev`.
-- До owner-managed запуска `run:dev` Sprint S16 остаётся markdown-only и не создаёт code/runtime changes в рамках doc-stage.
+- 2026-03-25 issue `#561` зафиксировала, что Sprint S16 больше не является текущим source of truth для Mission Control.
+- Day1-Day6 package и issues `#542..#547` сохранены только как historical evidence отклонённого baseline.
+- Актуальный Mission Control reset перенесён в `#562` (frontend-first UX на fake data) и `#563` (backend rebuild после owner approval UX).
+- Новый agreed baseline: fullscreen canvas без lane/column shell, node taxonomy `Issue/PR/Run`, repo-seed prompts без DB prompt editor и `stale/freshness` только как доказанный lag provider mirror/reconcile path.
+
+## Superseded Scope
+- superseded UX shell: lane/column workspace и обязательная root-group hierarchy;
+- superseded Wave 1 taxonomy: `discussion/work_item/run/pull_request`;
+- superseded execution path: `#542..#547` как следующий обязательный `run:dev` contour;
+- superseded semantics: старые freshness/watermark UX как центральный экранный статус.
 
 ## Stage roadmap
 - Day 1 (Intake): `docs/delivery/epics/s16/epic-s16-day1-mission-control-graph-workspace-intake.md` (Issue `#492`).

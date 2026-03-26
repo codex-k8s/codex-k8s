@@ -2,11 +2,11 @@
 doc_id: DSG-S16-MISSION-CONTROL-0001
 type: design-doc
 title: "Mission Control graph workspace — Detailed design Sprint S16 Day 5"
-status: in-review
+status: superseded
 owner_role: SA
 created_at: 2026-03-16
-updated_at: 2026-03-16
-related_issues: [480, 490, 492, 496, 510, 516, 519]
+updated_at: 2026-03-25
+related_issues: [480, 490, 492, 496, 510, 516, 519, 561, 562, 563]
 related_prs: []
 related_adrs: ["ADR-0016"]
 approvals:
@@ -18,10 +18,9 @@ approvals:
 # Detailed Design: Mission Control graph workspace
 
 ## TL;DR
-- Что меняем: переводим Mission Control из active-set dashboard Sprint S9 в fullscreen multi-root graph workspace поверх Day4 ownership split Sprint S16.
-- Почему: без typed transport/data/rollout контракта команда `run:plan` и `run:dev` будет принимать ad-hoc решения по run nodes, continuity gaps, watermarks и launch preview, что сломает Day4 boundaries.
-- Основные компоненты: `control-plane` собирает graph truth, `worker` поддерживает bounded provider foundation и backfill, `api-gateway` публикует thin-edge transport, `web-console` рендерит graph/list shell и drawer, `agent-runner` остаётся только emitter run evidence.
-- Риски: drift между S9 dashboard и S16 graph read model, неправильное обращение с bounded recent closed history, потеря policy-safe next-step preview и переизобретение graph logic во frontend.
+- 2026-03-25 issue `#561` перевела этот detailed design в historical superseded state.
+- Graph/list shell, taxonomy `discussion/work_item/run/pull_request` и rollout path Sprint S16 больше не являются текущим Mission Control baseline.
+- Новый design path будет переопределён после frontend-first approval в issue `#562` и backend rebuild sprint `#563`.
 - План выката: additive schema/backfill в `control-plane`, shadow validation в candidate, rollout order `migrations -> control-plane -> worker -> api-gateway -> web-console`, после чего старый S9 dashboard path переводится в superseded state.
 
 ## Цели / Не-цели
