@@ -5,8 +5,8 @@ title: "Epic Catalog: Sprint S17 (Unified long-lived user interaction waits and 
 status: in-review
 owner_role: PM
 created_at: 2026-03-20
-updated_at: 2026-03-26
-related_issues: [360, 361, 458, 473, 532, 540, 541, 554, 557, 559, 568]
+updated_at: 2026-03-27
+related_issues: [360, 361, 458, 473, 532, 540, 541, 554, 557, 559, 568, 575]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -22,6 +22,7 @@ approvals:
 - Day2 vision package (`#554`) закрепил mission, persona outcomes, KPI/guardrails, max timeout/TTL baseline для built-in `codex_k8s` MCP wait path и wave boundaries без переоткрытия Day1 baseline и создал issue `#557` для `run:prd`.
 - Day3 PRD package (`#557`) зафиксировал user stories, FR/AC/NFR, scenario matrix, expected evidence, recovery/lifecycle guardrails и создал issue `#559` для `run:arch`.
 - Day4 architecture package (`#559`) зафиксировал service boundaries, ownership split, live wait lifetime policy, persisted request truth и recovery-only snapshot-resume boundary и создал issue `#568` для `run:design`.
+- Day5 design package (`#568`) зафиксировал implementation-ready API/data/runtime contracts, response binding registry, staff-console fallback surface и additive migration policy поверх Sprint S10/S11 foundation и создал issue `#575` для `run:plan`.
 - До `run:plan` Sprint S17 остаётся markdown-only контуром: кодовые/runtime changes и конкретные schema/API decisions начинаются только после owner review следующих stage.
 
 ## Stage roadmap
@@ -29,8 +30,8 @@ approvals:
 - Day 2 (Vision): `docs/delivery/epics/s17/epic-s17-day2-unified-user-interaction-waits-and-owner-feedback-inbox-vision.md` (Issue `#554`); stage зафиксировал mission, persona outcomes, KPI/guardrails, max timeout/TTL baseline для built-in `codex_k8s` MCP wait path и wave boundaries для owner feedback loop и создал issue `#557` для `run:prd`.
 - Day 3 (PRD): issue `#557`, `docs/delivery/epics/s17/epic-s17-day3-unified-user-interaction-waits-and-owner-feedback-inbox-prd.md` и `docs/delivery/epics/s17/prd-s17-day3-unified-user-interaction-waits-and-owner-feedback-inbox.md`; stage формализовал user stories, FR/AC/NFR, scenario matrix и expected evidence и создал issue `#559` для `run:arch`.
 - Day 4 (Architecture): issue `#559`, `docs/delivery/epics/s17/epic-s17-day4-unified-user-interaction-waits-and-owner-feedback-inbox-arch.md` и package `docs/architecture/initiatives/s17_unified_owner_feedback_loop/*`; stage зафиксировал execution model, ownership split, lifetime policy, persisted truth и создал issue `#568` для `run:design`.
-- Day 5 (Design): issue `#568`, создаётся последовательно после architecture и должна выпустить implementation-ready API/data/UI/runtime contract.
-- Day 6 (Plan): создаётся последовательно после design и должна разложить execution package, quality-gates и owner-managed handover в `run:dev`.
+- Day 5 (Design): issue `#568`, `docs/delivery/epics/s17/epic-s17-day5-unified-user-interaction-waits-and-owner-feedback-inbox-design.md` и `docs/architecture/initiatives/s17_unified_owner_feedback_loop/{design_doc.md,api_contract.md,data_model.md,migrations_policy.md}`; stage выпустил implementation-ready API/data/UI/runtime contract и создал issue `#575` для `run:plan`.
+- Day 6 (Plan): issue `#575`, создаётся последовательно после design и должна разложить execution package, quality-gates и owner-managed handover в `run:dev`.
 
 ## Delivery-governance правила
 - Sprint S17 идёт полным doc-stage контуром `intake -> vision -> prd -> arch -> design -> plan`.
@@ -49,4 +50,9 @@ approvals:
   - `control-plane` остаётся owner persisted request truth и accepted-response winner;
   - `worker` владеет dispatch/reconcile/lease keepalive, а `agent-runner` только live session + recovery snapshot;
   - `api-gateway`, `staff web-console` и `telegram-interaction-adapter` остаются thin surfaces.
+- Day5 design baseline дополнительно обязателен для `run:plan`:
+  - `user.decision.request` остаётся built-in wait entrypoint, а `owner.feedback.request` не переиспользуется;
+  - response binding registry классифицирует Telegram callback/free-text/voice и staff-console responses в один winner-selection path;
+  - staff-console моделируется как projection + typed response surface, а не как второй source of truth;
+  - recovery resume остаётся explicit degraded path.
 - Detached resume-run не может вернуться как default UX без нового owner-решения.
