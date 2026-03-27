@@ -5,8 +5,8 @@ title: "Sprint S18 Traceability History"
 status: in-review
 owner_role: KM
 created_at: 2026-03-26
-updated_at: 2026-03-26
-related_issues: [470, 480, 522, 523, 524, 525, 561, 562, 563, 565, 567]
+updated_at: 2026-03-27
+related_issues: [470, 480, 522, 523, 524, 525, 561, 562, 563, 565, 567, 571]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -51,3 +51,18 @@ approvals:
 - Через `gh issue create` создана follow-up issue `#567` для stage `run:prd` с continuity-требованием сохранить цепочку `prd -> arch -> design -> plan -> dev`.
 - Выполнены markdown-only проверки: traceability sync, `git diff --check`, локальная проверка `gh issue view 565 --json number,title,body,url`, `gh issue view 567 --json number,title,body,url`, `gh issue create --help`, `gh pr create --help`, `gh pr edit --help`; kubectl/logs/БД-запросы не выполнялись, потому что stage ограничен documentation-only scope и не требовал runtime-debug.
 - Root FR/NFR matrix в `docs/delivery/requirements_traceability.md` не менялась по существу: vision stage добавляет product framing, guardrails и historical delta, не создавая новых канонических FR/NFR.
+
+## Актуализация по Issue #567 (`run:prd`, 2026-03-27)
+- Подготовлен PRD package:
+  - `docs/delivery/epics/s18/epic-s18-day3-mission-control-frontend-first-canvas-prd.md`;
+  - `docs/delivery/epics/s18/prd-s18-day3-mission-control-frontend-first-canvas.md`;
+  - обновлены `docs/delivery/sprints/s18/sprint_s18_mission_control_frontend_first_canvas_fake_data.md` и `docs/delivery/epics/s18/epic_s18.md`.
+- Зафиксированы:
+  - product contract Sprint S18 для owner/product lead path, operator path и workflow policy preview path на fake data;
+  - user stories, FR/AC/NFR, scenario matrix, edge cases и expected evidence для fullscreen canvas, taxonomy `Issue` / `PR` / `Run`, compact nodes, explicit relations, drawer, toolbar и workflow UX;
+  - locked baseline Sprint S18 сохранён без reopening: fullscreen canvas, workflow editor как policy-only fake-data UX, platform-safe actions only, repo-seed prompts как source of truth и isolated `web-console` prototype scope;
+  - backend rebuild `#563`, live provider sync, DB prompt editor, release-safety cockpit и waves `#524` / `#525` закреплены как deferred/later-wave направления и не блокируют core MVP;
+  - continuity handover переведён на issue `#571` для stage `run:arch` с требованием сохранить цепочку `arch -> design -> plan -> dev`.
+- Через `gh issue create` создана follow-up issue `#571` для stage `run:arch`.
+- Выполнены markdown-only проверки: traceability sync, `git diff --check`, локальная проверка `gh issue view 567 --json number,title,body,url`, `gh issue view 571 --json number,title,body,url`, `gh issue create --help`, `gh pr create --help`, `gh pr edit --help`; kubectl/logs/БД-запросы не выполнялись, потому что stage ограничен documentation-only scope и не требовал runtime-debug.
+- Root FR/NFR matrix в `docs/delivery/requirements_traceability.md` не менялась по существу: PRD stage фиксирует sprint-specific product contract и historical delta, а канонический baseline требований остаётся в `docs/product/requirements_machine_driven.md`.
