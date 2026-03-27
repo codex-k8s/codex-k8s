@@ -5,8 +5,8 @@ title: "Sprint S17 Traceability History"
 status: in-review
 owner_role: KM
 created_at: 2026-03-20
-updated_at: 2026-03-25
-related_issues: [360, 361, 458, 473, 532, 540, 541, 554, 557, 559]
+updated_at: 2026-03-26
+related_issues: [360, 361, 458, 473, 532, 540, 541, 554, 557, 559, 568]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -66,3 +66,23 @@ approvals:
 - Через `gh issue create` создана follow-up issue `#559` для stage `run:arch` с continuity-требованием сохранить цепочку `arch -> design -> plan -> dev`.
 - Выполнены markdown-only проверки: traceability sync, `git diff --check`, локальная проверка `gh issue view 557 --json number,title,body,url`, `gh issue view 559 --json number,title,body,url`, `gh issue create --help`, `gh pr create --help`, `gh pr edit --help`; kubectl/logs/БД-запросы не выполнялись, потому что stage ограничен documentation-only scope и не требовал runtime-debug.
 - Root FR/NFR matrix в `docs/delivery/requirements_traceability.md` не менялась по существу: PRD stage закрепляет sprint-specific product contract и historical delta без изменения канонического requirements baseline.
+
+## Актуализация по Issue #559 (`run:arch`, 2026-03-26)
+- Подготовлен architecture package:
+  - `docs/delivery/epics/s17/epic-s17-day4-unified-user-interaction-waits-and-owner-feedback-inbox-arch.md`;
+  - `docs/architecture/initiatives/s17_unified_owner_feedback_loop/README.md`;
+  - `docs/architecture/initiatives/s17_unified_owner_feedback_loop/architecture.md`;
+  - `docs/architecture/initiatives/s17_unified_owner_feedback_loop/c4_context.md`;
+  - `docs/architecture/initiatives/s17_unified_owner_feedback_loop/c4_container.md`;
+  - `docs/architecture/adr/ADR-0017-unified-owner-feedback-loop-live-wait-primary-platform-owned-continuation.md`;
+  - `docs/architecture/alternatives/ALT-0009-unified-owner-feedback-loop-live-wait-and-channel-ownership.md`;
+  - обновлены `docs/architecture/README.md`, `docs/delivery/sprints/s17/sprint_s17_unified_user_interaction_waits_and_owner_feedback_inbox.md`, `docs/delivery/epics/s17/epic_s17.md` и `docs/delivery/delivery_plan.md`.
+- Зафиксированы:
+  - `control-plane` как единственный owner feedback request truth, accepted-response winner, wait/deadline policy и continuation classification;
+  - `worker` как owner dispatch/retry/reconcile и runtime lease keepalive для long-lived waits, при этом `agent-runner` остаётся owner only for live same-session execution and recovery snapshot capture;
+  - `api-gateway`, `staff web-console` и `telegram-interaction-adapter` как thin surfaces вокруг одного persisted backend contract без права переопределять lifecycle semantics;
+  - primary happy-path = same live pod / same `codex` session; effective max timeout/TTL built-in `codex_k8s` MCP wait path не ниже owner wait window; snapshot-resume допускается только как recovery fallback;
+  - canonical visibility model для `overdue`, `expired`, `manual-fallback` и `recovery-resume`, чтобы degraded paths не оставались hidden operator-only detail.
+- Через `gh issue create` создана follow-up issue `#568` для stage `run:design` с continuity-требованием сохранить цепочку `design -> plan -> dev`.
+- Выполнены markdown-only проверки: traceability sync, `git diff --check`, локальная проверка `gh issue view 559 --json number,title,body,url`, `gh issue view 568 --json number,title,body,url`, `gh issue create --help`, `gh pr create --help`, `gh pr edit --help`; kubectl/logs/БД-запросы не выполнялись, потому что stage ограничен documentation-only scope и не требовал runtime-debug.
+- Root FR/NFR matrix в `docs/delivery/requirements_traceability.md` не менялась по существу: architecture stage закрепляет service boundaries, trade-offs и historical delta без изменения канонического requirements baseline.

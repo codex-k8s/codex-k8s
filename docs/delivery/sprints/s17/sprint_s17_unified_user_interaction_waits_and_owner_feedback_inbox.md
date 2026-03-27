@@ -5,8 +5,8 @@ title: "Sprint S17: Unified long-lived user interaction waits and owner feedback
 status: in-review
 owner_role: PM
 created_at: 2026-03-20
-updated_at: 2026-03-25
-related_issues: [360, 361, 458, 473, 532, 540, 541, 554, 557, 559]
+updated_at: 2026-03-26
+related_issues: [360, 361, 458, 473, 532, 540, 541, 554, 557, 559, 568]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -22,7 +22,8 @@ approvals:
 - Sprint S17 также фиксирует обязательные guardrails: long human-wait target `>=24h`, delivery-before-wait lifecycle, Telegram pending inbox, staff-console fallback, persisted text/voice binding и self-improve exclusion.
 - Vision package в Issue `#554` зафиксировал mission, north star, persona outcomes, KPI/guardrails и wave boundaries для unified owner feedback loop, не переоткрывая Day1 baseline, и явно добавил product guardrail: built-in `codex_k8s` MCP wait path обязан использовать максимальный timeout/TTL не ниже owner wait window.
 - PRD package в Issue `#557` формализовал user stories, FR/AC/NFR, scenario matrix, expected evidence и recovery/lifecycle guardrails для owner feedback loop без reopening Day1/Day2 baseline.
-- Continuity issue `#559` создана для stage `run:arch`; дальнейшие stage issues создаются последовательно после owner review.
+- Architecture package в Issue `#559` закрепил service boundaries, live wait lifetime policy, persisted request truth и recovery-only snapshot-resume boundary без переоткрытия Day1-Day3 baseline.
+- Continuity issue `#568` создана для stage `run:design`; дальнейшие stage issues создаются последовательно после owner review.
 
 ## Scope спринта
 ### In scope
@@ -52,7 +53,7 @@ approvals:
   - нужны обязательные `vision`, `arch` и `design`, чтобы удержать same-session baseline, cost/recovery trade-offs и channel-neutral contract;
   - сокращённые launch profile не удержат cross-service impact и continuity discipline.
 - Целевая continuity-цепочка:
-  `#541 (intake) -> #554 (vision) -> PRD issue -> architecture issue -> design issue -> plan issue -> dev execution waves -> qa -> release -> postdeploy -> ops`.
+  `#541 (intake) -> #554 (vision) -> #557 (prd) -> #559 (arch) -> #568 (design) -> plan issue -> dev execution waves -> qa -> release -> postdeploy -> ops`.
 
 ## План этапов и handover
 
@@ -61,8 +62,8 @@ approvals:
 | Intake (`#541`) | Problem/Brief/Scope/Constraints + intake AC | `pm` | Owner review intake-пакета и создана issue следующего этапа |
 | Vision (`#554`) | Mission, north star, persona outcomes, KPI/guardrails, wave boundaries | `pm` | Зафиксирован vision baseline и создана issue `#557` для `run:prd` |
 | PRD (`#557`) | User stories, FR/AC/NFR, scenario matrix, expected evidence и edge cases | `pm` + `sa` | Подтверждён PRD package и создана issue `#559` для `run:arch` |
-| Architecture (`#559`) | Execution model, ownership split, lifetime policy, continuation semantics | `sa` | Подтверждены архитектурные границы и создана issue для `run:design` |
-| Design (TBD) | API/data/UI/runtime contracts и rollout notes | `sa` + `qa` | Подготовлен implementation-ready design package и создана issue для `run:plan` |
+| Architecture (`#559`) | Execution model, ownership split, lifetime policy, continuation semantics | `sa` | Подтверждены архитектурные границы и создана issue `#568` для `run:design` |
+| Design (`#568`) | API/data/UI/runtime contracts и rollout notes | `sa` + `qa` | Подготовлен implementation-ready design package и создана issue для `run:plan` |
 | Plan (TBD) | Delivery waves, execution issues, DoR/DoD, quality-gates | `em` + `km` | Сформирован execution package и owner-managed handover в `run:dev` |
 
 ## Guardrails спринта
@@ -75,12 +76,17 @@ approvals:
 - До `run:plan` Sprint S17 остаётся markdown-only и не создаёт code/runtime diff.
 
 ## Handover
-- Текущий stage in-review: `run:prd` в Issue `#557`.
-- PRD package:
-  - `docs/delivery/epics/s17/epic-s17-day3-unified-user-interaction-waits-and-owner-feedback-inbox-prd.md`;
-  - `docs/delivery/epics/s17/prd-s17-day3-unified-user-interaction-waits-and-owner-feedback-inbox.md`;
-  - follow-up issue `#559` для `run:arch`.
-- Следующий stage: `run:arch` через issue `#559`.
+- Текущий stage in-review: `run:arch` в Issue `#559`.
+- Architecture package:
+  - `docs/delivery/epics/s17/epic-s17-day4-unified-user-interaction-waits-and-owner-feedback-inbox-arch.md`;
+  - `docs/architecture/initiatives/s17_unified_owner_feedback_loop/README.md`;
+  - `docs/architecture/initiatives/s17_unified_owner_feedback_loop/architecture.md`;
+  - `docs/architecture/initiatives/s17_unified_owner_feedback_loop/c4_context.md`;
+  - `docs/architecture/initiatives/s17_unified_owner_feedback_loop/c4_container.md`;
+  - `docs/architecture/adr/ADR-0017-unified-owner-feedback-loop-live-wait-primary-platform-owned-continuation.md`;
+  - `docs/architecture/alternatives/ALT-0009-unified-owner-feedback-loop-live-wait-and-channel-ownership.md`;
+  - follow-up issue `#568` для `run:design`.
+- Следующий stage: `run:design` через issue `#568`.
 - До завершения следующего stage нельзя потерять следующие Day1/Day2/Day3 decisions:
   - same live session как primary continuation model;
   - max timeout/TTL built-in `codex_k8s` MCP wait path не ниже owner wait window, чтобы happy-path оставался live wait, а не synthetic resume;
@@ -91,4 +97,7 @@ approvals:
   - deterministic text/voice binding;
   - visibility для overdue / expired / manual-fallback scenarios;
   - self-improve exclusion.
-- Trigger-лейбл для issue `#559` не ставится автоматически и остаётся owner-managed переходом после review PRD package.
+  - `control-plane` как owner persisted request truth, accepted-response winner и continuation classification;
+  - `worker` как owner dispatch/reconcile/lease keepalive, а `agent-runner` только как owner live session и recovery snapshot capture;
+  - `api-gateway`, `staff web-console` и `telegram-interaction-adapter` как thin surfaces вокруг одного persisted backend contract.
+- Trigger-лейбл для issue `#568` не ставится автоматически и остаётся owner-managed переходом после review architecture package.
