@@ -6,7 +6,7 @@ status: in-review
 owner_role: KM
 created_at: 2026-03-26
 updated_at: 2026-03-27
-related_issues: [470, 480, 522, 523, 524, 525, 561, 562, 563, 565, 567, 571]
+related_issues: [470, 480, 522, 523, 524, 525, 561, 562, 563, 565, 567, 571, 573]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -66,3 +66,23 @@ approvals:
 - Через `gh issue create` создана follow-up issue `#571` для stage `run:arch`.
 - Выполнены markdown-only проверки: traceability sync, `git diff --check`, локальная проверка `gh issue view 567 --json number,title,body,url`, `gh issue view 571 --json number,title,body,url`, `gh issue create --help`, `gh pr create --help`, `gh pr edit --help`; kubectl/logs/БД-запросы не выполнялись, потому что stage ограничен documentation-only scope и не требовал runtime-debug.
 - Root FR/NFR matrix в `docs/delivery/requirements_traceability.md` не менялась по существу: PRD stage фиксирует sprint-specific product contract и historical delta, а канонический baseline требований остаётся в `docs/product/requirements_machine_driven.md`.
+
+## Актуализация по Issue #571 (`run:arch`, 2026-03-27)
+- Подготовлен architecture package:
+  - `docs/delivery/epics/s18/epic-s18-day4-mission-control-frontend-first-canvas-arch.md`;
+  - `docs/architecture/initiatives/s18_mission_control_frontend_first_canvas/README.md`;
+  - `docs/architecture/initiatives/s18_mission_control_frontend_first_canvas/architecture.md`;
+  - `docs/architecture/initiatives/s18_mission_control_frontend_first_canvas/c4_context.md`;
+  - `docs/architecture/initiatives/s18_mission_control_frontend_first_canvas/c4_container.md`;
+  - `docs/architecture/adr/ADR-0017-mission-control-frontend-first-prototype-and-backend-handover-boundary.md`;
+  - `docs/architecture/alternatives/ALT-0009-mission-control-frontend-first-prototype-boundaries.md`;
+  - обновлены `docs/architecture/README.md`, `docs/architecture/initiatives/README.md`, `docs/delivery/sprints/s18/sprint_s18_mission_control_frontend_first_canvas_fake_data.md`, `docs/delivery/epics/s18/epic_s18.md`, `docs/delivery/delivery_plan.md`, `docs/delivery/issue_map.md`.
+- Зафиксированы:
+  - `web-console` как единственный owner isolated fake-data prototype, canvas/view-state и workflow preview UX для Sprint S18;
+  - явная граница между текущим prototype и future backend rebuild `#563`, без hidden prerequisite на `api-gateway`, `control-plane`, `worker` или `PostgreSQL`;
+  - repo-seed prompts как source of truth и deterministic `workflow-policy block` как единственно допустимая форма workflow preview semantics;
+  - deferred/later-wave boundary: backend rebuild `#563`, live provider sync, DB prompt editor, release-safety cockpit и waves `#524/#525` не блокируют Sprint S18;
+  - continuity handover переведён на issue `#573` для stage `run:design`.
+- Через `gh issue create` создана follow-up issue `#573` для stage `run:design`.
+- Выполнены markdown-only проверки: traceability sync, `git diff --check`, локальная проверка `gh issue view 571 --json number,title,body,url`, `gh issue view 573 --json number,title,body,url`, `gh issue create --help`, `gh pr create --help`, `gh pr edit --help`; kubectl/logs/БД-запросы не выполнялись, потому что stage ограничен documentation-only scope и не требовал runtime-debug.
+- Root FR/NFR matrix в `docs/delivery/requirements_traceability.md` не менялась по существу: architecture stage фиксирует ownership split, trade-offs и historical delta, не добавляя новые канонические требования в `docs/product/requirements_machine_driven.md`.
