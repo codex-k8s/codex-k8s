@@ -5,8 +5,8 @@ title: "Sprint S17 Traceability History"
 status: in-review
 owner_role: KM
 created_at: 2026-03-20
-updated_at: 2026-03-27
-related_issues: [360, 361, 458, 473, 532, 540, 541, 554, 557, 559, 568, 575]
+updated_at: 2026-04-01
+related_issues: [360, 361, 458, 473, 532, 540, 541, 554, 557, 559, 568, 575, 582]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -104,3 +104,16 @@ approvals:
 - Через `gh issue create` создана follow-up issue `#575` для stage `run:plan` с continuity-требованием сохранить цепочку `plan -> dev`.
 - Выполнены markdown-only проверки: traceability sync, `git diff --check`, локальная проверка `gh issue view 568 --json number,title,body,url`, `gh issue view 575 --json number,title,body,url`, `gh issue create --help`, `gh pr create --help`, `gh pr edit --help`; kubectl/logs/БД-запросы не выполнялись, потому что stage ограничен documentation-only scope и не требовал runtime-debug.
 - Root FR/NFR matrix в `docs/delivery/requirements_traceability.md` не менялась по существу: design stage закрепляет implementation-ready contracts и historical delta без изменения канонического requirements baseline.
+
+## Актуализация по Issue #575 (`run:plan`, 2026-04-01)
+- Подготовлен plan package:
+  - `docs/delivery/epics/s17/epic-s17-day6-unified-user-interaction-waits-and-owner-feedback-inbox-plan.md`;
+  - обновлены `docs/delivery/sprints/s17/sprint_s17_unified_user_interaction_waits_and_owner_feedback_inbox.md`, `docs/delivery/epics/s17/epic_s17.md`, `docs/delivery/delivery_plan.md`, `docs/delivery/issue_map.md`, `docs/delivery/requirements_traceability.md`, `docs/delivery/epics/README.md`, `docs/delivery/sprints/README.md` и `docs/delivery/traceability/README.md`.
+- Зафиксированы:
+  - execution package `S17-E01..S17-E07` для schema ownership, domain/use-case, worker visibility, `api-gateway`, `telegram-interaction-adapter`, `staff web-console` и observability/evidence gate;
+  - prerequisite gate на закрытых Sprint S10/S11 foundation issues `#391..#395` и `#458`;
+  - single execution anchor `#582` для `run:dev`, обязательный rollout order и owner-managed trigger policy;
+  - quality-gates, DoR/DoD, blockers, risks и owner decisions без пересмотра Day1-Day5 baseline.
+- Через `gh issue create` создана follow-up issue `#582` для stage `run:dev` с continuity-требованием сохранить цепочку `#541 -> #554 -> #557 -> #559 -> #568 -> #575 -> #582`.
+- Выполнены markdown-only проверки: traceability sync, `git diff --check`, локальная проверка `gh issue view 391 --json number,title,state,url`, `gh issue view 392 --json number,title,state,url`, `gh issue view 393 --json number,title,state,url`, `gh issue view 394 --json number,title,state,url`, `gh issue view 395 --json number,title,state,url`, `gh issue view 458 --json number,title,state,url`, `gh issue view 575 --json number,title,body,url`, `gh issue view 582 --json number,title,body,url`, `gh issue create --help`, `gh issue edit --help`, `gh pr create --help`, `gh pr edit --help`; kubectl/logs/БД-запросы не выполнялись, потому что stage ограничен documentation-only scope и не требовал runtime-debug.
+- Root FR/NFR matrix в `docs/delivery/requirements_traceability.md` не менялась по существу: plan stage закрепляет execution governance, handover и historical delta, не создавая новых канонических требований.

@@ -5,7 +5,7 @@ title: "codex-k8s — Delivery Plan"
 status: active
 owner_role: EM
 created_at: 2026-02-06
-related_issues: [1, 19, 74, 100, 106, 112, 154, 155, 170, 171, 184, 185, 187, 189, 195, 197, 199, 201, 210, 212, 216, 218, 220, 222, 223, 225, 226, 227, 228, 229, 230, 238, 241, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 262, 263, 265, 274, 281, 282, 320, 333, 335, 337, 340, 351, 360, 361, 363, 366, 369, 370, 371, 372, 373, 374, 375, 378, 383, 385, 387, 389, 391, 392, 393, 394, 395, 413, 416, 418, 420, 423, 425, 426, 427, 428, 429, 430, 431, 444, 447, 448, 452, 454, 456, 458, 469, 471, 476, 480, 484, 490, 492, 494, 496, 500, 510, 512, 516, 519, 521, 522, 523, 524, 525, 537, 541, 542, 543, 544, 545, 546, 547, 554, 557, 559, 561, 562, 563, 565, 567, 568, 571, 573, 575, 579]
+related_issues: [1, 19, 74, 100, 106, 112, 154, 155, 170, 171, 184, 185, 187, 189, 195, 197, 199, 201, 210, 212, 216, 218, 220, 222, 223, 225, 226, 227, 228, 229, 230, 238, 241, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 262, 263, 265, 274, 281, 282, 320, 333, 335, 337, 340, 351, 360, 361, 363, 366, 369, 370, 371, 372, 373, 374, 375, 378, 383, 385, 387, 389, 391, 392, 393, 394, 395, 413, 416, 418, 420, 423, 425, 426, 427, 428, 429, 430, 431, 444, 447, 448, 452, 454, 456, 458, 469, 471, 476, 480, 484, 490, 492, 494, 496, 500, 510, 512, 516, 519, 521, 522, 523, 524, 525, 537, 541, 542, 543, 544, 545, 546, 547, 554, 557, 559, 561, 562, 563, 565, 567, 568, 571, 573, 575, 579, 582]
 
 related_prs: []
 approvals:
@@ -501,6 +501,15 @@ approvals:
   - staff-console оформлен как projection + typed response surface, а не как второй source of truth или отдельный delivery owner;
   - recovery resume закреплён как explicit degraded path с отдельным `continuation_path`, без маскировки runtime loss под happy-path;
   - создана follow-up issue `#575` для stage `run:plan` без trigger-лейбла и с continuity-требованием сохранить цепочку `plan -> dev` без разрывов.
+- Day 6 (in-review): plan package для owner feedback loop (`docs/delivery/epics/s17/epic-s17-day6-unified-user-interaction-waits-and-owner-feedback-inbox-plan.md`, Issue `#575`).
+- Результат Day 6 (факт):
+  - execution package `S17-E01..S17-E07` разложил работу по schema ownership, domain/use-case, worker reconcile/visibility, `api-gateway`, `telegram-interaction-adapter`, `web-console` и observability/evidence gate;
+  - prerequisite gate подтверждён: закрытые issues `#391..#395` и `#458` остаются обязательным foundation baseline для Sprint S17;
+  - quality-gates, DoR/DoD, blockers, risks и owner decisions зафиксированы для rollout order `migrations -> control-plane -> worker -> api-gateway -> telegram-interaction-adapter -> web-console -> observability/evidence gate`;
+  - создана follow-up issue `#582` для stage `run:dev` без trigger-лейбла и с continuity-требованием сохранить цепочку `#541 -> #554 -> #557 -> #559 -> #568 -> #575 -> #582`.
+- Day 7 (planned): `run:dev` execution anchor для unified owner feedback loop (Issue `#582`).
+  - Цель: материализовать same-session owner feedback loop, dual-surface inbox, visibility path и candidate evidence без reopening Day1-Day6 baseline.
+  - Ожидаемый результат: PR с реализацией waves `S17-E01..S17-E07`, проверками и синхронным обновлением traceability.
 
 ### Sprint S18: Frontend-first Mission Control canvas UX on fake data (Issue #562)
 - Day 1 (in-review): intake package для frontend-first Mission Control reset (`docs/delivery/epics/s18/epic-s18-day1-mission-control-frontend-first-canvas-intake.md`, Issue `#562`).
