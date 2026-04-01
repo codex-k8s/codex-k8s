@@ -5,8 +5,7 @@ title: "codex-k8s — Delivery Plan"
 status: active
 owner_role: EM
 created_at: 2026-02-06
-updated_at: 2026-03-27
-related_issues: [1, 19, 74, 100, 106, 112, 154, 155, 170, 171, 184, 185, 187, 189, 195, 197, 199, 201, 210, 212, 216, 218, 220, 222, 223, 225, 226, 227, 228, 229, 230, 238, 241, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 262, 263, 265, 274, 281, 282, 320, 333, 335, 337, 340, 351, 360, 361, 363, 366, 369, 370, 371, 372, 373, 374, 375, 378, 383, 385, 387, 389, 391, 392, 393, 394, 395, 413, 416, 418, 420, 423, 425, 426, 427, 428, 429, 430, 431, 444, 447, 448, 452, 454, 456, 458, 469, 471, 476, 480, 484, 490, 492, 494, 496, 500, 510, 512, 516, 519, 521, 522, 523, 524, 525, 537, 541, 542, 543, 544, 545, 546, 547, 554, 557, 559, 561, 562, 563, 565, 567, 568, 571, 573, 575]
+related_issues: [1, 19, 74, 100, 106, 112, 154, 155, 170, 171, 184, 185, 187, 189, 195, 197, 199, 201, 210, 212, 216, 218, 220, 222, 223, 225, 226, 227, 228, 229, 230, 238, 241, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 262, 263, 265, 274, 281, 282, 320, 333, 335, 337, 340, 351, 360, 361, 363, 366, 369, 370, 371, 372, 373, 374, 375, 378, 383, 385, 387, 389, 391, 392, 393, 394, 395, 413, 416, 418, 420, 423, 425, 426, 427, 428, 429, 430, 431, 444, 447, 448, 452, 454, 456, 458, 469, 471, 476, 480, 484, 490, 492, 494, 496, 500, 510, 512, 516, 519, 521, 522, 523, 524, 525, 537, 541, 542, 543, 544, 545, 546, 547, 554, 557, 559, 561, 562, 563, 565, 567, 568, 571, 573, 575, 579]
 
 related_prs: []
 approvals:
@@ -534,9 +533,16 @@ approvals:
   - repo-seed prompts и `prompt_templates_policy` повторно зафиксированы как source of truth, а workflow editor оставлен в форме deterministic `workflow-policy block`;
   - backend rebuild `#563`, live provider sync, DB prompt editor, release-safety cockpit и waves `#524/#525` удержаны в deferred/later-wave scope;
   - создана follow-up issue `#573` для stage `run:design` без trigger-лейбла и с continuity-требованием сохранить цепочку `design -> plan -> dev`.
-- Day 5 (planned): design package для frontend-first Mission Control canvas UX (Issue `#573`).
-  - Цель: зафиксировать implementation-ready UI/state/interaction contracts и documented seam к backend rebuild `#563`.
-  - Ожидаемый результат: follow-up issue для `run:plan` и continuity-требование сохранить цепочку `plan -> dev` без разрывов.
+- Day 5 (in-review): design package для frontend-first Mission Control canvas UX (`docs/delivery/epics/s18/epic-s18-day5-mission-control-frontend-first-canvas-design.md`, `docs/architecture/initiatives/s18_mission_control_frontend_first_canvas/{README.md,design_doc.md,api_contract.md,data_model.md,migrations_policy.md}`, Issue `#573`).
+- Результат Day 5 (факт):
+  - route-level prototype path зафиксирован как frontend-only: `MissionControlPage.vue` остаётся entry point, но data/state path должен идти через feature-local fake-data source, а не через current API/realtime implementation;
+  - implementation-ready UI contract удержал fullscreen canvas, compact nodes, explicit relations, side panel/drawer, toolbar/controls и workflow preview на fake data без возврата к graph/list/freshness shell;
+  - workflow editor закреплён как local policy-preview UX с deterministic generated `workflow-policy block`, repo-seed refs и без free-form prompt editing или provider mutation path;
+  - data model и migration policy явно подтвердили отсутствие OpenAPI/proto/schema/runtime migrations в Sprint S18, а backend rebuild `#563` сохранён как отдельный deferred flow;
+  - создана follow-up issue `#579` для stage `run:plan` без trigger-лейбла и с continuity-требованием сохранить цепочку `plan -> dev`.
+- Day 6 (planned): execution package для frontend-first Mission Control canvas prototype (Issue `#579`).
+  - Цель: разложить frontend-only prototype на execution waves, quality gates, DoR/DoD и owner-managed handover в `run:dev`.
+  - Ожидаемый результат: review-ready plan package и follow-up issue для `run:dev` без разрыва continuity.
 
 ### Daily delivery contract (обязательный)
 - Каждый день задачи дня влиты в `main`.
