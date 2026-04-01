@@ -5,8 +5,8 @@ title: "Epic Catalog: Sprint S17 (Unified long-lived user interaction waits and 
 status: in-review
 owner_role: PM
 created_at: 2026-03-20
-updated_at: 2026-03-27
-related_issues: [360, 361, 458, 473, 532, 540, 541, 554, 557, 559, 568, 575]
+updated_at: 2026-04-01
+related_issues: [360, 361, 458, 473, 532, 540, 541, 554, 557, 559, 568, 575, 582]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -23,7 +23,8 @@ approvals:
 - Day3 PRD package (`#557`) зафиксировал user stories, FR/AC/NFR, scenario matrix, expected evidence, recovery/lifecycle guardrails и создал issue `#559` для `run:arch`.
 - Day4 architecture package (`#559`) зафиксировал service boundaries, ownership split, live wait lifetime policy, persisted request truth и recovery-only snapshot-resume boundary и создал issue `#568` для `run:design`.
 - Day5 design package (`#568`) зафиксировал implementation-ready API/data/runtime contracts, response binding registry, staff-console fallback surface и additive migration policy поверх Sprint S10/S11 foundation и создал issue `#575` для `run:plan`.
-- До `run:plan` Sprint S17 остаётся markdown-only контуром: кодовые/runtime changes и конкретные schema/API decisions начинаются только после owner review следующих stage.
+- Day6 plan package (`#575`) зафиксировал execution package `S17-E01..S17-E07`, prerequisite gate на закрытых Sprint S10/S11 foundation issues `#391..#395` и `#458`, quality-gates, DoR/DoD и создал handover issue `#582` для `run:dev`.
+- До owner-managed запуска `run:dev` в issue `#582` Sprint S17 остаётся markdown-only контуром: кодовые/runtime changes и конкретные schema/API decisions начинаются только после review plan package.
 
 ## Stage roadmap
 - Day 1 (Intake): `docs/delivery/epics/s17/epic-s17-day1-unified-user-interaction-waits-and-owner-feedback-inbox-intake.md` (Issue `#541`).
@@ -31,7 +32,7 @@ approvals:
 - Day 3 (PRD): issue `#557`, `docs/delivery/epics/s17/epic-s17-day3-unified-user-interaction-waits-and-owner-feedback-inbox-prd.md` и `docs/delivery/epics/s17/prd-s17-day3-unified-user-interaction-waits-and-owner-feedback-inbox.md`; stage формализовал user stories, FR/AC/NFR, scenario matrix и expected evidence и создал issue `#559` для `run:arch`.
 - Day 4 (Architecture): issue `#559`, `docs/delivery/epics/s17/epic-s17-day4-unified-user-interaction-waits-and-owner-feedback-inbox-arch.md` и package `docs/architecture/initiatives/s17_unified_owner_feedback_loop/*`; stage зафиксировал execution model, ownership split, lifetime policy, persisted truth и создал issue `#568` для `run:design`.
 - Day 5 (Design): issue `#568`, `docs/delivery/epics/s17/epic-s17-day5-unified-user-interaction-waits-and-owner-feedback-inbox-design.md` и `docs/architecture/initiatives/s17_unified_owner_feedback_loop/{design_doc.md,api_contract.md,data_model.md,migrations_policy.md}`; stage выпустил implementation-ready API/data/UI/runtime contract и создал issue `#575` для `run:plan`.
-- Day 6 (Plan): issue `#575`, создаётся последовательно после design и должна разложить execution package, quality-gates и owner-managed handover в `run:dev`.
+- Day 6 (Plan): issue `#575`, `docs/delivery/epics/s17/epic-s17-day6-unified-user-interaction-waits-and-owner-feedback-inbox-plan.md`; stage выпустил execution package `S17-E01..S17-E07`, quality-gates, DoR/DoD и handover issue `#582` для owner-managed запуска `run:dev`.
 
 ## Delivery-governance правила
 - Sprint S17 идёт полным doc-stage контуром `intake -> vision -> prd -> arch -> design -> plan`.
@@ -55,4 +56,9 @@ approvals:
   - response binding registry классифицирует Telegram callback/free-text/voice и staff-console responses в один winner-selection path;
   - staff-console моделируется как projection + typed response surface, а не как второй source of truth;
   - recovery resume остаётся explicit degraded path.
+- Day6 plan baseline дополнительно обязателен для `run:dev`:
+  - единый execution anchor = issue `#582`, скрытый параллельный dev-backlog не допускается;
+  - waves `S17-E01 -> S17-E02 -> S17-E03 -> S17-E04 -> S17-E05 -> S17-E06 -> S17-E07` обязательны как sequencing contract;
+  - prerequisite gate на закрытых Sprint S10/S11 foundation issues `#391..#395` и `#458` сохраняется до старта кода;
+  - observability/evidence gate остаётся обязательным перед `run:qa`.
 - Detached resume-run не может вернуться как default UX без нового owner-решения.
