@@ -5,8 +5,8 @@ title: "Sprint S18 Traceability History"
 status: in-review
 owner_role: KM
 created_at: 2026-03-26
-updated_at: 2026-03-27
-related_issues: [470, 480, 522, 523, 524, 525, 561, 562, 563, 565, 567, 571, 573]
+updated_at: 2026-04-01
+related_issues: [470, 480, 522, 523, 524, 525, 561, 562, 563, 565, 567, 571, 573, 579]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -86,3 +86,22 @@ approvals:
 - Через `gh issue create` создана follow-up issue `#573` для stage `run:design`.
 - Выполнены markdown-only проверки: traceability sync, `git diff --check`, локальная проверка `gh issue view 571 --json number,title,body,url`, `gh issue view 573 --json number,title,body,url`, `gh issue create --help`, `gh pr create --help`, `gh pr edit --help`; kubectl/logs/БД-запросы не выполнялись, потому что stage ограничен documentation-only scope и не требовал runtime-debug.
 - Root FR/NFR matrix в `docs/delivery/requirements_traceability.md` не менялась по существу: architecture stage фиксирует ownership split, trade-offs и historical delta, не добавляя новые канонические требования в `docs/product/requirements_machine_driven.md`.
+
+## Актуализация по Issue #573 (`run:design`, 2026-04-01)
+- Подготовлен design package:
+  - `docs/delivery/epics/s18/epic-s18-day5-mission-control-frontend-first-canvas-design.md`;
+  - `docs/architecture/initiatives/s18_mission_control_frontend_first_canvas/README.md`;
+  - `docs/architecture/initiatives/s18_mission_control_frontend_first_canvas/design_doc.md`;
+  - `docs/architecture/initiatives/s18_mission_control_frontend_first_canvas/api_contract.md`;
+  - `docs/architecture/initiatives/s18_mission_control_frontend_first_canvas/data_model.md`;
+  - `docs/architecture/initiatives/s18_mission_control_frontend_first_canvas/migrations_policy.md`;
+  - обновлены `docs/delivery/sprints/s18/sprint_s18_mission_control_frontend_first_canvas_fake_data.md`, `docs/delivery/epics/s18/epic_s18.md`, `docs/delivery/delivery_plan.md`, `docs/delivery/issue_map.md`.
+- Зафиксированы:
+  - frontend-only implementation contract для Sprint S18: route `MissionControlPage.vue` сохраняется, но data/state path должен идти через explicit prototype source/store, а не через current API/realtime branch;
+  - feature-local fake-data data model для scenario/initiative/node/relation/drawer/workflow preset/ui-state, без объявления временного backend source of truth;
+  - workflow preview как deterministic generated `workflow-policy block` с repo-seed source refs, structured toggles only и без prompt editor/provider mutation semantics;
+  - no-op migration policy: в Sprint S18 отсутствуют OpenAPI/proto/schema/runtime migrations, а backend rebuild `#563` остаётся отдельным deferred flow;
+  - continuity handover переведён на issue `#579` для stage `run:plan`.
+- Через `gh issue create` создана follow-up issue `#579` для stage `run:plan`.
+- Выполнены markdown-only проверки: traceability sync, `git diff --check`, локальная проверка `gh issue view 573 --json number,title,body,url`, `gh issue view 579 --json number,title,body,url`, фактическое создание issue `#579` через `gh issue create`; kubectl/logs/БД-запросы не выполнялись, потому что stage ограничен documentation-only scope и не требовал runtime-debug.
+- Root FR/NFR matrix в `docs/delivery/requirements_traceability.md` не менялась по существу: design stage фиксирует UI/state/contract package и historical delta, не добавляя новые канонические требования в `docs/product/requirements_machine_driven.md`.
