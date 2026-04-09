@@ -1,5 +1,5 @@
 <template>
-  <div class="mission-control-prototype-page">
+  <div class="mission-control-page">
     <PageHeader
       :title="t('pages.missionControlPrototype.title')"
       :hint="t('pages.missionControlPrototype.hint')"
@@ -9,111 +9,139 @@
       {{ t(prototype.error.messageKey) }}
     </VAlert>
 
-    <VCard class="mt-4 mission-control-prototype-shell" rounded="xl" variant="flat">
-      <MissionControlPrototypeToolbar
-        :catalog="prototype.catalog"
-        :active-scenario-id="activeRouteState.scenarioId"
-        :initiatives="prototype.initiativeViews"
-        :focused-initiative-id="prototype.focusedInitiativeId"
-        :search="prototype.search"
-        :selected-node-title="prototype.selectedNodeTitle"
-        :zoom-label="zoomLabel"
-        @select-scenario="onSelectScenario"
-        @select-initiative="onSelectInitiative"
-        @clear-initiative="onClearInitiative"
-        @update-search="onUpdateSearch"
-        @zoom-in="prototype.zoomBy(0.08)"
-        @zoom-out="prototype.zoomBy(-0.08)"
-        @fit="prototype.fitViewport()"
-        @reset="prototype.resetViewport()"
-        @open-workflow="onOpenWorkflow"
+    <div v-if="prototype.loading" class="mission-control-page__loading mt-4">
+      <VSkeletonLoader type="article, article, article" />
+    </div>
+
+    <section v-else class="mission-control-page__shell mt-4">
+      <div class="mission-control-page__toolbar">
+        <div class="mission-control-page__toolbar-main">
+          <VBtnToggle divided mandatory :model-value="activeRouteState.screen" @update:model-value="onSelectScreen">
+            <VBtn v-for="option in screenOptions" :key="option.screen" :value="option.screen">
+              {{ option.label }}
+            </VBtn>
+          </VBtnToggle>
+
+          <VSelect
+            :model-value="activeRouteState.projectId"
+            :items="prototype.projectOptions"
+            item-title="title"
+            item-value="projectId"
+            density="compact"
+            variant="outlined"
+            hide-details
+            label="Проект"
+            class="mission-control-page__select"
+            @update:model-value="onSelectProject"
+          />
+
+          <VSelect
+            :model-value="activeRouteState.initiativeId"
+            :items="initiativeOptions"
+            item-title="title"
+            item-value="initiativeId"
+            density="compact"
+            variant="outlined"
+            hide-details
+            label="Инициатива"
+            class="mission-control-page__select mission-control-page__select--wide"
+            @update:model-value="onSelectInitiative"
+          />
+
+          <VTextField
+            :model-value="activeRouteState.search"
+            density="compact"
+            variant="outlined"
+            hide-details
+            prepend-inner-icon="mdi-magnify"
+            label="Поиск по инициативам, артефактам и executions"
+            class="mission-control-page__search"
+            @update:model-value="onUpdateSearch"
+          />
+        </div>
+
+        <div class="mission-control-page__toolbar-side">
+          <VChip v-if="prototype.currentProject" size="small" variant="tonal" color="primary">
+            {{ prototype.currentProject.title }}
+          </VChip>
+          <VBtn variant="text" prepend-icon="mdi-microphone" @click="voiceDialogOpen = true">Голос</VBtn>
+        </div>
+      </div>
+
+      <MissionControlPrototypeHomeView
+        v-if="activeRouteState.screen === 'home'"
+        :project-title="prototype.currentProject?.title || ''"
+        :project-summary="prototype.currentProject?.summary || ''"
+        :attention-cards="prototype.attentionCards"
+        :columns="prototype.homeColumns"
+        @open-voice="voiceDialogOpen = true"
+        @launch-workflow="onOpenStudio"
+        @select-initiative="onOpenInitiative"
       />
 
-      <div class="mission-control-prototype-shell__summary">
-        <div class="mission-control-prototype-shell__summary-copy">
-          <div class="mission-control-prototype-shell__summary-title">{{ prototype.scenario?.title }}</div>
-          <div class="mission-control-prototype-shell__summary-text">{{ prototype.scenario?.summary }}</div>
-        </div>
+      <MissionControlPrototypeWorkspaceView
+        v-else-if="activeRouteState.screen === 'initiative'"
+        :initiative="prototype.currentInitiative"
+        :workflow="prototype.currentWorkflow"
+        :workspace-view="activeRouteState.workspaceView"
+        :stage-views="prototype.workspaceStageViews"
+        :artifact-views="prototype.workspaceArtifacts"
+        :selected-artifact="selectedArtifactView"
+        :activity="prototype.currentInitiativeActivity"
+        :flow-nodes="prototype.workspaceFlowNodes"
+        :flow-relations="prototype.workspaceFlowRelations"
+        @update:view="onUpdateWorkspaceView"
+        @select-artifact="onSelectArtifact"
+        @open-executions="onOpenExecutions"
+        @open-studio="onOpenStudio"
+      />
 
-        <div class="mission-control-prototype-shell__metrics">
-          <VChip size="small" variant="tonal" color="primary">
-            {{ t("pages.missionControlPrototype.summary.initiatives", { count: prototype.scenario?.initiatives.length ?? 0 }) }}
-          </VChip>
-          <VChip size="small" variant="tonal" color="info">
-            {{ t("pages.missionControlPrototype.summary.nodes", { count: prototype.scenario?.nodes.length ?? 0 }) }}
-          </VChip>
-          <VChip size="small" variant="tonal" color="warning">
-            {{ t("pages.missionControlPrototype.summary.visible", { count: visibleNodeCount }) }}
-          </VChip>
-          <VChip size="small" variant="tonal" color="success">
-            {{ t("pages.missionControlPrototype.summary.prototypeOnly") }}
-          </VChip>
-        </div>
-      </div>
+      <MissionControlPrototypeWorkflowStudioView
+        v-else-if="activeRouteState.screen === 'studio'"
+        :workflow="prototype.currentWorkflow"
+        :workflow-options="prototype.workflowOptions"
+        :nodes="prototype.studioNodes"
+        :relations="prototype.studioRelations"
+        @select-workflow="onSelectWorkflow"
+      />
 
-      <div class="mission-control-prototype-shell__body">
-        <div class="mission-control-prototype-shell__canvas-pane">
-          <div class="mission-control-prototype-shell__refs">
-            <VChip v-for="sourceRef in prototype.sourceRefs" :key="sourceRef" size="small" variant="outlined">
-              {{ sourceRef }}
-            </VChip>
-          </div>
+      <MissionControlPrototypeExecutionsView
+        v-else
+        :groups="prototype.executionGroups"
+      />
+    </section>
 
-          <div v-if="prototype.loading" class="mission-control-prototype-shell__loading">
-            <VSkeletonLoader type="article, article, article" />
-          </div>
+    <MissionControlPrototypeVoiceFab @click="voiceDialogOpen = true" />
 
-          <MissionControlPrototypeCanvas
-            v-else
-            :initiatives="prototype.initiativeViews"
-            :nodes="prototype.nodeViews"
-            :relations="prototype.relationViews"
-            :viewport="prototype.viewport"
-            @select-node="onSelectNode"
+    <VDialog v-model="voiceDialogOpen" max-width="760">
+      <VCard rounded="xl">
+        <VCardTitle>{{ t("pages.missionControlPrototype.voice.title") }}</VCardTitle>
+        <VCardText class="mission-control-page__voice-sheet">
+          <p class="mission-control-page__voice-copy">
+            Голосовой запуск станет центральным входом в платформу: отсюда можно создать инициативу, задачу или
+            запустить workflow по вашему описанию.
+          </p>
+
+          <VTextarea
+            v-model="voiceDraft"
+            variant="outlined"
+            auto-grow
+            rows="4"
+            hide-details
+            label="Распознанная команда"
           />
-        </div>
 
-        <aside v-if="!display.mobile.value" class="mission-control-prototype-shell__drawer">
-          <MissionControlPrototypeDrawer
-            :drawer="prototype.drawerView"
-            :tab="activeRouteState.tab"
-            :drawer-loading="prototype.drawerLoading"
-            :workflow-loading="prototype.workflowLoading"
-            :scenario-source-refs="prototype.sourceRefs"
-            :workflow-preset-options="prototype.availableWorkflowPresetOptions"
-            :active-workflow-preset-id="prototype.activeWorkflowPresetId"
-            :workflow-draft="prototype.workflowDraft"
-            :workflow-preview="prototype.workflowPreview"
-            :error="prototype.error"
-            @close="onCloseDrawer"
-            @update-tab="onUpdateTab"
-            @select-node="onSelectNode"
-            @select-workflow-preset="prototype.selectWorkflowPreset"
-            @patch-workflow-draft="prototype.patchWorkflowDraft"
-          />
-        </aside>
-      </div>
-    </VCard>
-
-    <VDialog v-model="mobileDrawerOpen" fullscreen transition="dialog-bottom-transition">
-      <VCard class="mission-control-prototype-mobile-drawer">
-        <MissionControlPrototypeDrawer
-          :drawer="prototype.drawerView"
-          :tab="activeRouteState.tab"
-          :drawer-loading="prototype.drawerLoading"
-          :workflow-loading="prototype.workflowLoading"
-          :scenario-source-refs="prototype.sourceRefs"
-          :workflow-preset-options="prototype.availableWorkflowPresetOptions"
-          :active-workflow-preset-id="prototype.activeWorkflowPresetId"
-          :workflow-draft="prototype.workflowDraft"
-          :workflow-preview="prototype.workflowPreview"
-          :error="prototype.error"
-          @close="onCloseDrawer"
-          @update-tab="onUpdateTab"
-          @select-node="onSelectNode"
-          @select-workflow-preset="prototype.selectWorkflowPreset"
-          @patch-workflow-draft="prototype.patchWorkflowDraft"
-        />
+          <div class="mission-control-page__voice-chips">
+            <VChip size="small" variant="tonal" color="primary">Запуск workflow</VChip>
+            <VChip size="small" variant="tonal" color="info">Создать задачу</VChip>
+            <VChip size="small" variant="tonal" color="warning">Запустить агента</VChip>
+          </div>
+        </VCardText>
+        <VCardActions>
+          <VSpacer />
+          <VBtn variant="text" @click="voiceDialogOpen = false">Закрыть</VBtn>
+          <VBtn color="primary" prepend-icon="mdi-rocket-launch-outline" @click="onOpenStudio">Перейти к workflow</VBtn>
+        </VCardActions>
       </VCard>
     </VDialog>
   </div>
@@ -123,11 +151,12 @@
 import { computed, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
-import { useDisplay } from "vuetify";
 
-import MissionControlPrototypeCanvas from "../../features/mission-control/prototype/MissionControlPrototypeCanvas.vue";
-import MissionControlPrototypeDrawer from "../../features/mission-control/prototype/MissionControlPrototypeDrawer.vue";
-import MissionControlPrototypeToolbar from "../../features/mission-control/prototype/MissionControlPrototypeToolbar.vue";
+import MissionControlPrototypeExecutionsView from "../../features/mission-control/prototype/MissionControlPrototypeExecutionsView.vue";
+import MissionControlPrototypeHomeView from "../../features/mission-control/prototype/MissionControlPrototypeHomeView.vue";
+import MissionControlPrototypeVoiceFab from "../../features/mission-control/prototype/MissionControlPrototypeVoiceFab.vue";
+import MissionControlPrototypeWorkflowStudioView from "../../features/mission-control/prototype/MissionControlPrototypeWorkflowStudioView.vue";
+import MissionControlPrototypeWorkspaceView from "../../features/mission-control/prototype/MissionControlPrototypeWorkspaceView.vue";
 import {
   buildMissionControlPrototypeRouteQuery,
   missionControlPrototypeRouteStateEquals,
@@ -135,27 +164,46 @@ import {
   patchMissionControlPrototypeRouteState,
 } from "../../features/mission-control/prototype/route";
 import { useMissionControlPrototypeStore } from "../../features/mission-control/prototype/store";
-import type { MissionControlPrototypeRouteState, MissionDrawerTab } from "../../features/mission-control/prototype/types";
+import type {
+  MissionControlPrototypeRouteState,
+  MissionControlScreen,
+  MissionInitiativeWorkspaceView,
+} from "../../features/mission-control/prototype/types";
 import PageHeader from "../../shared/ui/PageHeader.vue";
 
 const route = useRoute();
 const router = useRouter();
-const display = useDisplay();
 const prototype = useMissionControlPrototypeStore();
 const { t } = useI18n({ useScope: "global" });
 
-const mobileDrawerOpen = ref(false);
+const voiceDialogOpen = ref(false);
+const voiceDraft = ref("Собери новый workflow для инициативы Mission Control: сначала owner narrative, потом дизайн, затем фронтенд-прототип и follow-up задачу на backend.");
 const activeRouteState = ref<MissionControlPrototypeRouteState>({
-  scenarioId: "",
+  screen: "home",
+  projectId: "",
   initiativeId: "",
-  nodeId: "",
+  workflowId: "",
+  artifactId: "",
   search: "",
-  tab: "details",
+  workspaceView: "overview",
 });
 
 const routeState = computed(() => normalizeMissionControlPrototypeRouteQuery(route.query));
-const visibleNodeCount = computed(() => prototype.nodeViews.filter((node) => !node.dimmed).length);
-const zoomLabel = computed(() => `${Math.round(prototype.viewport.zoomLevel * 100)}%`);
+const screenOptions = computed(() => [
+  { screen: "home" as const, label: t("pages.missionControlPrototype.screens.home") },
+  { screen: "initiative" as const, label: t("pages.missionControlPrototype.screens.initiative") },
+  { screen: "studio" as const, label: t("pages.missionControlPrototype.screens.studio") },
+  { screen: "executions" as const, label: t("pages.missionControlPrototype.screens.executions") },
+]);
+const initiativeOptions = computed(() =>
+  prototype.projectInitiatives.map((initiative) => ({
+    initiativeId: initiative.initiativeId,
+    title: initiative.title,
+  })),
+);
+const selectedArtifactView = computed(
+  () => prototype.workspaceArtifacts.find((artifact) => artifact.artifactId === activeRouteState.value.artifactId) ?? null,
+);
 
 watch(
   routeState,
@@ -166,26 +214,17 @@ watch(
     if (!missionControlPrototypeRouteStateEquals(nextState, normalizedState)) {
       await replaceRoute(normalizedState);
     }
-
-    mobileDrawerOpen.value = display.mobile.value && normalizedState.nodeId !== "";
   },
   { immediate: true, deep: true },
 );
 
-watch(
-  () => display.mobile.value,
-  (isMobile) => {
-    mobileDrawerOpen.value = isMobile && activeRouteState.value.nodeId !== "";
-  },
-  { immediate: true },
-);
-
 async function replaceRoute(nextState: MissionControlPrototypeRouteState): Promise<void> {
-  const defaultScenarioId = prototype.defaultScenarioId || nextState.scenarioId;
   await router.replace({
     name: "mission-control",
     query: buildMissionControlPrototypeRouteQuery(nextState, {
-      scenarioId: defaultScenarioId,
+      projectId: prototype.defaultProjectId || nextState.projectId,
+      initiativeId: prototype.defaultInitiativeId || nextState.initiativeId,
+      workflowId: prototype.defaultWorkflowId || nextState.workflowId,
     }),
   });
 }
@@ -198,164 +237,175 @@ function updateRoute(patch: Partial<MissionControlPrototypeRouteState>): void {
   void replaceRoute(nextState);
 }
 
-function onSelectScenario(scenarioId: string): void {
-  updateRoute({
-    scenarioId,
-    initiativeId: "",
-    nodeId: "",
-    search: "",
-    tab: "details",
-  });
+function onSelectScreen(nextScreen: string): void {
+  if (nextScreen === "home" || nextScreen === "initiative" || nextScreen === "studio" || nextScreen === "executions") {
+    updateRoute({
+      screen: nextScreen,
+      artifactId: nextScreen === "executions" ? activeRouteState.value.artifactId : "",
+    });
+  }
 }
 
-function onSelectInitiative(initiativeId: string): void {
-  updateRoute({
-    initiativeId,
-    nodeId: "",
-    tab: "details",
-  });
-}
-
-function onClearInitiative(): void {
-  updateRoute({
-    initiativeId: "",
-    nodeId: "",
-    tab: "details",
-  });
-}
-
-function onUpdateSearch(search: string): void {
-  updateRoute({
-    search,
-  });
-}
-
-function onSelectNode(nodeId: string): void {
-  updateRoute({
-    nodeId,
-    tab: activeRouteState.value.tab,
-  });
-}
-
-function onCloseDrawer(): void {
-  updateRoute({
-    nodeId: "",
-    tab: "details",
-  });
-}
-
-function onUpdateTab(tab: MissionDrawerTab): void {
-  updateRoute({
-    tab,
-  });
-}
-
-function onOpenWorkflow(): void {
-  if (!activeRouteState.value.nodeId) {
+function onSelectProject(nextProjectId: string | null): void {
+  if (!nextProjectId) {
     return;
   }
   updateRoute({
-    tab: "workflow",
+    projectId: nextProjectId,
+    initiativeId: "",
+    workflowId: "",
+    artifactId: "",
+    screen: activeRouteState.value.screen === "studio" ? "studio" : "home",
+  });
+}
+
+function onSelectInitiative(nextInitiativeId: string | null): void {
+  if (!nextInitiativeId) {
+    return;
+  }
+  updateRoute({
+    initiativeId: nextInitiativeId,
+    workflowId: "",
+    artifactId: "",
+    screen: "initiative",
+  });
+}
+
+function onOpenInitiative(nextInitiativeId: string): void {
+  updateRoute({
+    initiativeId: nextInitiativeId,
+    workflowId: "",
+    screen: "initiative",
+    workspaceView: "overview",
+  });
+}
+
+function onSelectWorkflow(nextWorkflowId: string): void {
+  updateRoute({
+    workflowId: nextWorkflowId,
+    screen: "studio",
+  });
+}
+
+function onOpenStudio(): void {
+  voiceDialogOpen.value = false;
+  updateRoute({
+    screen: "studio",
+  });
+}
+
+function onOpenExecutions(): void {
+  updateRoute({
+    screen: "executions",
+  });
+}
+
+function onUpdateSearch(nextSearch: string | null): void {
+  updateRoute({
+    search: nextSearch || "",
+  });
+}
+
+function onUpdateWorkspaceView(nextView: MissionInitiativeWorkspaceView): void {
+  updateRoute({
+    workspaceView: nextView,
+  });
+}
+
+function onSelectArtifact(nextArtifactId: string): void {
+  updateRoute({
+    artifactId: nextArtifactId,
   });
 }
 </script>
 
 <style scoped>
-.mission-control-prototype-page {
-  display: flex;
-  flex-direction: column;
-}
-
-.mission-control-prototype-shell {
-  overflow: hidden;
-  border: 1px solid rgba(148, 163, 184, 0.18);
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(248, 250, 252, 0.98)),
-    radial-gradient(circle at top left, rgba(217, 119, 6, 0.12), transparent 32%);
-}
-
-.mission-control-prototype-shell__summary {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 18px;
-  padding: 18px 20px;
-  border-bottom: 1px solid rgba(148, 163, 184, 0.14);
-  background: rgba(255, 255, 255, 0.9);
-}
-
-.mission-control-prototype-shell__summary-copy {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.mission-control-prototype-shell__summary-title {
-  font-size: 1.08rem;
-  font-weight: 800;
-  color: rgb(15, 23, 42);
-}
-
-.mission-control-prototype-shell__summary-text {
-  max-width: 820px;
-  color: rgb(71, 85, 105);
-  line-height: 1.6;
-}
-
-.mission-control-prototype-shell__metrics {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-}
-
-.mission-control-prototype-shell__body {
+.mission-control-page {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 420px;
-  min-height: calc(100vh - 270px);
 }
 
-.mission-control-prototype-shell__canvas-pane {
+.mission-control-page__shell {
+  display: grid;
+  gap: 18px;
+  padding: 20px;
+  border-radius: 32px;
+  background:
+    radial-gradient(circle at top left, rgba(255, 232, 186, 0.18), transparent 28%),
+    radial-gradient(circle at top right, rgba(201, 229, 255, 0.2), transparent 26%),
+    linear-gradient(180deg, rgba(249, 248, 245, 0.96), rgba(245, 246, 249, 0.96));
+  border: 1px solid rgba(223, 228, 235, 0.94);
+}
+
+.mission-control-page__toolbar {
   display: flex;
-  flex-direction: column;
-  min-width: 0;
-  background: rgba(248, 250, 252, 0.7);
+  justify-content: space-between;
+  gap: 16px;
+  align-items: flex-start;
+  flex-wrap: wrap;
 }
 
-.mission-control-prototype-shell__refs {
+.mission-control-page__toolbar-main {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+  flex: 1;
+}
+
+.mission-control-page__toolbar-side {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.mission-control-page__select {
+  width: 220px;
+}
+
+.mission-control-page__select--wide {
+  width: 340px;
+}
+
+.mission-control-page__search {
+  min-width: 320px;
+  max-width: 480px;
+}
+
+.mission-control-page__loading {
+  padding: 18px;
+  border-radius: 28px;
+  background: rgba(255, 255, 255, 0.88);
+}
+
+.mission-control-page__voice-sheet {
+  display: grid;
+  gap: 14px;
+}
+
+.mission-control-page__voice-copy {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.55;
+  color: rgb(89, 98, 112);
+}
+
+.mission-control-page__voice-chips {
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
-  padding: 16px 20px 0;
 }
 
-.mission-control-prototype-shell__loading {
-  padding: 24px;
-}
-
-.mission-control-prototype-shell__drawer {
-  border-left: 1px solid rgba(148, 163, 184, 0.14);
-  min-height: 100%;
-  background: rgba(255, 255, 255, 0.9);
-}
-
-.mission-control-prototype-mobile-drawer {
-  min-height: 100%;
-}
-
-@media (max-width: 1180px) {
-  .mission-control-prototype-shell__body {
-    grid-template-columns: minmax(0, 1fr);
-  }
-}
-
-@media (max-width: 960px) {
-  .mission-control-prototype-shell__summary {
-    flex-direction: column;
+@media (max-width: 900px) {
+  .mission-control-page__shell {
+    padding: 14px;
   }
 
-  .mission-control-prototype-shell__metrics {
-    justify-content: flex-start;
+  .mission-control-page__select,
+  .mission-control-page__select--wide,
+  .mission-control-page__search {
+    width: 100%;
+    min-width: 0;
+    max-width: none;
   }
 }
 </style>

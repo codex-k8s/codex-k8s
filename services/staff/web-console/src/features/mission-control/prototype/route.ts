@@ -1,8 +1,13 @@
 import type { LocationQuery, LocationQueryRaw } from "vue-router";
 
-import type { MissionControlPrototypeRouteState, MissionDrawerTab } from "./types";
+import type {
+  MissionControlPrototypeRouteState,
+  MissionControlScreen,
+  MissionInitiativeWorkspaceView,
+} from "./types";
 
-const missionPrototypeDefaultDrawerTab: MissionDrawerTab = "details";
+const defaultScreen: MissionControlScreen = "home";
+const defaultWorkspaceView: MissionInitiativeWorkspaceView = "overview";
 
 function asQueryString(value: LocationQuery[string]): string {
   if (typeof value === "string") {
@@ -14,32 +19,45 @@ function asQueryString(value: LocationQuery[string]): string {
   return "";
 }
 
-function isDrawerTab(value: string): value is MissionDrawerTab {
-  return value === "details" || value === "timeline" || value === "workflow";
+function isScreen(value: string): value is MissionControlScreen {
+  return value === "home" || value === "initiative" || value === "studio" || value === "executions";
+}
+
+function isWorkspaceView(value: string): value is MissionInitiativeWorkspaceView {
+  return value === "overview" || value === "flow" || value === "artifacts" || value === "activity";
 }
 
 export function normalizeMissionControlPrototypeRouteQuery(query: LocationQuery): MissionControlPrototypeRouteState {
-  const rawTab = asQueryString(query.tab);
+  const rawScreen = asQueryString(query.screen);
+  const rawView = asQueryString(query.view);
 
   return {
-    scenarioId: asQueryString(query.scenario),
+    screen: isScreen(rawScreen) ? rawScreen : defaultScreen,
+    projectId: asQueryString(query.project),
     initiativeId: asQueryString(query.initiative),
-    nodeId: asQueryString(query.node),
+    workflowId: asQueryString(query.workflow),
+    artifactId: asQueryString(query.artifact),
     search: asQueryString(query.q),
-    tab: isDrawerTab(rawTab) ? rawTab : missionPrototypeDefaultDrawerTab,
+    workspaceView: isWorkspaceView(rawView) ? rawView : defaultWorkspaceView,
   };
 }
 
 export function buildMissionControlPrototypeRouteQuery(
   state: MissionControlPrototypeRouteState,
-  defaults: { scenarioId: string },
+  defaults: {
+    projectId: string;
+    initiativeId: string;
+    workflowId: string;
+  },
 ): LocationQueryRaw {
   return {
-    scenario: state.scenarioId !== "" && state.scenarioId !== defaults.scenarioId ? state.scenarioId : undefined,
-    initiative: state.initiativeId || undefined,
-    node: state.nodeId || undefined,
+    screen: state.screen !== defaultScreen ? state.screen : undefined,
+    project: state.projectId !== "" && state.projectId !== defaults.projectId ? state.projectId : undefined,
+    initiative: state.initiativeId !== "" && state.initiativeId !== defaults.initiativeId ? state.initiativeId : undefined,
+    workflow: state.workflowId !== "" && state.workflowId !== defaults.workflowId ? state.workflowId : undefined,
+    artifact: state.artifactId || undefined,
     q: state.search || undefined,
-    tab: state.tab !== missionPrototypeDefaultDrawerTab ? state.tab : undefined,
+    view: state.workspaceView !== defaultWorkspaceView ? state.workspaceView : undefined,
   };
 }
 
@@ -58,10 +76,12 @@ export function missionControlPrototypeRouteStateEquals(
   right: MissionControlPrototypeRouteState,
 ): boolean {
   return (
-    left.scenarioId === right.scenarioId &&
+    left.screen === right.screen &&
+    left.projectId === right.projectId &&
     left.initiativeId === right.initiativeId &&
-    left.nodeId === right.nodeId &&
+    left.workflowId === right.workflowId &&
+    left.artifactId === right.artifactId &&
     left.search === right.search &&
-    left.tab === right.tab
+    left.workspaceView === right.workspaceView
   );
 }

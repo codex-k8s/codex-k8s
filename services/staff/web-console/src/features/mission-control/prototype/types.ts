@@ -1,38 +1,35 @@
-export type MissionCanvasNodeKind = "Issue" | "PR" | "Run";
+export type MissionControlScreen = "home" | "initiative" | "studio" | "executions";
 
-export type MissionCanvasNodeState = "working" | "review" | "blocked" | "waiting";
+export type MissionInitiativeWorkspaceView = "overview" | "flow" | "artifacts" | "activity";
 
-export type MissionCanvasRelationKind = "drives" | "produces" | "tracks" | "blocks";
+export type MissionProjectAccent = "amber" | "teal" | "rose";
 
-export type MissionCanvasRelationImportance = "primary" | "supporting";
+export type MissionWorkflowStageKey =
+  | "intake"
+  | "vision"
+  | "prd"
+  | "arch"
+  | "design"
+  | "plan"
+  | "dev"
+  | "qa"
+  | "release"
+  | "postdeploy"
+  | "ops"
+  | "triage"
+  | "fix";
 
-export type MissionCanvasInitiativeAccentToken = "amber" | "teal" | "rose" | "lime" | "slate";
+export type MissionWorkflowStageStatus = "pending" | "active" | "attention" | "blocked" | "done";
 
-export type MissionCanvasNodeBadge =
-  | "owner-review"
-  | "needs-evidence"
-  | "blocked"
-  | "handover"
-  | "deferred"
-  | "demo-ready"
-  | "live-wait";
+export type MissionAttentionTone = "info" | "success" | "warning" | "error";
 
-export type MissionDrawerTab = "details" | "timeline" | "workflow";
+export type MissionArtifactKind = "doc" | "task" | "pr" | "release";
 
-export type MissionWorkflowStageSequenceVariant = "full_delivery" | "owner_demo" | "revise_loop";
+export type MissionArtifactStatus = "draft" | "active" | "review" | "blocked" | "done";
 
-export type MissionWorkflowAutoReviewPolicy = "required" | "owner_only" | "paired_reviewer";
+export type MissionExecutionStatus = "running" | "waiting" | "failed" | "done";
 
-export type MissionWorkflowFollowUpPolicy = "carry_to_next_stage" | "spawn_issue_on_gap" | "owner_managed";
-
-export type MissionWorkflowSafeActionProfile = "preview_only" | "github_links_only" | "candidate_readonly";
-
-export type MissionWorkflowDraft = {
-  stageSequenceVariant: MissionWorkflowStageSequenceVariant;
-  autoReviewPolicy: MissionWorkflowAutoReviewPolicy;
-  followUpPolicy: MissionWorkflowFollowUpPolicy;
-  safeActionProfile: MissionWorkflowSafeActionProfile;
-};
+export type MissionWorkflowTemplateKind = "system" | "project";
 
 export type MissionControlPrototypeError = {
   messageKey: string;
@@ -40,203 +37,217 @@ export type MissionControlPrototypeError = {
 };
 
 export type MissionControlPrototypeRouteState = {
-  scenarioId: string;
+  screen: MissionControlScreen;
+  projectId: string;
   initiativeId: string;
-  nodeId: string;
+  workflowId: string;
+  artifactId: string;
   search: string;
-  tab: MissionDrawerTab;
+  workspaceView: MissionInitiativeWorkspaceView;
 };
 
-export type MissionControlPrototypeCatalogItem = {
-  scenarioId: string;
+export type MissionProject = {
+  projectId: string;
   title: string;
   summary: string;
-  initiativeCount: number;
-  nodeCount: number;
-  defaultFocusInitiativeId: string;
+  accent: MissionProjectAccent;
 };
 
-export type MissionCanvasViewport = {
-  zoomLevel: number;
-  panX: number;
-  panY: number;
-  canvasWidth: number;
-  canvasHeight: number;
-};
-
-export type MissionCanvasInitiative = {
-  initiativeId: string;
+export type MissionWorkflowStageDefinition = {
+  stageKey: MissionWorkflowStageKey;
   label: string;
-  accentToken: MissionCanvasInitiativeAccentToken;
-  focusOrder: number;
-  nodeIds: string[];
+  summary: string;
+  ownerLabel: string;
+  outputLabel: string;
 };
+
+export type MissionWorkflowTemplate = {
+  workflowId: string;
+  title: string;
+  summary: string;
+  kind: MissionWorkflowTemplateKind;
+  projectId?: string;
+  stages: MissionWorkflowStageDefinition[];
+  launchSummary: string;
+  voiceHint: string;
+  policyBullets: string[];
+};
+
+export type MissionRunSummary = {
+  total: number;
+  running: number;
+  waiting: number;
+  failed: number;
+};
+
+export type MissionArtifact = {
+  artifactId: string;
+  initiativeId: string;
+  stageKey: MissionWorkflowStageKey;
+  kind: MissionArtifactKind;
+  title: string;
+  summary: string;
+  status: MissionArtifactStatus;
+  ownerLabel: string;
+  badgeLabels: string[];
+  updatedAtLabel: string;
+  runSummary: MissionRunSummary;
+};
+
+export type MissionInitiativeStageState = {
+  stageKey: MissionWorkflowStageKey;
+  status: MissionWorkflowStageStatus;
+  summary: string;
+  exitLabel: string;
+  artifactIds: string[];
+};
+
+export type MissionInitiative = {
+  initiativeId: string;
+  projectId: string;
+  workflowId: string;
+  title: string;
+  summary: string;
+  ownerLabel: string;
+  currentStageKey: MissionWorkflowStageKey;
+  nextAction: string;
+  statusLabel: string;
+  attentionLabel: string;
+  attentionTone: MissionAttentionTone;
+  tags: string[];
+  artifactIds: string[];
+  stageStates: MissionInitiativeStageState[];
+  blockedReason?: string;
+  runSummary: MissionRunSummary;
+};
+
+export type MissionActivityItem = {
+  itemId: string;
+  initiativeId: string;
+  title: string;
+  summary: string;
+  happenedAtLabel: string;
+  actorLabel: string;
+  tone: MissionAttentionTone;
+};
+
+export type MissionExecution = {
+  executionId: string;
+  initiativeId: string;
+  artifactId: string;
+  title: string;
+  summary: string;
+  status: MissionExecutionStatus;
+  agentRoleLabel: string;
+  startedAtLabel: string;
+  durationLabel: string;
+};
+
+export type MissionControlPrototypeModel = {
+  projects: MissionProject[];
+  workflows: MissionWorkflowTemplate[];
+  initiatives: MissionInitiative[];
+  artifacts: MissionArtifact[];
+  activity: MissionActivityItem[];
+  executions: MissionExecution[];
+};
+
+export type MissionProjectOption = {
+  projectId: string;
+  title: string;
+};
+
+export type MissionScreenOption = {
+  screen: MissionControlScreen;
+  label: string;
+};
+
+export type MissionWorkflowOption = {
+  workflowId: string;
+  title: string;
+  kind: MissionWorkflowTemplateKind;
+};
+
+export type MissionHomeAttentionCard = {
+  cardId: string;
+  title: string;
+  valueLabel: string;
+  summary: string;
+  tone: MissionAttentionTone;
+};
+
+export type MissionHomeInitiativeCard = {
+  initiativeId: string;
+  projectTitle: string;
+  title: string;
+  summary: string;
+  stageLabel: string;
+  nextAction: string;
+  attentionLabel: string;
+  attentionTone: MissionAttentionTone;
+  runSummary: MissionRunSummary;
+  tags: string[];
+};
+
+export type MissionHomeColumn = {
+  columnId: string;
+  title: string;
+  summary: string;
+  items: MissionHomeInitiativeCard[];
+};
+
+export type MissionWorkspaceStageView = {
+  stageKey: MissionWorkflowStageKey;
+  label: string;
+  summary: string;
+  ownerLabel: string;
+  outputLabel: string;
+  status: MissionWorkflowStageStatus;
+  exitLabel: string;
+  artifactIds: string[];
+};
+
+export type MissionWorkspaceArtifactView = {
+  artifactId: string;
+  stageKey: MissionWorkflowStageKey;
+  kind: MissionArtifactKind;
+  title: string;
+  summary: string;
+  status: MissionArtifactStatus;
+  ownerLabel: string;
+  badgeLabels: string[];
+  updatedAtLabel: string;
+  runSummary: MissionRunSummary;
+  selected: boolean;
+};
+
+export type MissionCanvasNodeKind = "stage" | "gate";
 
 export type MissionCanvasNode = {
   nodeId: string;
-  nodeKind: MissionCanvasNodeKind;
-  initiativeId: string;
+  kind: MissionCanvasNodeKind;
   title: string;
-  state: MissionCanvasNodeState;
-  stageLabel: string;
+  summary: string;
+  statusLabel: string;
+  tone: MissionAttentionTone;
   layoutX: number;
   layoutY: number;
-  meta: string[];
-  badges: MissionCanvasNodeBadge[];
-  detailId: string;
-  safeActionIds: string[];
+  artifactIds: string[];
+  stageKey?: MissionWorkflowStageKey;
 };
 
 export type MissionCanvasRelation = {
   relationId: string;
-  relationKind: MissionCanvasRelationKind;
   sourceNodeId: string;
   targetNodeId: string;
   label: string;
-  importance: MissionCanvasRelationImportance;
 };
 
-export type MissionTimelineItemTone = "neutral" | "positive" | "warning" | "attention";
-
-export type MissionDrawerTimelineItem = {
-  itemId: string;
-  happenedAt: string;
-  title: string;
+export type MissionExecutionGroup = {
+  groupId: string;
+  initiativeTitle: string;
+  artifactTitle: string;
+  artifactKind: MissionArtifactKind;
   summary: string;
-  tone: MissionTimelineItemTone;
-  sourceRef?: string;
-};
-
-export type MissionSafeActionKind = "link" | "doc" | "preview";
-
-export type MissionDrawerSafeAction = {
-  actionId: string;
-  kind: MissionSafeActionKind;
-  label: string;
-  description: string;
-  icon: string;
-  href?: string;
-};
-
-export type MissionDrawerRecord = {
-  detailId: string;
-  nodeId: string;
-  overviewMarkdown: string;
-  timelineItems: MissionDrawerTimelineItem[];
-  relatedNodeIds: string[];
-  safeActions: MissionDrawerSafeAction[];
-  workflowPresetIds: string[];
-  sourceRefs: string[];
-};
-
-export type MissionWorkflowPreset = {
-  presetId: string;
-  label: string;
-  summary: string;
-  defaultDraft: MissionWorkflowDraft;
-  stageSequenceOptions: Record<MissionWorkflowStageSequenceVariant, string[]>;
-  promptSeedRefs: string[];
-  generatedBlockSeed: string;
-  allowedOverrides: Array<keyof MissionWorkflowDraft>;
-};
-
-export type MissionWorkflowPreviewResult = {
-  presetId: string;
-  presetLabel: string;
-  resolvedDraft: MissionWorkflowDraft;
-  stageSequence: string[];
-  generatedBlockMarkdown: string;
-  sourceRefs: string[];
-  changeExplanations: string[];
-  warnings: string[];
-};
-
-export type MissionCanvasScenario = {
-  scenarioId: string;
-  title: string;
-  summary: string;
-  initiatives: MissionCanvasInitiative[];
-  nodes: MissionCanvasNode[];
-  relations: MissionCanvasRelation[];
-  drawerRecords: MissionDrawerRecord[];
-  workflowPresets: MissionWorkflowPreset[];
-  sourceRefs: string[];
-  defaultViewport: MissionCanvasViewport;
-  defaultFocusInitiativeId: string;
-};
-
-export type MissionInitiativeView = {
-  initiativeId: string;
-  label: string;
-  accentToken: MissionCanvasInitiativeAccentToken;
-  nodeCount: number;
-  focused: boolean;
-  dimmed: boolean;
-  bounds: {
-    left: number;
-    top: number;
-    width: number;
-    height: number;
-  };
-};
-
-export type MissionCanvasNodeView = {
-  nodeId: string;
-  initiativeId: string;
-  initiativeAccentToken: MissionCanvasInitiativeAccentToken;
-  nodeKind: MissionCanvasNodeKind;
-  title: string;
-  state: MissionCanvasNodeState;
-  stageLabel: string;
-  meta: string[];
-  badges: MissionCanvasNodeBadge[];
-  layoutX: number;
-  layoutY: number;
-  selected: boolean;
-  dimmed: boolean;
-  highlighted: boolean;
-  matchesSearch: boolean;
-};
-
-export type MissionCanvasRelationView = {
-  relationId: string;
-  relationKind: MissionCanvasRelationKind;
-  label: string;
-  startX: number;
-  startY: number;
-  endX: number;
-  endY: number;
-  labelX: number;
-  labelY: number;
-  path: string;
-  highlighted: boolean;
-  dimmed: boolean;
-};
-
-export type MissionDrawerRelatedNodeView = {
-  nodeId: string;
-  nodeKind: MissionCanvasNodeKind;
-  title: string;
-  stageLabel: string;
-  state: MissionCanvasNodeState;
-};
-
-export type MissionDrawerView = {
-  nodeId: string;
-  nodeKind: MissionCanvasNodeKind;
-  title: string;
-  stageLabel: string;
-  state: MissionCanvasNodeState;
-  initiativeLabel: string;
-  overviewMarkdown: string;
-  timelineItems: MissionDrawerTimelineItem[];
-  relatedNodes: MissionDrawerRelatedNodeView[];
-  safeActions: MissionDrawerSafeAction[];
-  sourceRefs: string[];
-};
-
-export type MissionWorkflowPresetOption = {
-  presetId: string;
-  label: string;
-  summary: string;
+  items: MissionExecution[];
 };

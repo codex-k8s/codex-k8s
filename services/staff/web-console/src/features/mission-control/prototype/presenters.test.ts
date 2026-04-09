@@ -1,84 +1,72 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { missionControlPrototypeScenarios } from "./fixtures.ts";
+import { missionControlPrototypeModel } from "./fixtures.ts";
 import {
-  buildInitiativeViews,
-  buildNodeViews,
-  buildRelationViews,
-  buildViewportForNodes,
-  missionControlPrototypeCardWidth,
+  buildAttentionCards,
+  buildExecutionGroups,
+  buildHomeColumns,
+  buildWorkflowStudioNodes,
+  buildWorkspaceFlowNodes,
+  buildWorkspaceStageViews,
 } from "./presenters.ts";
-import { missionControlPrototypeSource } from "./source.ts";
 
-test("buildNodeViews dims unrelated initiatives and preserves search matches", () => {
-  const scenario = missionControlPrototypeScenarios[0];
-  const nodeViews = buildNodeViews(scenario, {
-    search: "owner",
-    focusedInitiativeId: "initiative-s18",
-    selectedNodeId: "issue-581",
-  });
+test("buildHomeColumns раскладывает инициативы по верхнеуровневым колонкам", () => {
+  const columns = buildHomeColumns(missionControlPrototypeModel, "project-kodex", "");
 
-  const issueNode = nodeViews.find((node) => node.nodeId === "issue-581");
-  const qualityNode = nodeViews.find((node) => node.nodeId === "issue-524");
+  const designColumn = columns.find((column) => column.columnId === "design");
+  const validationColumn = columns.find((column) => column.columnId === "validation");
 
-  assert.ok(issueNode);
-  assert.equal(issueNode?.dimmed, false);
-  assert.equal(issueNode?.matchesSearch, true);
-
-  assert.ok(qualityNode);
-  assert.equal(qualityNode?.dimmed, true);
+  assert.ok(designColumn);
+  assert.ok(validationColumn);
+  assert.ok(designColumn.items.some((item) => item.initiativeId === "initiative-mission-control"));
+  assert.ok(validationColumn.items.some((item) => item.initiativeId === "initiative-release-guard"));
 });
 
-test("buildRelationViews keeps selected-node edges highlighted", () => {
-  const scenario = missionControlPrototypeScenarios[0];
-  const nodeViews = buildNodeViews(scenario, {
-    search: "",
-    focusedInitiativeId: null,
-    selectedNodeId: "pr-s18-owner-demo",
-  });
-  const relationViews = buildRelationViews(scenario, nodeViews, "pr-s18-owner-demo");
+test("buildAttentionCards считает предупреждения и блокеры по проекту", () => {
+  const cards = buildAttentionCards(missionControlPrototypeModel, "project-kodex");
 
-  const highlightedRelation = relationViews.find((relation) => relation.relationId === "rel-pr-blocks-563");
-  assert.ok(highlightedRelation);
-  assert.equal(highlightedRelation?.highlighted, true);
+  const needsDecision = cards.find((card) => card.cardId === "needs-decision");
+  const blocked = cards.find((card) => card.cardId === "blocked");
+
+  assert.equal(needsDecision?.valueLabel, "1");
+  assert.equal(blocked?.valueLabel, "2");
 });
 
-test("buildViewportForNodes centers a focused initiative", () => {
-  const scenario = missionControlPrototypeScenarios[0];
-  const nodes = scenario.nodes.filter((node) => node.initiativeId === "initiative-s18");
-  const viewport = buildViewportForNodes(nodes, scenario.defaultViewport);
+test("buildWorkspaceStageViews строит последовательность стадий по workflow инициативы", () => {
+  const initiative = missionControlPrototypeModel.initiatives.find((item) => item.initiativeId === "initiative-mission-control") ?? null;
+  const workflow = missionControlPrototypeModel.workflows.find((item) => item.workflowId === "workflow-owner-showcase") ?? null;
+  const stageViews = buildWorkspaceStageViews(initiative, workflow);
 
-  assert.ok(viewport.zoomLevel <= 1.15);
-  assert.ok(viewport.canvasWidth > missionControlPrototypeCardWidth);
-  assert.ok(viewport.panX >= 0);
+  assert.equal(stageViews[0]?.stageKey, "vision");
+  assert.equal(stageViews[1]?.status, "active");
+  assert.match(stageViews[1]?.summary ?? "", /UX/i);
 });
 
-test("source generates deterministic workflow preview with source refs", async () => {
-  const preview = await missionControlPrototypeSource.generateWorkflowPreview({
-    scenarioId: "owner-walkthrough",
-    nodeId: "issue-581",
-    presetId: "preset-owner-demo",
-    draft: {
-      stageSequenceVariant: "revise_loop",
-      autoReviewPolicy: "required",
-      followUpPolicy: "carry_to_next_stage",
-      safeActionProfile: "github_links_only",
-    },
-  });
+test("buildWorkspaceFlowNodes использует stage-centric модель вместо run-centric узлов", () => {
+  const initiative = missionControlPrototypeModel.initiatives.find((item) => item.initiativeId === "initiative-hotfix-login") ?? null;
+  const workflow = missionControlPrototypeModel.workflows.find((item) => item.workflowId === "workflow-hotfix") ?? null;
+  const stageViews = buildWorkspaceStageViews(initiative, workflow);
+  const nodes = buildWorkspaceFlowNodes(stageViews);
 
-  assert.equal(preview.presetId, "preset-owner-demo");
-  assert.match(preview.generatedBlockMarkdown, /workflow-policy:/);
-  assert.ok(preview.sourceRefs.length >= 2);
-  assert.ok(preview.changeExplanations.some((item) => item.includes("stage_sequence_variant")));
+  assert.equal(nodes.length, workflow?.stages.length);
+  assert.equal(nodes[0]?.kind, "stage");
+  assert.equal(nodes[0]?.stageKey, "triage");
 });
 
-test("buildInitiativeViews returns deterministic cluster bounds", () => {
-  const scenario = missionControlPrototypeScenarios[0];
-  const initiativeViews = buildInitiativeViews(scenario, "initiative-s18");
-  const s18View = initiativeViews.find((initiative) => initiative.initiativeId === "initiative-s18");
+test("buildWorkflowStudioNodes добавляет gate nodes для design и qa", () => {
+  const workflow = missionControlPrototypeModel.workflows.find((item) => item.workflowId === "workflow-owner-showcase") ?? null;
+  const nodes = buildWorkflowStudioNodes(workflow);
 
-  assert.ok(s18View);
-  assert.equal(s18View?.focused, true);
-  assert.ok((s18View?.bounds.width ?? 0) > 0);
+  assert.ok(nodes.some((node) => node.nodeId === "studio-gate-design"));
+  assert.ok(nodes.some((node) => node.nodeId === "studio-gate-qa"));
+});
+
+test("buildExecutionGroups группирует исполнения по артефактам", () => {
+  const groups = buildExecutionGroups(missionControlPrototypeModel, "project-kodex", "");
+  const missionControlGroup = groups.find((group) => group.groupId === "artifact-mc-prototype-task");
+
+  assert.ok(missionControlGroup);
+  assert.equal(missionControlGroup?.items.length, 1);
+  assert.match(missionControlGroup?.initiativeTitle ?? "", /инициативами и агентами/i);
 });

@@ -1,307 +1,470 @@
 import type {
-  MissionCanvasInitiative,
+  MissionArtifact,
+  MissionArtifactStatus,
+  MissionAttentionTone,
   MissionCanvasNode,
-  MissionCanvasNodeBadge,
-  MissionCanvasNodeView,
   MissionCanvasRelation,
-  MissionCanvasRelationView,
-  MissionCanvasScenario,
-  MissionCanvasViewport,
-  MissionDrawerRecord,
-  MissionDrawerRelatedNodeView,
-  MissionDrawerView,
-  MissionInitiativeView,
-} from "./types.ts";
+  MissionControlPrototypeModel,
+  MissionExecutionGroup,
+  MissionHomeAttentionCard,
+  MissionHomeColumn,
+  MissionHomeInitiativeCard,
+  MissionInitiative,
+  MissionProjectOption,
+  MissionRunSummary,
+  MissionWorkflowStageKey,
+  MissionWorkflowTemplate,
+  MissionWorkflowOption,
+  MissionWorkflowStageStatus,
+  MissionWorkspaceArtifactView,
+  MissionWorkspaceStageView,
+} from "./types";
 
-export const missionControlPrototypeCardWidth = 232;
-export const missionControlPrototypeCardHeight = 132;
-
-const missionControlInitiativePadding = 56;
+const stageColumnCatalog: Array<{
+  columnId: string;
+  title: string;
+  summary: string;
+  stageKeys: MissionWorkflowStageKey[];
+}> = [
+  {
+    columnId: "formation",
+    title: "Формирование",
+    summary: "Прием, видение и требования.",
+    stageKeys: ["intake", "vision", "prd", "triage"] satisfies MissionWorkflowStageKey[],
+  },
+  {
+    columnId: "design",
+    title: "Проектирование",
+    summary: "Архитектура, дизайн и план.",
+    stageKeys: ["arch", "design", "plan"] satisfies MissionWorkflowStageKey[],
+  },
+  {
+    columnId: "delivery",
+    title: "Разработка",
+    summary: "Код, сборка и подготовка PR.",
+    stageKeys: ["dev", "fix"] satisfies MissionWorkflowStageKey[],
+  },
+  {
+    columnId: "validation",
+    title: "Проверка",
+    summary: "QA, walkthrough и решение по рискам.",
+    stageKeys: ["qa"] satisfies MissionWorkflowStageKey[],
+  },
+  {
+    columnId: "release",
+    title: "Релиз и сопровождение",
+    summary: "Выкладка, postdeploy и ops.",
+    stageKeys: ["release", "postdeploy", "ops"] satisfies MissionWorkflowStageKey[],
+  },
+];
 
 function normalizeToken(value: string): string {
   return value.trim().toLowerCase();
 }
 
-function buildNodeSearchTokens(node: MissionCanvasNode): string[] {
-  return [node.title, node.stageLabel, ...node.meta, ...node.badges].map(normalizeToken).filter(Boolean);
+function sumRunSummary(items: MissionRunSummary[]): MissionRunSummary {
+  return items.reduce<MissionRunSummary>(
+    (acc, item) => ({
+      total: acc.total + item.total,
+      running: acc.running + item.running,
+      waiting: acc.waiting + item.waiting,
+      failed: acc.failed + item.failed,
+    }),
+    { total: 0, running: 0, waiting: 0, failed: 0 },
+  );
 }
 
-function nodeMatchesSearch(node: MissionCanvasNode, search: string): boolean {
+function initiativeMatchesSearch(initiative: MissionInitiative, artifacts: MissionArtifact[], search: string): boolean {
   const needle = normalizeToken(search);
   if (needle === "") {
     return true;
   }
 
-  return buildNodeSearchTokens(node).some((token) => token.includes(needle));
+  const artifactTokens = artifacts.flatMap((artifact) => [artifact.title, artifact.summary, ...artifact.badgeLabels]);
+  return [initiative.title, initiative.summary, initiative.nextAction, ...initiative.tags, ...artifactTokens]
+    .map(normalizeToken)
+    .some((token) => token.includes(needle));
 }
 
-function buildInitiativeBounds(nodes: MissionCanvasNode[]) {
-  const left = Math.min(...nodes.map((node) => node.layoutX)) - missionControlInitiativePadding;
-  const top = Math.min(...nodes.map((node) => node.layoutY)) - missionControlInitiativePadding;
-  const right =
-    Math.max(...nodes.map((node) => node.layoutX + missionControlPrototypeCardWidth)) + missionControlInitiativePadding;
-  const bottom =
-    Math.max(...nodes.map((node) => node.layoutY + missionControlPrototypeCardHeight)) + missionControlInitiativePadding;
-
-  return {
-    left,
-    top,
-    width: right - left,
-    height: bottom - top,
-  };
+function stageToColumnId(stageKey: MissionWorkflowStageKey): string {
+  return (
+    stageColumnCatalog.find((column) => column.stageKeys.includes(stageKey))?.columnId ??
+    stageColumnCatalog[stageColumnCatalog.length - 1].columnId
+  );
 }
 
-function buildNodeView(
-  node: MissionCanvasNode,
-  options: {
-    initiative: MissionCanvasInitiative;
-    search: string;
-    focusedInitiativeId: string | null;
-    selectedNodeId: string | null;
-  },
-): MissionCanvasNodeView {
-  const matchesSearch = nodeMatchesSearch(node, options.search);
-  const initiativeFiltered = options.focusedInitiativeId ? options.focusedInitiativeId !== node.initiativeId : false;
-  const dimmed = initiativeFiltered || !matchesSearch;
-
-  return {
-    nodeId: node.nodeId,
-    initiativeId: node.initiativeId,
-    initiativeAccentToken: options.initiative.accentToken,
-    nodeKind: node.nodeKind,
-    title: node.title,
-    state: node.state,
-    stageLabel: node.stageLabel,
-    meta: node.meta,
-    badges: node.badges,
-    layoutX: node.layoutX,
-    layoutY: node.layoutY,
-    selected: options.selectedNodeId === node.nodeId,
-    dimmed,
-    highlighted: options.selectedNodeId === node.nodeId || (!dimmed && options.search.trim() !== ""),
-    matchesSearch,
-  };
-}
-
-function buildRelationPath(
-  leftX: number,
-  leftY: number,
-  rightX: number,
-  rightY: number,
-): { path: string; labelX: number; labelY: number } {
-  const controlOffset = Math.max(80, Math.abs(rightX - leftX) * 0.32);
-  const midpointX = (leftX + rightX) / 2;
-  const midpointY = (leftY + rightY) / 2;
-
-  return {
-    path: `M ${leftX} ${leftY} C ${leftX + controlOffset} ${leftY}, ${rightX - controlOffset} ${rightY}, ${rightX} ${rightY}`,
-    labelX: midpointX,
-    labelY: midpointY - 12,
-  };
-}
-
-export function missionControlPrototypeBadgeTone(badge: MissionCanvasNodeBadge): string {
-  switch (badge) {
+function statusToTone(status: MissionWorkflowStageStatus): MissionAttentionTone {
+  switch (status) {
+    case "pending":
+      return "info";
+    case "active":
+      return "warning";
+    case "attention":
+      return "warning";
     case "blocked":
       return "error";
-    case "owner-review":
-    case "needs-evidence":
-      return "warning";
-    case "demo-ready":
+    case "done":
       return "success";
-    case "handover":
-    case "deferred":
-    case "live-wait":
-      return "info";
   }
 }
 
-export function missionControlPrototypeStateTone(state: MissionCanvasNode["state"]): string {
-  switch (state) {
-    case "working":
+export function missionAttentionToneColor(tone: MissionAttentionTone): string {
+  switch (tone) {
+    case "info":
+      return "info";
+    case "success":
+      return "success";
+    case "warning":
+      return "warning";
+    case "error":
+      return "error";
+  }
+}
+
+export function missionArtifactStatusColor(status: MissionArtifactStatus): string {
+  switch (status) {
+    case "draft":
+      return "secondary";
+    case "active":
       return "info";
     case "review":
       return "warning";
     case "blocked":
       return "error";
-    case "waiting":
-      return "secondary";
+    case "done":
+      return "success";
   }
 }
 
-export function buildInitiativeViews(
-  scenario: MissionCanvasScenario | null,
-  focusedInitiativeId: string | null,
-): MissionInitiativeView[] {
-  if (!scenario) {
-    return [];
+export function missionArtifactKindLabel(kind: MissionArtifact["kind"]): string {
+  switch (kind) {
+    case "doc":
+      return "Документ";
+    case "task":
+      return "Задача";
+    case "pr":
+      return "PR";
+    case "release":
+      return "Релиз";
   }
-
-  return scenario.initiatives
-    .map((initiative) => {
-      const nodes = scenario.nodes.filter((node) => node.initiativeId === initiative.initiativeId);
-      return {
-        initiativeId: initiative.initiativeId,
-        label: initiative.label,
-        accentToken: initiative.accentToken,
-        nodeCount: nodes.length,
-        focused: focusedInitiativeId === initiative.initiativeId,
-        dimmed: Boolean(focusedInitiativeId) && focusedInitiativeId !== initiative.initiativeId,
-        bounds: buildInitiativeBounds(nodes),
-      };
-    })
-    .sort((left, right) => {
-      const leftInitiative = scenario.initiatives.find((initiative) => initiative.initiativeId === left.initiativeId);
-      const rightInitiative = scenario.initiatives.find((initiative) => initiative.initiativeId === right.initiativeId);
-      return (leftInitiative?.focusOrder ?? 0) - (rightInitiative?.focusOrder ?? 0);
-    });
 }
 
-export function buildNodeViews(
-  scenario: MissionCanvasScenario | null,
-  options: {
-    search: string;
-    focusedInitiativeId: string | null;
-    selectedNodeId: string | null;
-  },
-): MissionCanvasNodeView[] {
-  if (!scenario) {
+export function buildProjectOptions(model: MissionControlPrototypeModel | null): MissionProjectOption[] {
+  if (!model) {
     return [];
   }
 
-  const initiativeById = new Map(scenario.initiatives.map((initiative) => [initiative.initiativeId, initiative]));
+  return model.projects.map((project) => ({
+    projectId: project.projectId,
+    title: project.title,
+  }));
+}
 
-  return scenario.nodes.map((node) =>
-    buildNodeView(node, {
-      initiative: initiativeById.get(node.initiativeId) ?? scenario.initiatives[0],
-      search: options.search,
-      focusedInitiativeId: options.focusedInitiativeId,
-      selectedNodeId: options.selectedNodeId,
-    }),
+export function buildWorkflowOptions(
+  model: MissionControlPrototypeModel | null,
+  projectId: string,
+): MissionWorkflowOption[] {
+  if (!model) {
+    return [];
+  }
+
+  return model.workflows
+    .filter((workflow) => workflow.kind === "system" || workflow.projectId === projectId)
+    .map((workflow) => ({
+      workflowId: workflow.workflowId,
+      title: workflow.title,
+      kind: workflow.kind,
+    }));
+}
+
+export function buildAttentionCards(model: MissionControlPrototypeModel | null, projectId: string): MissionHomeAttentionCard[] {
+  if (!model) {
+    return [];
+  }
+
+  const projectInitiatives = model.initiatives.filter((initiative) => initiative.projectId === projectId);
+  const projectExecutions = model.executions.filter((execution) =>
+    projectInitiatives.some((initiative) => initiative.initiativeId === execution.initiativeId),
   );
+
+  return [
+    {
+      cardId: "needs-decision",
+      title: "Нуждаются в решении",
+      valueLabel: String(projectInitiatives.filter((initiative) => initiative.attentionTone === "warning").length),
+      summary: "Инициативы, где владелец должен принять решение или задать направление.",
+      tone: "warning",
+    },
+    {
+      cardId: "blocked",
+      title: "Есть блокеры",
+      valueLabel: String(
+        projectInitiatives.filter((initiative) => initiative.attentionTone === "error" || initiative.blockedReason).length,
+      ),
+      summary: "Работа не может двигаться дальше без устранения блокера.",
+      tone: "error",
+    },
+    {
+      cardId: "active-runs",
+      title: "Активные исполнения",
+      valueLabel: String(projectExecutions.filter((execution) => execution.status === "running").length),
+      summary: "Технические исполнения скрыты из основного потока, но живут за артефактами.",
+      tone: "info",
+    },
+    {
+      cardId: "release-ready",
+      title: "Почти готовы к выпуску",
+      valueLabel: String(projectInitiatives.filter((initiative) => stageToColumnId(initiative.currentStageKey) === "release").length),
+      summary: "Инициативы на релизе, postdeploy или ops.",
+      tone: "success",
+    },
+  ];
 }
 
-export function buildRelationViews(
-  scenario: MissionCanvasScenario | null,
-  nodeViews: MissionCanvasNodeView[],
-  selectedNodeId: string | null,
-): MissionCanvasRelationView[] {
-  if (!scenario) {
+export function buildHomeColumns(
+  model: MissionControlPrototypeModel | null,
+  projectId: string,
+  search: string,
+): MissionHomeColumn[] {
+  if (!model) {
     return [];
   }
 
-  const nodeViewById = new Map(nodeViews.map((node) => [node.nodeId, node]));
+  const projectTitle = model.projects.find((project) => project.projectId === projectId)?.title ?? "";
 
-  return scenario.relations
-    .map((relation) => {
-      const sourceNode = nodeViewById.get(relation.sourceNodeId);
-      const targetNode = nodeViewById.get(relation.targetNodeId);
-      if (!sourceNode || !targetNode) {
-        return null;
+  return stageColumnCatalog.map((column) => {
+    const items: MissionHomeInitiativeCard[] = model.initiatives
+      .filter((initiative) => initiative.projectId === projectId)
+      .filter((initiative) => stageToColumnId(initiative.currentStageKey) === column.columnId)
+      .filter((initiative) =>
+        initiativeMatchesSearch(
+          initiative,
+          model.artifacts.filter((artifact) => artifact.initiativeId === initiative.initiativeId),
+          search,
+        ),
+      )
+      .map((initiative) => {
+        const workflow = model.workflows.find((candidate) => candidate.workflowId === initiative.workflowId);
+        const stageLabel = workflow?.stages.find((stage) => stage.stageKey === initiative.currentStageKey)?.label ?? "Этап";
+
+        return {
+          initiativeId: initiative.initiativeId,
+          projectTitle,
+          title: initiative.title,
+          summary: initiative.summary,
+          stageLabel,
+          nextAction: initiative.nextAction,
+          attentionLabel: initiative.attentionLabel,
+          attentionTone: initiative.attentionTone,
+          runSummary: initiative.runSummary,
+          tags: initiative.tags,
+        };
+      });
+
+    return {
+      columnId: column.columnId,
+      title: column.title,
+      summary: column.summary,
+      items,
+    };
+  });
+}
+
+export function buildWorkspaceStageViews(
+  initiative: MissionInitiative | null,
+  workflow: MissionWorkflowTemplate | null,
+): MissionWorkspaceStageView[] {
+  if (!initiative || !workflow) {
+    return [];
+  }
+
+  const stageStateByKey = new Map(initiative.stageStates.map((stageState) => [stageState.stageKey, stageState]));
+
+  return workflow.stages.map((stageDefinition) => {
+    const state = stageStateByKey.get(stageDefinition.stageKey);
+    return {
+      stageKey: stageDefinition.stageKey,
+      label: stageDefinition.label,
+      summary: state?.summary ?? stageDefinition.summary,
+      ownerLabel: stageDefinition.ownerLabel,
+      outputLabel: stageDefinition.outputLabel,
+      status: state?.status ?? "pending",
+      exitLabel: state?.exitLabel ?? `Нужен артефакт: ${stageDefinition.outputLabel}`,
+      artifactIds: state?.artifactIds ?? [],
+    };
+  });
+}
+
+export function buildWorkspaceArtifactViews(
+  artifacts: MissionArtifact[],
+  selectedArtifactId: string,
+  search: string,
+): MissionWorkspaceArtifactView[] {
+  const needle = normalizeToken(search);
+
+  return artifacts
+    .filter((artifact) => {
+      if (needle === "") {
+        return true;
       }
 
-      const startX = sourceNode.layoutX + missionControlPrototypeCardWidth - 8;
-      const startY = sourceNode.layoutY + missionControlPrototypeCardHeight / 2;
-      const endX = targetNode.layoutX + 8;
-      const endY = targetNode.layoutY + missionControlPrototypeCardHeight / 2;
-      const geometry = buildRelationPath(startX, startY, endX, endY);
-      const highlighted = selectedNodeId
-        ? relation.sourceNodeId === selectedNodeId || relation.targetNodeId === selectedNodeId
-        : relation.importance === "primary";
-      const dimmed =
-        (!highlighted && (sourceNode.dimmed || targetNode.dimmed)) ||
-        (relation.importance === "supporting" && !highlighted);
-
-      return {
-        relationId: relation.relationId,
-        relationKind: relation.relationKind,
-        label: relation.label,
-        startX,
-        startY,
-        endX,
-        endY,
-        labelX: geometry.labelX,
-        labelY: geometry.labelY,
-        path: geometry.path,
-        highlighted,
-        dimmed,
-      };
+      return [artifact.title, artifact.summary, ...artifact.badgeLabels]
+        .map(normalizeToken)
+        .some((token) => token.includes(needle));
     })
-    .filter((relation): relation is MissionCanvasRelationView => relation !== null);
+    .map((artifact) => ({
+      artifactId: artifact.artifactId,
+      stageKey: artifact.stageKey,
+      kind: artifact.kind,
+      title: artifact.title,
+      summary: artifact.summary,
+      status: artifact.status,
+      ownerLabel: artifact.ownerLabel,
+      badgeLabels: artifact.badgeLabels,
+      updatedAtLabel: artifact.updatedAtLabel,
+      runSummary: artifact.runSummary,
+      selected: artifact.artifactId === selectedArtifactId,
+    }));
 }
 
-export function buildDrawerView(
-  scenario: MissionCanvasScenario | null,
-  nodeId: string | null,
-  drawerRecord: MissionDrawerRecord | null,
-): MissionDrawerView | null {
-  if (!scenario || !nodeId || !drawerRecord) {
-    return null;
+export function buildWorkspaceFlowNodes(stageViews: MissionWorkspaceStageView[]): MissionCanvasNode[] {
+  return stageViews.map((stageView, index) => ({
+    nodeId: `stage-${stageView.stageKey}`,
+    kind: "stage",
+    title: stageView.label,
+    summary: stageView.summary,
+    statusLabel: stageView.exitLabel,
+    tone: statusToTone(stageView.status),
+    layoutX: index * 280,
+    layoutY: stageView.status === "blocked" ? 110 : stageView.status === "active" ? 70 : 0,
+    artifactIds: stageView.artifactIds,
+    stageKey: stageView.stageKey,
+  }));
+}
+
+export function buildWorkspaceFlowRelations(stageViews: MissionWorkspaceStageView[]): MissionCanvasRelation[] {
+  return stageViews.slice(1).map((stageView, index) => ({
+    relationId: `relation-${stageViews[index].stageKey}-${stageView.stageKey}`,
+    sourceNodeId: `stage-${stageViews[index].stageKey}`,
+    targetNodeId: `stage-${stageView.stageKey}`,
+    label: stageView.status === "blocked" ? "есть блокер на переходе" : "следующий этап",
+  }));
+}
+
+export function buildWorkflowStudioNodes(workflow: MissionWorkflowTemplate | null): MissionCanvasNode[] {
+  if (!workflow) {
+    return [];
   }
 
-  const node = scenario.nodes.find((candidate) => candidate.nodeId === nodeId);
-  if (!node) {
-    return null;
-  }
-  const initiative = scenario.initiatives.find((candidate) => candidate.initiativeId === node.initiativeId);
-  const relatedNodeById = new Map(scenario.nodes.map((candidate) => [candidate.nodeId, candidate]));
+  const stageNodes: MissionCanvasNode[] = workflow.stages.map((stageDefinition, index) => ({
+    nodeId: `studio-stage-${stageDefinition.stageKey}`,
+    kind: "stage",
+    title: stageDefinition.label,
+    summary: stageDefinition.summary,
+    statusLabel: `Выход: ${stageDefinition.outputLabel}`,
+    tone: index === 0 ? "warning" : "info",
+    layoutX: index * 250,
+    layoutY: index % 2 === 0 ? 0 : 120,
+    artifactIds: [],
+    stageKey: stageDefinition.stageKey,
+  }));
 
-  const relatedNodes: MissionDrawerRelatedNodeView[] = drawerRecord.relatedNodeIds
-    .map((relatedNodeId) => relatedNodeById.get(relatedNodeId))
-    .filter((relatedNode): relatedNode is MissionCanvasNode => relatedNode !== undefined)
-    .map((relatedNode) => ({
-      nodeId: relatedNode.nodeId,
-      nodeKind: relatedNode.nodeKind,
-      title: relatedNode.title,
-      stageLabel: relatedNode.stageLabel,
-      state: relatedNode.state,
+  const gateNodes: MissionCanvasNode[] = workflow.stages
+    .filter((stageDefinition) => stageDefinition.stageKey === "design" || stageDefinition.stageKey === "qa")
+    .map((stageDefinition, index) => ({
+      nodeId: `studio-gate-${stageDefinition.stageKey}`,
+      kind: "gate",
+      title: stageDefinition.stageKey === "design" ? "Owner review" : "Quality gate",
+      summary: stageDefinition.stageKey === "design" ? "Владелец принимает структуру решения." : "Выпуск идет только после проверки.",
+      statusLabel: "Gate node",
+      tone: "warning",
+      layoutX: index === 0 ? 560 : 1120,
+      layoutY: index === 0 ? 250 : 250,
+      artifactIds: [],
     }));
 
-  return {
-    nodeId: node.nodeId,
-    nodeKind: node.nodeKind,
-    title: node.title,
-    stageLabel: node.stageLabel,
-    state: node.state,
-    initiativeLabel: initiative?.label ?? "",
-    overviewMarkdown: drawerRecord.overviewMarkdown,
-    timelineItems: drawerRecord.timelineItems,
-    relatedNodes,
-    safeActions: drawerRecord.safeActions,
-    sourceRefs: drawerRecord.sourceRefs,
-  };
+  return [...stageNodes, ...gateNodes];
 }
 
-export function buildViewportForNodes(
-  nodes: MissionCanvasNode[],
-  baseViewport: MissionCanvasViewport,
-): MissionCanvasViewport {
-  if (nodes.length === 0) {
-    return baseViewport;
+export function buildWorkflowStudioRelations(workflow: MissionWorkflowTemplate | null): MissionCanvasRelation[] {
+  if (!workflow) {
+    return [];
   }
 
-  const left = Math.min(...nodes.map((node) => node.layoutX));
-  const top = Math.min(...nodes.map((node) => node.layoutY));
-  const right = Math.max(...nodes.map((node) => node.layoutX + missionControlPrototypeCardWidth));
-  const bottom = Math.max(...nodes.map((node) => node.layoutY + missionControlPrototypeCardHeight));
+  const relations: MissionCanvasRelation[] = workflow.stages.slice(1).map((stageDefinition, index) => ({
+    relationId: `studio-relation-${workflow.stages[index].stageKey}-${stageDefinition.stageKey}`,
+    sourceNodeId: `studio-stage-${workflow.stages[index].stageKey}`,
+    targetNodeId: `studio-stage-${stageDefinition.stageKey}`,
+    label: "переход workflow",
+  }));
 
-  const contentWidth = right - left;
-  const contentHeight = bottom - top;
-  const paddedWidth = contentWidth + 220;
-  const paddedHeight = contentHeight + 180;
+  if (workflow.stages.some((stageDefinition) => stageDefinition.stageKey === "design")) {
+    relations.push({
+      relationId: "studio-design-gate",
+      sourceNodeId: "studio-stage-design",
+      targetNodeId: "studio-gate-design",
+      label: "решение владельца",
+    });
+  }
 
-  const fitZoom = Math.min(
-    1.15,
-    Math.max(
-      0.72,
-      Math.min(baseViewport.canvasWidth / paddedWidth, baseViewport.canvasHeight / paddedHeight),
-    ),
-  );
+  if (workflow.stages.some((stageDefinition) => stageDefinition.stageKey === "qa")) {
+    relations.push({
+      relationId: "studio-qa-gate",
+      sourceNodeId: "studio-stage-qa",
+      targetNodeId: "studio-gate-qa",
+      label: "контроль качества",
+    });
+  }
 
-  return {
-    ...baseViewport,
-    zoomLevel: fitZoom,
-    panX: Math.max(0, (baseViewport.canvasWidth - contentWidth * fitZoom) / 2 - left * fitZoom),
-    panY: Math.max(0, (baseViewport.canvasHeight - contentHeight * fitZoom) / 2 - top * fitZoom),
-  };
+  return relations;
+}
+
+export function buildExecutionGroups(
+  model: MissionControlPrototypeModel | null,
+  projectId: string,
+  search: string,
+): MissionExecutionGroup[] {
+  if (!model) {
+    return [];
+  }
+
+  const needle = normalizeToken(search);
+
+  const groups = model.executions
+    .filter((execution) =>
+      model.initiatives.some(
+        (initiative) => initiative.initiativeId === execution.initiativeId && initiative.projectId === projectId,
+      ),
+    )
+    .reduce<Map<string, MissionExecutionGroup>>((acc, execution) => {
+      const initiative = model.initiatives.find((candidate) => candidate.initiativeId === execution.initiativeId);
+      const artifact = model.artifacts.find((candidate) => candidate.artifactId === execution.artifactId);
+      if (!initiative || !artifact) {
+        return acc;
+      }
+
+      const tokens = [initiative.title, artifact.title, execution.title, execution.summary].map(normalizeToken);
+      if (needle !== "" && !tokens.some((token) => token.includes(needle))) {
+        return acc;
+      }
+
+      const current = acc.get(execution.artifactId);
+      if (current) {
+        current.items.push(execution);
+        return acc;
+      }
+
+      acc.set(execution.artifactId, {
+        groupId: execution.artifactId,
+        initiativeTitle: initiative.title,
+        artifactTitle: artifact.title,
+        artifactKind: artifact.kind,
+        summary: artifact.summary,
+        items: [execution],
+      });
+
+      return acc;
+    }, new Map<string, MissionExecutionGroup>());
+
+  return Array.from(groups.values()).sort((left, right) => left.initiativeTitle.localeCompare(right.initiativeTitle, "ru"));
 }
