@@ -1,7 +1,7 @@
 ---
 doc_id: ARC-MRM-CK8S-0001
 type: architecture-design
-title: "codex-k8s — Multi-repo Runtime and Docs Federation Design"
+title: "kodex — Multi-repo Runtime and Docs Federation Design"
 status: proposed
 owner_role: SA
 created_at: 2026-02-21
@@ -122,7 +122,7 @@ Issue #100 требует снять текущую зависимость от 
 
 Почему этот вариант:
 - покрывает все кейсы A..F без отдельного режима выполнения;
-- не ломает FR-022 (сам `codex-k8s` может оставаться монорепо);
+- не ломает FR-022 (сам `kodex` может оставаться монорепо);
 - сохраняет FR-020 (per-repo `services.yaml`) и добавляет управляемый кросс-repo deploy;
 - удерживает архитектурные границы и auditability.
 

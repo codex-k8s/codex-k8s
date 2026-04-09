@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"time"
 
-	floweventdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/flowevent"
-	floweventrepo "github.com/codex-k8s/codex-k8s/services/jobs/worker/internal/domain/repository/flowevent"
-	runqueuerepo "github.com/codex-k8s/codex-k8s/services/jobs/worker/internal/domain/repository/runqueue"
+	floweventdomain "github.com/codex-k8s/kodex/libs/go/domain/flowevent"
+	floweventrepo "github.com/codex-k8s/kodex/services/jobs/worker/internal/domain/repository/flowevent"
+	runqueuerepo "github.com/codex-k8s/kodex/services/jobs/worker/internal/domain/repository/runqueue"
 )
 
 func (s *Service) releaseStaleRunningLeases(ctx context.Context) error {

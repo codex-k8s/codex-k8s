@@ -14,8 +14,8 @@ import (
 
 	"github.com/labstack/echo/v5"
 
-	webhookdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/webhook"
-	controlplanev1 "github.com/codex-k8s/codex-k8s/proto/gen/go/codexk8s/controlplane/v1"
+	webhookdomain "github.com/codex-k8s/kodex/libs/go/domain/webhook"
+	controlplanev1 "github.com/codex-k8s/kodex/proto/gen/go/kodex/controlplane/v1"
 )
 
 func TestIngestGitHubWebhook_AcceptAndDuplicate(t *testing.T) {
@@ -24,7 +24,7 @@ func TestIngestGitHubWebhook_AcceptAndDuplicate(t *testing.T) {
 	secret := "test-secret"
 	event := string(webhookdomain.GitHubEventPush)
 	deliveryID := "delivery-abc"
-	payload := `{"action":"opened","repository":{"id":1,"full_name":"codex-k8s/codex-k8s"}}`
+	payload := `{"action":"opened","repository":{"id":1,"full_name":"codex-k8s/kodex"}}`
 
 	fake := &fakeWebhookService{
 		sequence: []*controlplanev1.IngestGitHubWebhookResponse{

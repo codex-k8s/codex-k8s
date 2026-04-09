@@ -121,7 +121,7 @@ approvals:
 ### Pre-migration checks
 - `agent_runs` and `agent_sessions` contain no unknown wait enums before cutover.
 - Existing `wait_target_kind`/`wait_target_ref` columns from S10 baseline are present and healthy.
-- Feature flags are defined with `CODEXK8S_` prefix and defaulted off.
+- Feature flags are defined with `KODEX_` prefix and defaulted off.
 - Deployment plan confirms order `control-plane -> worker -> agent-runner -> edge/ui`.
 
 ### Post-migration verification

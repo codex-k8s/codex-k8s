@@ -9,9 +9,9 @@ import (
 	"sort"
 	"strings"
 
-	agentdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/agent"
-	"github.com/codex-k8s/codex-k8s/libs/go/servicescfg"
-	querytypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/query"
+	agentdomain "github.com/codex-k8s/kodex/libs/go/domain/agent"
+	"github.com/codex-k8s/kodex/libs/go/servicescfg"
+	querytypes "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/types/query"
 )
 
 func (s *Service) PromptContext(ctx context.Context, session SessionContext) (PromptContextResult, error) {
@@ -88,9 +88,9 @@ func buildPromptIssueContext(issue *querytypes.RunPayloadIssue) *PromptIssueCont
 
 func buildPromptServices(publicBaseURL string, internalMCPBaseURL string) []PromptServiceContext {
 	items := []PromptServiceContext{
-		{Name: "control-plane-grpc", Endpoint: "codex-k8s-control-plane:9090", Kind: "grpc"},
+		{Name: "control-plane-grpc", Endpoint: "kodex-control-plane:9090", Kind: "grpc"},
 		{Name: "control-plane-mcp", Endpoint: strings.TrimSpace(internalMCPBaseURL), Kind: "mcp-http"},
-		{Name: "worker", Endpoint: "codex-k8s-worker", Kind: "job-orchestrator"},
+		{Name: "worker", Endpoint: "kodex-worker", Kind: "job-orchestrator"},
 	}
 	if strings.TrimSpace(publicBaseURL) != "" {
 		items = append(items, PromptServiceContext{

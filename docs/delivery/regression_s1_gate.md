@@ -22,7 +22,7 @@ approvals:
 
 ## Preconditions
 - Production домен резолвится на production IP.
-- TLS выдан (cert-manager ClusterIssuer `codex-k8s-letsencrypt`).
+- TLS выдан (cert-manager ClusterIssuer `kodex-letsencrypt`).
 - Последний deploy зелёный, migrate job completed.
 
 ## P0 scenarios (must pass)

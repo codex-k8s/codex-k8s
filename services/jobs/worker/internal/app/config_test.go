@@ -3,11 +3,11 @@ package app
 import "testing"
 
 func TestLoadConfigDefaults(t *testing.T) {
-	t.Setenv("CODEXK8S_DB_HOST", "postgres")
-	t.Setenv("CODEXK8S_DB_NAME", "codex_k8s")
-	t.Setenv("CODEXK8S_DB_USER", "codex_k8s")
-	t.Setenv("CODEXK8S_DB_PASSWORD", "secret")
-	t.Setenv("CODEXK8S_CONTROL_PLANE_GRPC_TARGET", "codex-k8s-control-plane:9090")
+	t.Setenv("KODEX_DB_HOST", "postgres")
+	t.Setenv("KODEX_DB_NAME", "kodex")
+	t.Setenv("KODEX_DB_USER", "kodex")
+	t.Setenv("KODEX_DB_PASSWORD", "secret")
+	t.Setenv("KODEX_CONTROL_PLANE_GRPC_TARGET", "kodex-control-plane:9090")
 
 	cfg, err := LoadConfig()
 	if err != nil {
@@ -20,8 +20,8 @@ func TestLoadConfigDefaults(t *testing.T) {
 	if cfg.Mode != "service" {
 		t.Fatalf("expected default worker mode service, got %s", cfg.Mode)
 	}
-	if cfg.K8sNamespace != "codex-k8s-prod" {
-		t.Fatalf("expected default namespace codex-k8s-prod, got %s", cfg.K8sNamespace)
+	if cfg.K8sNamespace != "kodex-prod" {
+		t.Fatalf("expected default namespace kodex-prod, got %s", cfg.K8sNamespace)
 	}
 	if cfg.JobImage != "busybox:1.36" {
 		t.Fatalf("expected default job image busybox:1.36, got %s", cfg.JobImage)

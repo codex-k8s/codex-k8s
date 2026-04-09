@@ -23,7 +23,7 @@ func TestBuildPrompt_PrependsGitHubRateLimitResumePromptBlock(t *testing.T) {
 	service := &Service{
 		cfg: Config{
 			RunID:                        "run-resume",
-			RepositoryFullName:           "codex-k8s/codex-k8s",
+			RepositoryFullName:           "codex-k8s/kodex",
 			AgentKey:                     "dev",
 			IssueNumber:                  428,
 			RuntimeMode:                  runtimeModeFullEnv,

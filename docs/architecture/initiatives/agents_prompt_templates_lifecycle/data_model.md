@@ -1,7 +1,7 @@
 ---
 doc_id: DM-APT-CK8S-0001
 type: data-model
-title: "codex-k8s — Data model: agents settings and prompt templates lifecycle"
+title: "kodex — Data model: agents settings and prompt templates lifecycle"
 status: in-review
 owner_role: SA
 created_at: 2026-02-25

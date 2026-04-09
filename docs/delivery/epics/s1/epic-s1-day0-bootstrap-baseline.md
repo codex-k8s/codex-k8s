@@ -41,7 +41,7 @@ approvals:
 - SSH bootstrap с хоста разработчика под `root`.
 - Создание отдельного системного пользователя и базовый hardening.
 - Установка k3s, ingress, cert-manager, production namespace.
-- Разворачивание PostgreSQL и `codex-k8s`.
+- Разворачивание PostgreSQL и `kodex`.
 - Настройка production deploy pipeline.
 
 ### Out of scope

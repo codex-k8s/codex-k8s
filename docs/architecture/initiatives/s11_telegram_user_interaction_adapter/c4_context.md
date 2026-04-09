@@ -20,7 +20,7 @@ approvals:
 
 ## TL;DR
 - Telegram-адаптер остаётся первым внешним channel-specific path поверх platform-owned interaction slice, а не новым source-of-truth для interaction semantics.
-- Raw Telegram traffic завершается во внешнем Telegram adapter contour; `codex-k8s` получает только normalized callbacks и сохраняет channel-neutral meaning outcome.
+- Raw Telegram traffic завершается во внешнем Telegram adapter contour; `kodex` получает только normalized callbacks и сохраняет channel-neutral meaning outcome.
 
 ## Диаграмма (Mermaid C4Context)
 ```mermaid
@@ -31,7 +31,7 @@ Person(agent, "System agent", "Вызывает built-in interaction tools че�
 Person(user, "End user / requester", "Получает notify и отвечает в Telegram")
 Person(owner, "Owner / Product lead", "Получает decision request и operator-visible fallback signals")
 
-System(system, "codex-k8s Telegram interaction slice", "Platform-owned interaction lifecycle with first external Telegram channel")
+System(system, "kodex Telegram interaction slice", "Platform-owned interaction lifecycle with first external Telegram channel")
 
 System_Ext(tgadapter, "Telegram adapter contour", "Channel-specific rendering, Bot API mediation, raw webhook handling")
 System_Ext(telegram, "Telegram Bot API", "Bot methods, callback queries and webhook delivery")
@@ -48,7 +48,7 @@ Rel(system, k8s, "Runs agent and worker workloads", "Kubernetes API")
 ```
 
 ## Пояснения
-- `codex-k8s` владеет interaction aggregate, audit/correlation и semantic classification; Telegram-specific transport detail остаётся во внешнем adapter contour.
+- `kodex` владеет interaction aggregate, audit/correlation и semantic classification; Telegram-specific transport detail остаётся во внешнем adapter contour.
 - Telegram adapter contour может материализоваться отдельным runtime/service, но для core architecture он рассматривается как replaceable external adapter layer.
 - GitHub остаётся fallback/context channel для ссылок и operator workflow, но не primary response path для core S11 flows.
 

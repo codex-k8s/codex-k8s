@@ -165,10 +165,10 @@ approvals:
   - `services/internal/control-plane/internal/domain/staff/github_rate_limit_replay.go`;
   - `services/internal/control-plane/internal/transport/grpc/server_github_rate_limit_worker_methods.go`;
   - `services/jobs/worker/internal/domain/worker/github_rate_limit.go`;
-  - `proto/codexk8s/controlplane/v1/controlplane.proto`.
+  - `proto/kodex/controlplane/v1/controlplane.proto`.
 - Зафиксированы:
   - `control-plane` теперь владеет worker-facing `ProcessNextGitHubRateLimitWait` RPC, claim/resume lifecycle, resolved/manual-action evidence append и `run.wait.resumed` flow-event для deterministic replay outcome;
-  - `worker` получил bounded sweep loop с отдельным feature flag `CODEXK8S_GITHUB_RATE_LIMIT_WAIT_ENABLED` и лимитом `CODEXK8S_WORKER_GITHUB_RATE_LIMIT_SWEEP_LIMIT`, который обрабатывает due waits до exhaustion/empty queue без собственной domain classification;
+  - `worker` получил bounded sweep loop с отдельным feature flag `KODEX_GITHUB_RATE_LIMIT_WAIT_ENABLED` и лимитом `KODEX_WORKER_GITHUB_RATE_LIMIT_SWEEP_LIMIT`, который обрабатывает due waits до exhaustion/empty queue без собственной domain classification;
   - `run_status_comment_retry`, `platform_github_call_replay` и `agent_session_resume` теперь исполняются через typed replay payloads; agent path создаёт pending resume run с persisted `github_rate_limit_resume_payload`, а replay failure reschedule’ится по finite budget и эскалируется в `manual_action_required` только после реального исчерпания safe attempts;
   - `platform_github_call_replay` для issue stage transition получил CAS snapshot `expected_current_run_labels` и request metadata, поэтому delayed replay не удаляет более новый `run:*` label-set вслепую, а уходит в conflict/manual review path;
   - config/deploy/codegen синхронизированы: proto regenerated, control-plane/worker wiring добавлен в app/grpc/client layers, production manifest и bootstrap example получили новые env.
@@ -189,12 +189,12 @@ approvals:
   - `services/jobs/agent-runner/internal/controlplane/client.go`;
   - `services/internal/control-plane/internal/domain/agentcallback/{interaction_resume_payload.go,service.go}`;
   - `services/internal/control-plane/internal/transport/grpc/{server.go,server_github_rate_limit_runtime_methods.go}`;
-  - `proto/codexk8s/controlplane/v1/controlplane.proto`.
+  - `proto/kodex/controlplane/v1/controlplane.proto`.
 - Зафиксированы:
   - `agent-runner` теперь детектирует GitHub rate-limit по stderr/stdout, сохраняет coarse session snapshots `running -> waiting_backpressure`, передаёт typed `ReportGitHubRateLimitSignal` и прекращает local retry-loop после подтверждённого handoff;
   - `control-plane` получил run-bound runtime RPC для runner path: `ReportGitHubRateLimitSignal` маппит hard-failure в `failed_precondition`, а `GetRunGitHubRateLimitResumePayload` отдаёт компактный deterministic JSON из persisted `run_payload`;
   - requeued runner resume path распознаёт correlation prefix `github-rate-limit-resume:*`, требует persisted `github_rate_limit_resume_payload`, восстанавливает последнюю codex session без PR-precondition и prepend'ит typed wait outcome в resume prompt вместо повторного derive semantics из stderr/headers;
-  - rollout wiring синхронизирован: `RunnerReady` теперь следует `CODEXK8S_GITHUB_RATE_LIMIT_WAIT_ENABLED`, proto/go codegen обновлён, unit coverage добавлена для handoff detection, resume payload parsing и runtime gRPC callbacks.
+  - rollout wiring синхронизирован: `RunnerReady` теперь следует `KODEX_GITHUB_RATE_LIMIT_WAIT_ENABLED`, proto/go codegen обновлён, unit coverage добавлена для handoff detection, resume payload parsing и runtime gRPC callbacks.
 - Проверки:
   - `make gen-proto-go`
   - `go test ./services/jobs/agent-runner/internal/runner ./services/jobs/agent-runner/internal/controlplane`
@@ -210,7 +210,7 @@ approvals:
   - `services/external/api-gateway/api/server/api.yaml`;
   - `services/external/api-gateway/internal/transport/http/{models/staff.go,models/realtime.go,casters/controlplane.go,staff_realtime_handler.go}`;
   - `services/internal/control-plane/internal/transport/grpc/{server.go,server_staff_methods.go,server_staff_run_wait_projection.go}`;
-  - `proto/codexk8s/controlplane/v1/controlplane.proto`.
+  - `proto/kodex/controlplane/v1/controlplane.proto`.
 - Зафиксированы:
   - contract-first расширение staff visibility contracts: `Run.wait_projection` и typed модели `dominant_wait` / `related_waits`, recovery hint и manual action guidance;
   - additive realtime envelope в `api-gateway`: `wait_entered`, `wait_updated`, `wait_resolved`, `wait_manual_action_required` без доменных решений inside handlers;
@@ -252,15 +252,15 @@ approvals:
   - обновлены `docs/architecture/initiatives/s12_github_api_rate_limit_resilience/README.md`, `docs/delivery/delivery_plan.md`, `docs/delivery/issue_map.md`.
 - Зафиксированы:
   - canonical readiness gate перед `run:qa`: rollout order `migrations -> control-plane -> worker -> agent-runner -> api-gateway -> web-console -> evidence gate`, typed evidence surfaces (`flow_events`, `github_rate_limit_wait_evidence`, `Run.wait_projection`, realtime wait envelopes, runner/worker logs) и rollback notes собраны в одном source-of-truth;
-  - candidate runtime фактами подтверждён namespace `codex-k8s-dev-1`: основные deployments готовы, `codex-k8s-migrate`/kaniko/repo-sync jobs завершены, а текущий agent run job активен в том же rollout lineage;
-  - в текущем candidate rollout feature gate остаётся default-disabled: `kubectl get deploy ... env` показал пустые `CODEXK8S_GITHUB_RATE_LIMIT_WAIT_ENABLED` и `CODEXK8S_WORKER_GITHUB_RATE_LIMIT_SWEEP_LIMIT`, а defaults в `services/internal/control-plane/internal/app/config.go` и `services/jobs/worker/internal/app/config.go` оставляют live wait-path неактивным без явного owner rollout decision;
+  - candidate runtime фактами подтверждён namespace `kodex-dev-1`: основные deployments готовы, `kodex-migrate`/kaniko/repo-sync jobs завершены, а текущий agent run job активен в том же rollout lineage;
+  - в текущем candidate rollout feature gate остаётся default-disabled: `kubectl get deploy ... env` показал пустые `KODEX_GITHUB_RATE_LIMIT_WAIT_ENABLED` и `KODEX_WORKER_GITHUB_RATE_LIMIT_SWEEP_LIMIT`, а defaults в `services/internal/control-plane/internal/app/config.go` и `services/jobs/worker/internal/app/config.go` оставляют live wait-path неактивным без явного owner rollout decision;
   - по последним 120 строкам `control-plane` логов live GitHub rate-limit events не обнаружены, поэтому readiness bundle явно отделяет документированный runtime baseline от ещё не выполненного synthetic/live smoke.
 - Проверки:
   - `kubectl config view --minify -o jsonpath='{..namespace}'`
-  - `kubectl get deploy,pods,job -n codex-k8s-dev-1 -o wide`
-  - `kubectl logs -n codex-k8s-dev-1 deploy/codex-k8s-control-plane --tail=120 | rg 'github rate-limit|wait.entered|wait.resumed|manual_action_required|waiting_backpressure'`
-  - `kubectl get deploy -n codex-k8s-dev-1 codex-k8s-control-plane -o jsonpath='{range .spec.template.spec.containers[0].env[*]}{.name}={.value}{"\n"}{end}' | rg '^CODEXK8S_GITHUB_RATE_LIMIT'`
-  - `kubectl get deploy -n codex-k8s-dev-1 codex-k8s-worker -o jsonpath='{range .spec.template.spec.containers[0].env[*]}{.name}={.value}{"\n"}{end}' | rg '^CODEXK8S_GITHUB_RATE_LIMIT|^CODEXK8S_WORKER_GITHUB_RATE_LIMIT'`
+  - `kubectl get deploy,pods,job -n kodex-dev-1 -o wide`
+  - `kubectl logs -n kodex-dev-1 deploy/kodex-control-plane --tail=120 | rg 'github rate-limit|wait.entered|wait.resumed|manual_action_required|waiting_backpressure'`
+  - `kubectl get deploy -n kodex-dev-1 kodex-control-plane -o jsonpath='{range .spec.template.spec.containers[0].env[*]}{.name}={.value}{"\n"}{end}' | rg '^KODEX_GITHUB_RATE_LIMIT'`
+  - `kubectl get deploy -n kodex-dev-1 kodex-worker -o jsonpath='{range .spec.template.spec.containers[0].env[*]}{.name}={.value}{"\n"}{end}' | rg '^KODEX_GITHUB_RATE_LIMIT|^KODEX_WORKER_GITHUB_RATE_LIMIT'`
   - `git diff --check`
 - Внешний baseline дополнительно сверен:
   - Context7 `/github/docs` использован для повторной проверки guidance по primary/secondary rate limits, `Retry-After`, `x-ratelimit-reset` и bounded retry discipline, чтобы readiness-пакет не расходился с provider semantics.
@@ -280,7 +280,7 @@ approvals:
   - `services/staff/web-console/src/pages/configuration/SystemSettingsPage.vue`.
 - Зафиксированы:
   - `system_settings` и `system_setting_changes` стали реальным control-plane owned contour с durable versioning, audit trail и seeded catalog entry `github_rate_limit_wait_enabled=false`;
-  - `CODEXK8S_GITHUB_RATE_LIMIT_WAIT_ENABLED` удалён из `control-plane`/`worker` app config и production/bootstrap wiring; effective rollout state GitHub rate-limit wait path теперь читается из DB-backed platform setting с hot-reload через PostgreSQL `LISTEN/NOTIFY` и reconnect-safe reload from durable tables;
+  - `KODEX_GITHUB_RATE_LIMIT_WAIT_ENABLED` удалён из `control-plane`/`worker` app config и production/bootstrap wiring; effective rollout state GitHub rate-limit wait path теперь читается из DB-backed platform setting с hot-reload через PostgreSQL `LISTEN/NOTIFY` и reconnect-safe reload from durable tables;
   - staff/private contract-first surface добавлен end-to-end: новые gRPC/OpenAPI/AsyncAPI контракты, typed API/client codegen, staff admin routes `list/get/update/reset/realtime` и рабочая `System settings` page вместо scaffold;
   - policy для future work синхронизирована в common design guidelines: product/runtime switches, которые должны меняться на лету, больше не вводятся как env-only flags и должны жить в typed platform settings catalog.
 - Проверки:

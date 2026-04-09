@@ -1,18 +1,18 @@
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: {{ envOr "CODEXK8S_INTERNAL_REGISTRY_SERVICE" "" }}-gc
-  namespace: {{ envOr "CODEXK8S_PRODUCTION_NAMESPACE" "" }}
+  name: {{ envOr "KODEX_INTERNAL_REGISTRY_SERVICE" "" }}-gc
+  namespace: {{ envOr "KODEX_PRODUCTION_NAMESPACE" "" }}
   labels:
-    app.kubernetes.io/name: codex-k8s-registry-gc
+    app.kubernetes.io/name: kodex-registry-gc
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-  name: {{ envOr "CODEXK8S_INTERNAL_REGISTRY_SERVICE" "" }}-gc
-  namespace: {{ envOr "CODEXK8S_PRODUCTION_NAMESPACE" "" }}
+  name: {{ envOr "KODEX_INTERNAL_REGISTRY_SERVICE" "" }}-gc
+  namespace: {{ envOr "KODEX_PRODUCTION_NAMESPACE" "" }}
   labels:
-    app.kubernetes.io/name: codex-k8s-registry-gc
+    app.kubernetes.io/name: kodex-registry-gc
 rules:
   - apiGroups: ["apps"]
     resources:
@@ -28,26 +28,26 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name: {{ envOr "CODEXK8S_INTERNAL_REGISTRY_SERVICE" "" }}-gc
-  namespace: {{ envOr "CODEXK8S_PRODUCTION_NAMESPACE" "" }}
+  name: {{ envOr "KODEX_INTERNAL_REGISTRY_SERVICE" "" }}-gc
+  namespace: {{ envOr "KODEX_PRODUCTION_NAMESPACE" "" }}
   labels:
-    app.kubernetes.io/name: codex-k8s-registry-gc
+    app.kubernetes.io/name: kodex-registry-gc
 subjects:
   - kind: ServiceAccount
-    name: {{ envOr "CODEXK8S_INTERNAL_REGISTRY_SERVICE" "" }}-gc
-    namespace: {{ envOr "CODEXK8S_PRODUCTION_NAMESPACE" "" }}
+    name: {{ envOr "KODEX_INTERNAL_REGISTRY_SERVICE" "" }}-gc
+    namespace: {{ envOr "KODEX_PRODUCTION_NAMESPACE" "" }}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
-  name: {{ envOr "CODEXK8S_INTERNAL_REGISTRY_SERVICE" "" }}-gc
+  name: {{ envOr "KODEX_INTERNAL_REGISTRY_SERVICE" "" }}-gc
 ---
 apiVersion: batch/v1
 kind: CronJob
 metadata:
-  name: {{ envOr "CODEXK8S_INTERNAL_REGISTRY_SERVICE" "" }}-gc
-  namespace: {{ envOr "CODEXK8S_PRODUCTION_NAMESPACE" "" }}
+  name: {{ envOr "KODEX_INTERNAL_REGISTRY_SERVICE" "" }}-gc
+  namespace: {{ envOr "KODEX_PRODUCTION_NAMESPACE" "" }}
   labels:
-    app.kubernetes.io/name: codex-k8s-registry-gc
+    app.kubernetes.io/name: kodex-registry-gc
 spec:
   # UTC by default: every day at 03:17.
   schedule: "17 3 * * *"
@@ -63,19 +63,19 @@ spec:
       template:
         metadata:
           labels:
-            app.kubernetes.io/name: codex-k8s-registry-gc
+            app.kubernetes.io/name: kodex-registry-gc
         spec:
-          serviceAccountName: {{ envOr "CODEXK8S_INTERNAL_REGISTRY_SERVICE" "" }}-gc
+          serviceAccountName: {{ envOr "KODEX_INTERNAL_REGISTRY_SERVICE" "" }}-gc
           restartPolicy: Never
           volumes:
             - name: registry-data
               persistentVolumeClaim:
-                claimName: {{ envOr "CODEXK8S_INTERNAL_REGISTRY_SERVICE" "" }}-data
+                claimName: {{ envOr "KODEX_INTERNAL_REGISTRY_SERVICE" "" }}-data
             - name: tools
               emptyDir: {}
           initContainers:
             - name: copy-kubectl
-              image: {{ envOr "CODEXK8S_KUBECTL_IMAGE" "127.0.0.1:5000/codex-k8s/mirror/alpine-k8s:1.32.2" }}
+              image: {{ envOr "KODEX_KUBECTL_IMAGE" "127.0.0.1:5000/kodex/mirror/alpine-k8s:1.32.2" }}
               imagePullPolicy: IfNotPresent
               command:
                 - sh
@@ -95,7 +95,7 @@ spec:
                   mountPath: /tools
           containers:
             - name: gc
-              image: {{ envOr "CODEXK8S_REGISTRY_IMAGE" "registry:2" }}
+              image: {{ envOr "KODEX_REGISTRY_IMAGE" "registry:2" }}
               imagePullPolicy: IfNotPresent
               command:
                 - sh
@@ -103,8 +103,8 @@ spec:
                 - |
                   set -eu
 
-                  REGISTRY_DEPLOYMENT='{{ envOr "CODEXK8S_INTERNAL_REGISTRY_SERVICE" "" }}'
-                  TARGET_NAMESPACE='{{ envOr "CODEXK8S_PRODUCTION_NAMESPACE" "" }}'
+                  REGISTRY_DEPLOYMENT='{{ envOr "KODEX_INTERNAL_REGISTRY_SERVICE" "" }}'
+                  TARGET_NAMESPACE='{{ envOr "KODEX_PRODUCTION_NAMESPACE" "" }}'
                   TARGET_REPLICAS='1'
                   ROLLOUT_TIMEOUT='15m'
                   KUBECTL_BIN='/tools/kubectl'

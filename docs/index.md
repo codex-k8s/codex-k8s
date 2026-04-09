@@ -1,7 +1,7 @@
 ---
 doc_id: IDX-CK8S-DOCS-0001
 type: docs-index
-title: "codex-k8s Documentation Index"
+title: "kodex Documentation Index"
 status: in-review
 owner_role: KM
 created_at: 2026-03-11

@@ -3,8 +3,8 @@ package learningfeedback
 import (
 	"context"
 
-	enumtypes "github.com/codex-k8s/codex-k8s/services/jobs/worker/internal/domain/types/enum"
-	querytypes "github.com/codex-k8s/codex-k8s/services/jobs/worker/internal/domain/types/query"
+	enumtypes "github.com/codex-k8s/kodex/services/jobs/worker/internal/domain/types/enum"
+	querytypes "github.com/codex-k8s/kodex/services/jobs/worker/internal/domain/types/query"
 )
 
 type (

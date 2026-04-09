@@ -1,9 +1,9 @@
 package mcpactionrequest
 
 import (
-	domainrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/mcpactionrequest"
-	entitytypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/entity"
-	"github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/mcpactionrequest/dbmodel"
+	domainrepo "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/repository/mcpactionrequest"
+	entitytypes "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/types/entity"
+	"github.com/codex-k8s/kodex/services/internal/control-plane/internal/repository/postgres/mcpactionrequest/dbmodel"
 )
 
 func fromDBModel(row dbmodel.ActionRequestRow) domainrepo.Item {

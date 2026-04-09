@@ -17,16 +17,16 @@ func TestEnsureNamespace_FailsWhenNamespaceIsTerminating(t *testing.T) {
 	deletionTime := metav1.NewTime(time.Date(2026, 3, 12, 19, 39, 0, 0, time.UTC))
 	client := NewForClient(&rest.Config{Host: "https://example.invalid"}, fake.NewClientset(&corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:              "codex-k8s-dev-2",
+			Name:              "kodex-dev-2",
 			DeletionTimestamp: &deletionTime,
 		},
 	}))
 
-	err := client.EnsureNamespace(context.Background(), "codex-k8s-dev-2")
+	err := client.EnsureNamespace(context.Background(), "kodex-dev-2")
 	if err == nil {
 		t.Fatal("expected terminating namespace error, got nil")
 	}
-	if got, want := err.Error(), "namespace codex-k8s-dev-2 is terminating"; got != want {
+	if got, want := err.Error(), "namespace kodex-dev-2 is terminating"; got != want {
 		t.Fatalf("EnsureNamespace() error = %q, want %q", got, want)
 	}
 }
@@ -37,13 +37,13 @@ func TestGetManagedRunNamespace_ReturnsOnlyWorkerManagedRunNamespaces(t *testing
 	client := NewForClient(&rest.Config{Host: "https://example.invalid"}, fake.NewClientset(
 		&corev1.Namespace{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: "codex-k8s-dev-1",
+				Name: "kodex-dev-1",
 				Labels: map[string]string{
 					runNamespaceManagedByLabel: runNamespaceManagedByValue,
 					runNamespacePurposeLabel:   runNamespacePurposeValue,
 				},
 				Annotations: map[string]string{
-					"codex-k8s.dev/runtime-fingerprint-hash": "hash-1",
+					"kodex.works/runtime-fingerprint-hash": "hash-1",
 				},
 			},
 		},
@@ -54,17 +54,17 @@ func TestGetManagedRunNamespace_ReturnsOnlyWorkerManagedRunNamespaces(t *testing
 		},
 	))
 
-	state, found, err := client.GetManagedRunNamespace(context.Background(), "codex-k8s-dev-1")
+	state, found, err := client.GetManagedRunNamespace(context.Background(), "kodex-dev-1")
 	if err != nil {
 		t.Fatalf("GetManagedRunNamespace() error = %v", err)
 	}
 	if !found {
 		t.Fatal("expected managed namespace to be found")
 	}
-	if got, want := state.Name, "codex-k8s-dev-1"; got != want {
+	if got, want := state.Name, "kodex-dev-1"; got != want {
 		t.Fatalf("expected namespace %q, got %q", want, got)
 	}
-	if got, want := state.Annotations["codex-k8s.dev/runtime-fingerprint-hash"], "hash-1"; got != want {
+	if got, want := state.Annotations["kodex.works/runtime-fingerprint-hash"], "hash-1"; got != want {
 		t.Fatalf("expected annotation %q, got %q", want, got)
 	}
 
@@ -82,7 +82,7 @@ func TestUpsertNamespaceAnnotations_MergesAnnotations(t *testing.T) {
 
 	clientset := fake.NewClientset(&corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "codex-k8s-dev-1",
+			Name: "kodex-dev-1",
 			Annotations: map[string]string{
 				"existing": "value",
 			},
@@ -90,14 +90,14 @@ func TestUpsertNamespaceAnnotations_MergesAnnotations(t *testing.T) {
 	})
 	client := NewForClient(&rest.Config{Host: "https://example.invalid"}, clientset)
 
-	if err := client.UpsertNamespaceAnnotations(context.Background(), "codex-k8s-dev-1", map[string]string{
+	if err := client.UpsertNamespaceAnnotations(context.Background(), "kodex-dev-1", map[string]string{
 		"existing": "updated",
 		"new":      "value-2",
 	}); err != nil {
 		t.Fatalf("UpsertNamespaceAnnotations() error = %v", err)
 	}
 
-	ns, err := clientset.CoreV1().Namespaces().Get(context.Background(), "codex-k8s-dev-1", metav1.GetOptions{})
+	ns, err := clientset.CoreV1().Namespaces().Get(context.Background(), "kodex-dev-1", metav1.GetOptions{})
 	if err != nil {
 		t.Fatalf("reload namespace: %v", err)
 	}

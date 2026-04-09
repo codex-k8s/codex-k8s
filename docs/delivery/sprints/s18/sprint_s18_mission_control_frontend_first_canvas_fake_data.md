@@ -6,7 +6,7 @@ status: in-review
 owner_role: PM
 created_at: 2026-03-26
 updated_at: 2026-04-01
-related_issues: [470, 480, 522, 523, 524, 525, 561, 562, 563, 565, 567, 571, 573, 579]
+related_issues: [470, 480, 522, 523, 524, 525, 561, 562, 563, 565, 567, 571, 573, 579, 581]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -23,9 +23,10 @@ approvals:
 - PRD stage в issue `#567` формализовал user stories, FR/AC/NFR, scenario matrix и expected evidence для owner/product lead path, operator path и workflow policy preview; continuity issue `#571` создана для `run:arch`.
 - Architecture stage в issue `#571` закрепил `web-console` как owner isolated fake-data prototype, отделил Sprint S18 от backend rebuild `#563` и создал continuity issue `#573` для `run:design`.
 - Design stage в issue `#573` зафиксировал frontend-only source/state contracts, fake-data data model, workflow preview semantics и отсутствие API/DB/runtime migrations; continuity issue `#579` создана для `run:plan`.
+- Plan stage в issue `#579` выпустил execution package для `run:dev`: четыре последовательные implementation waves, quality gates, DoR/DoD, blockers/risks и continuity issue `#581`.
 - Sprint S18 намеренно не продолжает старый S16 baseline `lane/column` и не пытается “подкрасить” отклонённый graph shell.
 - Prompt policy не меняется: repo-seed prompts остаются каноничными, workflow logic допускается только как deterministic generated `workflow-policy block`, без DB prompt editor.
-- Backend follow-up `#563` остаётся отдельной задачей после owner approval результата Sprint S18, а следующий owner-managed handover идёт через issue `#579` на `run:plan`.
+- Backend follow-up `#563` остаётся отдельной задачей после owner approval результата Sprint S18, а следующий owner-managed handover идёт через issue `#581` на `run:dev`.
 
 ## Scope спринта
 ### In scope
@@ -66,8 +67,8 @@ approvals:
 | PRD (`#567`) | User stories, FR/AC/NFR, scenario matrix и expected evidence | `pm` + `sa` | Зафиксирован product contract и создана issue `#571` для `run:arch` |
 | Architecture (`#571`) | Prototype isolation, ownership split, future handover в backend rebuild | `sa` | Подтверждены архитектурные границы и создана issue `#573` для `run:design` |
 | Design (`#573`) | UI/data/interaction/design package для fake-data prototype | `sa` + `qa` | Подготовлен implementation-ready design package и создана issue `#579` для `run:plan` |
-| Plan (`#579`) | Delivery waves, feedback loops, DoR/DoD, owner-managed `run:dev` handover | `em` + `km` | Сформирован execution package для isolated prototype |
-| Development (TBD) | Isolated `web-console` prototype на fake data | `dev` | Открыт PR с prototype-реализацией; дальнейшие backend/late-stage задачи остаются отдельными initiative flows |
+| Plan (`#579`) | Delivery waves, feedback loops, DoR/DoD, quality gates и owner-managed `run:dev` handover | `em` + `km` | Сформирован execution package и создана issue `#581` для isolated prototype |
+| Development (`#581`) | Isolated `web-console` prototype на fake data | `dev` | Открыт PR с prototype-реализацией; дальнейшие backend/late-stage задачи остаются отдельными initiative flows |
 
 ## Guardrails спринта
 - Fullscreen canvas обязателен; возврат к lane/column shell или обязательной `root-group/column/stack` иерархии не допускается без нового owner-решения.
@@ -82,7 +83,7 @@ approvals:
   - `#470` нельзя использовать для фиксации финального cockpit UI до завершения Sprint S18.
 
 ## Handover
-- Текущий stage in-review: `run:design` в issue `#573`.
+- Текущий stage in-review: `run:plan` в issue `#579`.
 - Актуальный package:
   - `docs/delivery/sprints/s18/sprint_s18_mission_control_frontend_first_canvas_fake_data.md`;
   - `docs/delivery/epics/s18/epic_s18.md`;
@@ -91,6 +92,7 @@ approvals:
   - `docs/delivery/epics/s18/epic-s18-day3-mission-control-frontend-first-canvas-prd.md`;
   - `docs/delivery/epics/s18/epic-s18-day4-mission-control-frontend-first-canvas-arch.md`;
   - `docs/delivery/epics/s18/epic-s18-day5-mission-control-frontend-first-canvas-design.md`;
+  - `docs/delivery/epics/s18/epic-s18-day6-mission-control-frontend-first-canvas-plan.md`;
   - `docs/delivery/epics/s18/prd-s18-day3-mission-control-frontend-first-canvas.md`;
   - `docs/architecture/initiatives/s18_mission_control_frontend_first_canvas/README.md`;
   - `docs/architecture/initiatives/s18_mission_control_frontend_first_canvas/architecture.md`;
@@ -103,7 +105,7 @@ approvals:
   - `docs/architecture/adr/ADR-0018-mission-control-frontend-first-prototype-and-backend-handover-boundary.md`;
   - `docs/architecture/alternatives/ALT-0010-mission-control-frontend-first-prototype-boundaries.md`;
   - `docs/delivery/traceability/s18_mission_control_frontend_first_canvas_history.md`.
-- Следующий stage: `run:plan` через issue `#579`.
+- Следующий stage: `run:dev` через issue `#581`.
 - До завершения следующего stage нельзя потерять следующие Day1/Day2/Day3 decisions:
   - сначала утверждается UX baseline на fake data, потом backend rebuild;
   - fullscreen свободный canvas без lane/column shell;
@@ -115,4 +117,8 @@ approvals:
   - `run:dev` внутри этого спринта ограничен isolated `web-console` prototype;
   - repo-seed prompts остаются каноничными, free-form DB prompt storage не вводится;
   - после `run:dev` обязательная late-stage цепочка внутри этой инициативы не запускается автоматически.
-- Trigger-лейбл для issue `#579` не ставится автоматически и остаётся owner-managed переходом после review design package.
+- Дополнительно Day6 зафиксировал обязательный execution discipline:
+  - реализация идёт через одну issue `#581`, но строго по waves `Wave 1 -> Wave 2 -> Wave 3 -> Wave 4`;
+  - quality gates, DoR/DoD и deferred boundary к `#563` нельзя переоткрывать без нового owner decision;
+  - owner-managed continuity `plan -> dev` уже зафиксирована и не должна теряться в implementation PR.
+- Trigger-лейбл для issue `#581` не ставится автоматически и остаётся owner-managed переходом после review plan package.

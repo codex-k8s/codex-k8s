@@ -28,8 +28,8 @@ func TestParseCodexReportOutput_CompletedEnvelope(t *testing.T) {
 		"status":"completed",
 		"branch":"codex/issue-320",
 		"commit":"77a833f",
-		"pr":{"number":324,"url":"https://github.com/codex-k8s/codex-k8s/pull/324"},
-		"issue":{"number":320,"follow_up_issue":{"number":325,"url":"https://github.com/codex-k8s/codex-k8s/issues/325"}},
+		"pr":{"number":324,"url":"https://github.com/codex-k8s/kodex/pull/324"},
+		"issue":{"number":320,"follow_up_issue":{"number":325,"url":"https://github.com/codex-k8s/kodex/issues/325"}},
 		"summary":[
 			"Удалил устаревшую проверку.",
 			"Синхронизировал delivery-доки."
@@ -54,7 +54,7 @@ func TestParseCodexReportOutput_CompletedEnvelope(t *testing.T) {
 	if report.PRNumber != 324 {
 		t.Fatalf("pr_number = %d, want 324", report.PRNumber)
 	}
-	if report.PRURL != "https://github.com/codex-k8s/codex-k8s/pull/324" {
+	if report.PRURL != "https://github.com/codex-k8s/kodex/pull/324" {
 		t.Fatalf("pr_url = %q", report.PRURL)
 	}
 	wantSummary := "Удалил устаревшую проверку.\nСинхронизировал delivery-доки."

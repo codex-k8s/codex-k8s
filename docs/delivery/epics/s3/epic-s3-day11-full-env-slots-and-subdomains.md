@@ -42,7 +42,7 @@ approvals:
 - Шаблонизация поддоменов для full-env slot namespaces:
   - контракт `services.yaml` расширяется полем уровня окружения (MVP): `environments.<env>.domainTemplate`.
   - шаблон использует контекст рендера: `.Project`, `.Env`, `.Slot`, `.Namespace`.
-  - runtime deploy резолвит host в `CODEXK8S_PRODUCTION_DOMAIN` и `CODEXK8S_PUBLIC_BASE_URL` перед рендером манифестов.
+  - runtime deploy резолвит host в `KODEX_PRODUCTION_DOMAIN` и `KODEX_PUBLIC_BASE_URL` перед рендером манифестов.
   - ingress манифесты используют резолвленный host, а oauth2-proxy redirect URL всегда соответствует этому host.
 - TLS и cert-manager:
   - `ClusterIssuer` (Let’s Encrypt) считается bootstrap-only и не применяется в runtime deploy.
@@ -78,9 +78,9 @@ approvals:
   - `libs/go/servicescfg/model.go`
   - `libs/go/servicescfg/load.go`
 - Для AI-слотов используется отдельный домен и slot-specific env:
-  - `CODEXK8S_AI_DOMAIN` в prerequisites/манифестах:
+  - `KODEX_AI_DOMAIN` в prerequisites/манифестах:
     - `services/internal/control-plane/internal/domain/runtimedeploy/service_prerequisites.go`
-    - `deploy/base/codex-k8s/app.yaml.tpl`
+    - `deploy/base/kodex/app.yaml.tpl`
 - TLS для слотов реализован namespaced-путём (без создания cluster-scoped ресурсов из runtime deploy):
   - runtime TLS reuse/validation: `services/internal/control-plane/internal/domain/runtimedeploy/service_tls.go`
   - `ClusterIssuer` остаётся bootstrap/base-ресурсом: `deploy/base/cert-manager/clusterissuer.yaml.tpl`.

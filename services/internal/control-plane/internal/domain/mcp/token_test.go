@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	agentrunrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/agentrun"
-	entitytypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/entity"
+	agentrunrepo "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/repository/agentrun"
+	entitytypes "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/types/entity"
 	"github.com/golang-jwt/jwt/v5"
 )
 
@@ -82,8 +82,8 @@ func TestIssueInteractionCallbackTokenKeepsPostDeadlineGrace(t *testing.T) {
 	if err != nil {
 		t.Fatalf("issueInteractionCallbackToken returned error: %v", err)
 	}
-	if issued.KeyID != "codex-k8s/test" {
-		t.Fatalf("key_id = %q, want codex-k8s/test", issued.KeyID)
+	if issued.KeyID != "kodex/test" {
+		t.Fatalf("key_id = %q, want kodex/test", issued.KeyID)
 	}
 
 	session, err := service.parseRunToken(issued.Token)
@@ -100,7 +100,7 @@ func newTokenTestService(runStatus string) *Service {
 	return &Service{
 		cfg: Config{
 			TokenSigningKey: "test-signing-key",
-			TokenIssuer:     "codex-k8s/test",
+			TokenIssuer:     "kodex/test",
 		},
 		runs: &interactionTestRunsRepository{
 			byID: map[string]agentrunrepo.Run{

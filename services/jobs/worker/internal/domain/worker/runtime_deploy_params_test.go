@@ -4,9 +4,9 @@ import (
 	"encoding/json"
 	"testing"
 
-	agentdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/agent"
-	runqueuerepo "github.com/codex-k8s/codex-k8s/services/jobs/worker/internal/domain/repository/runqueue"
-	valuetypes "github.com/codex-k8s/codex-k8s/services/jobs/worker/internal/domain/types/value"
+	agentdomain "github.com/codex-k8s/kodex/libs/go/domain/agent"
+	runqueuerepo "github.com/codex-k8s/kodex/services/jobs/worker/internal/domain/repository/runqueue"
+	valuetypes "github.com/codex-k8s/kodex/services/jobs/worker/internal/domain/types/value"
 )
 
 func TestBuildPrepareRunEnvironmentParams_FromRuntimePayload(t *testing.T) {
@@ -15,7 +15,7 @@ func TestBuildPrepareRunEnvironmentParams_FromRuntimePayload(t *testing.T) {
 	claimed := runqueuerepo.ClaimedRun{
 		RunID:      "run-123",
 		SlotNo:     7,
-		RunPayload: json.RawMessage(`{"project":{"services_yaml":"deploy/services.yaml"},"repository":{"full_name":"codex-k8s/test"},"runtime":{"mode":"full-env","target_env":"production","namespace":"codex-k8s-prod","build_ref":"abc123","deploy_only":true}}`),
+		RunPayload: json.RawMessage(`{"project":{"services_yaml":"deploy/services.yaml"},"repository":{"full_name":"kodex/test"},"runtime":{"mode":"full-env","target_env":"production","namespace":"kodex-prod","build_ref":"abc123","deploy_only":true}}`),
 	}
 	execution := valuetypes.RunExecutionContext{
 		RuntimeMode: agentdomain.RuntimeModeFullEnv,
@@ -30,13 +30,13 @@ func TestBuildPrepareRunEnvironmentParams_FromRuntimePayload(t *testing.T) {
 	if got, want := params.RuntimeMode, "full-env"; got != want {
 		t.Fatalf("RuntimeMode mismatch: got %q want %q", got, want)
 	}
-	if got, want := params.Namespace, "codex-k8s-prod"; got != want {
+	if got, want := params.Namespace, "kodex-prod"; got != want {
 		t.Fatalf("Namespace mismatch: got %q want %q", got, want)
 	}
 	if got, want := params.TargetEnv, "production"; got != want {
 		t.Fatalf("TargetEnv mismatch: got %q want %q", got, want)
 	}
-	if got, want := params.RepositoryFullName, "codex-k8s/test"; got != want {
+	if got, want := params.RepositoryFullName, "kodex/test"; got != want {
 		t.Fatalf("RepositoryFullName mismatch: got %q want %q", got, want)
 	}
 	if got, want := params.ServicesYAMLPath, "deploy/services.yaml"; got != want {
@@ -59,7 +59,7 @@ func TestBuildPrepareRunEnvironmentParams_DefaultsSlotEnvForFullEnvRun(t *testin
 	claimed := runqueuerepo.ClaimedRun{
 		RunID:      "run-999",
 		SlotNo:     3,
-		RunPayload: json.RawMessage(`{"repository":{"full_name":"codex-k8s/codex-k8s"},"runtime":{"mode":"full-env"}}`),
+		RunPayload: json.RawMessage(`{"repository":{"full_name":"codex-k8s/kodex"},"runtime":{"mode":"full-env"}}`),
 	}
 	execution := valuetypes.RunExecutionContext{
 		RuntimeMode: agentdomain.RuntimeModeFullEnv,

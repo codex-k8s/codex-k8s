@@ -22,14 +22,14 @@
   - `libs/*` (если используется в нескольких сервисах/приложениях).
 - В production-коде нет анонимных структур/объектов для контрактов/персистентных payload-моделей.
 - Секреты не хардкодятся и не коммитятся; в логах нет секретов/PII.
-- Имена platform env/secrets/CI variables унифицированы с префиксом `CODEXK8S_`;
-  имена без префикса `CODEXK8S_` не добавляются.
+- Имена platform env/secrets/CI variables унифицированы с префиксом `KODEX_`;
+  имена без префикса `KODEX_` не добавляются.
 - Kubernetes манифесты не “вшиты” heredoc’ами в bash: шаблоны лежат в `deploy/base/**`,
   а рендер/применение выполняются Go-рантаймом (`cmd/codex-bootstrap`, `runtime-deploy`).
 - Для runtime-токенов дефолтные TTL не меньше времени жизни соответствующих контейнеров;
   для MCP baseline TTL не ниже `24h`.
 - Для multi-service deploy у каждого deployable-сервиса есть собственные image vars/repositories
-  (шаблон нейминга: `CODEXK8S_<SERVICE>_IMAGE` и `CODEXK8S_<SERVICE>_INTERNAL_IMAGE_REPOSITORY`).
+  (шаблон нейминга: `KODEX_<SERVICE>_IMAGE` и `KODEX_<SERVICE>_INTERNAL_IMAGE_REPOSITORY`).
 - При изменении состава deployable-сервисов синхронно обновлены:
   runtime deploy и build orchestration (`services/internal/control-plane/internal/domain/runtimedeploy/service_build.go`,
   `services/internal/control-plane/internal/domain/runtimedeploy/service_reconcile.go`,
@@ -44,7 +44,7 @@
 - Если добавлена/обновлена внешняя зависимость, обновлён
   `docs/design-guidelines/common/external_dependencies_catalog.md`.
 
-## Специфика codex-k8s
+## Специфика kodex
 - Поддержка оркестрации ограничена Kubernetes; нет кода под другие оркестраторы.
 - Kubernetes-операции выполняются через SDK/интерфейсы (не shell-first как основной путь).
 - Интеграция с репозиториями идет через интерфейс провайдера; GitHub-специфика не просачивается в домен.

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/codex-k8s/codex-k8s/libs/go/errs"
+	"github.com/codex-k8s/kodex/libs/go/errs"
 )
 
 // EncryptSecretValue encrypts plain secret value using platform token-crypto service.

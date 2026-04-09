@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/codex-k8s/codex-k8s/libs/go/servicescfg"
+	"github.com/codex-k8s/kodex/libs/go/servicescfg"
 )
 
 func loadSecretResolver(configPath string, values map[string]string) (servicescfg.SecretResolver, error) {
@@ -27,7 +27,7 @@ func loadSecretResolver(configPath string, values map[string]string) (servicescf
 		return servicescfg.NewSecretResolver(nil), fmt.Errorf("stat config path %q: %w", absPath, err)
 	}
 
-	envName := strings.TrimSpace(values["CODEXK8S_SERVICES_CONFIG_ENV"])
+	envName := strings.TrimSpace(values["KODEX_SERVICES_CONFIG_ENV"])
 	if envName == "" {
 		envName = runtimeEnvironmentProduction
 	}

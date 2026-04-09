@@ -20,7 +20,7 @@ approvals:
 - Цель спринта: превратить built-in feedback tools и existing Telegram channel path в единый owner feedback loop, где пользователь отвечает в понятном inbox, а агент детерминированно продолжает ту же задачу.
 - Intake stage в Issue `#541` уже зафиксировал ключевой baseline: primary happy-path = same live pod / same `codex` session until user response, while snapshot-resume is recovery-only fallback.
 - Sprint S17 также фиксирует обязательные guardrails: long human-wait target `>=24h`, delivery-before-wait lifecycle, Telegram pending inbox, staff-console fallback, persisted text/voice binding и self-improve exclusion.
-- Vision package в Issue `#554` зафиксировал mission, north star, persona outcomes, KPI/guardrails и wave boundaries для unified owner feedback loop, не переоткрывая Day1 baseline, и явно добавил product guardrail: built-in `codex_k8s` MCP wait path обязан использовать максимальный timeout/TTL не ниже owner wait window.
+- Vision package в Issue `#554` зафиксировал mission, north star, persona outcomes, KPI/guardrails и wave boundaries для unified owner feedback loop, не переоткрывая Day1 baseline, и явно добавил product guardrail: built-in `kodex` MCP wait path обязан использовать максимальный timeout/TTL не ниже owner wait window.
 - PRD package в Issue `#557` формализовал user stories, FR/AC/NFR, scenario matrix, expected evidence и recovery/lifecycle guardrails для owner feedback loop без reopening Day1/Day2 baseline.
 - Architecture package в Issue `#559` закрепил service boundaries, live wait lifetime policy, persisted request truth и recovery-only snapshot-resume boundary без переоткрытия Day1-Day3 baseline.
 - Design package в Issue `#568` закрепил implementation-ready API/data/runtime contracts, response binding registry, wait-state linkage и rollout policy без пересмотра Day1-Day4 baseline.
@@ -34,7 +34,7 @@ approvals:
   - same-session continuation как primary happy-path;
   - recovery-only snapshot resume;
   - 24h long human-wait policy;
-  - max timeout/TTL для built-in `codex_k8s` MCP wait path, чтобы agent pod реально ждал ответ tool в той же session;
+  - max timeout/TTL для built-in `kodex` MCP wait path, чтобы agent pod реально ждал ответ tool в той же session;
   - delivery-before-wait lifecycle visibility;
   - Telegram pending inbox;
   - staff-console fallback;
@@ -72,7 +72,7 @@ approvals:
 ## Guardrails спринта
 - Same live pod / same `codex` session остаётся primary happy-path и не заменяется detached resume-run без нового owner-решения.
 - Persisted session snapshot используется только как recovery fallback при потере live runtime.
-- Long human wait не меньше 24 часов должен отражаться одновременно в interaction TTL, wait-state semantics, pod lifetime expectations, timeout policy и max timeout/TTL built-in `codex_k8s` MCP wait path.
+- Long human wait не меньше 24 часов должен отражаться одновременно в interaction TTL, wait-state semantics, pod lifetime expectations, timeout policy и max timeout/TTL built-in `kodex` MCP wait path.
 - Delivery lifecycle обязан разделять `delivery pending` и `waiting for user response`.
 - Telegram inbox и staff-console fallback обязаны использовать общий persisted backend contract; канал не может становиться owner of semantics.
 - `run:self-improve` остаётся вне owner-facing human-wait contract.
@@ -98,7 +98,7 @@ approvals:
 - Wave order для issue `#582`: `S17-E01 -> S17-E02 -> S17-E03 -> S17-E04 -> S17-E05 -> S17-E06 -> S17-E07`.
 - До завершения следующего stage нельзя потерять следующие Day1/Day2/Day3 decisions:
   - same live session как primary continuation model;
-  - max timeout/TTL built-in `codex_k8s` MCP wait path не ниже owner wait window, чтобы happy-path оставался live wait, а не synthetic resume;
+  - max timeout/TTL built-in `kodex` MCP wait path не ниже owner wait window, чтобы happy-path оставался live wait, а не synthetic resume;
   - snapshot-resume как recovery-only fallback;
   - long human-wait target `>=24h`;
   - delivery-before-wait lifecycle;

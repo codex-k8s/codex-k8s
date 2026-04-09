@@ -9,7 +9,7 @@
 - Изменение перечня сервисов/приложений, участвующих в codegen, должно синхронно обновлять:
   - цели `gen-openapi-*` в `Makefile`;
   - конфиги codegen в `tools/codegen/**`;
-  - CI-проверку `deploy/base/codex-k8s/codegen-check-job.yaml.tpl`.
+  - CI-проверку `deploy/base/kodex/codegen-check-job.yaml.tpl`.
 - Источник правды транспорта:
   - REST: `api/server/api.yaml` (OpenAPI YAML)
   - gRPC: `proto/**/*.proto`
@@ -56,7 +56,7 @@ make gen-proto-go SVC=services/<zone>/<service>
 Контракт:
 - `api/server/asyncapi.yaml`
 
-Применение в `codex-k8s`:
+Применение в `kodex`:
 - описание webhook payloads и внутренних async-событий,
 - опциональная генерация моделей для transport-слоя.
 
@@ -80,7 +80,7 @@ make gen-openapi-ts APP=services/<zone>/<app> SPEC=services/<zone>/<service>/api
 
 ## Проверка консистентности generated-кода в CI
 
-- Обязательная проверка: `deploy/base/codex-k8s/codegen-check-job.yaml.tpl`.
+- Обязательная проверка: `deploy/base/kodex/codegen-check-job.yaml.tpl`.
 - Codegen-check job должен выполнять:
   - установку зависимостей frontend;
   - `make gen-openapi`;

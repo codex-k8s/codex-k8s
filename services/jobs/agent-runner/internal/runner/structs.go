@@ -7,8 +7,8 @@ import (
 	"log/slog"
 	"time"
 
-	floweventdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/flowevent"
-	cpclient "github.com/codex-k8s/codex-k8s/services/jobs/agent-runner/internal/controlplane"
+	floweventdomain "github.com/codex-k8s/kodex/libs/go/domain/flowevent"
+	cpclient "github.com/codex-k8s/kodex/services/jobs/agent-runner/internal/controlplane"
 )
 
 // ExitError allows caller to map runner failures to process exit code.

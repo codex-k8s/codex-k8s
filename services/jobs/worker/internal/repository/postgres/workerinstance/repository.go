@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"strings"
 
-	domainrepo "github.com/codex-k8s/codex-k8s/services/jobs/worker/internal/domain/repository/workerinstance"
+	domainrepo "github.com/codex-k8s/kodex/services/jobs/worker/internal/domain/repository/workerinstance"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 

@@ -8,12 +8,12 @@ import (
 	"testing"
 	"time"
 
-	agentdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/agent"
-	"github.com/codex-k8s/codex-k8s/libs/go/servicescfg"
-	agentrunrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/agentrun"
-	repocfgrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/repocfg"
-	entitytypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/entity"
-	querytypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/query"
+	agentdomain "github.com/codex-k8s/kodex/libs/go/domain/agent"
+	"github.com/codex-k8s/kodex/libs/go/servicescfg"
+	agentrunrepo "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/repository/agentrun"
+	repocfgrepo "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/repository/repocfg"
+	entitytypes "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/types/entity"
+	querytypes "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/types/query"
 )
 
 func TestBuildPromptRuntimeInventory_DefaultStrategyAndSort(t *testing.T) {
@@ -63,7 +63,7 @@ func TestResolvePromptTargetEnv_ForDevTrigger(t *testing.T) {
 	t.Parallel()
 
 	runCtx := resolvedRunContext{
-		Session: SessionContext{RuntimeMode: agentdomain.RuntimeModeFullEnv, Namespace: "codex-k8s-dev-3"},
+		Session: SessionContext{RuntimeMode: agentdomain.RuntimeModeFullEnv, Namespace: "kodex-dev-3"},
 		Payload: querytypes.RunPayload{
 			Trigger: &querytypes.RunPayloadTrigger{Kind: "dev"},
 		},
@@ -84,7 +84,7 @@ func TestResolvePromptServicesConfigPath_ResolvesRepoSnapshot(t *testing.T) {
 		t.Fatalf("mkdir snapshot path: %v", err)
 	}
 	servicesPath := filepath.Join(snapshotPath, "services.yaml")
-	if err := os.WriteFile(servicesPath, []byte("apiVersion: codex-k8s.dev/v1alpha1\n"), 0o644); err != nil {
+	if err := os.WriteFile(servicesPath, []byte("apiVersion: kodex.works/v1alpha1\n"), 0o644); err != nil {
 		t.Fatalf("write services.yaml: %v", err)
 	}
 
@@ -252,7 +252,7 @@ func promptContextForTrigger(t *testing.T, triggerKind string) (PromptContextRes
 			RepositoryID: "repo-1",
 		},
 		Repository: querytypes.RunPayloadRepository{
-			FullName: "codex-k8s/codex-k8s",
+			FullName: "codex-k8s/kodex",
 		},
 		Agent: &querytypes.RunPayloadAgent{
 			Key: "dev",
@@ -267,7 +267,7 @@ func promptContextForTrigger(t *testing.T, triggerKind string) (PromptContextRes
 
 	service := &Service{
 		cfg: Config{
-			ServerName:         "codex-k8s-control-plane-mcp",
+			ServerName:         "kodex-control-plane-mcp",
 			InternalMCPBaseURL: "http://platform-control-plane.example/mcp",
 			RepositoryRoot:     t.TempDir(),
 		},
@@ -285,8 +285,8 @@ func promptContextForTrigger(t *testing.T, triggerKind string) (PromptContextRes
 				ID:               "repo-1",
 				ProjectID:        "project-1",
 				Provider:         "github",
-				Owner:            "codex-k8s",
-				Name:             "codex-k8s",
+				Owner:            "kodex",
+				Name:             "kodex",
 				ServicesYAMLPath: "services.yaml",
 			},
 		},

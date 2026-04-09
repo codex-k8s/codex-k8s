@@ -46,7 +46,7 @@ approvals:
 - `control-plane` остаётся владельцем interaction aggregate, typed validation, audit/correlation и wait-state transitions.
 - `worker` закреплён за outbound dispatch, retries и timeout/expiry reconciliation; `api-gateway` не принимает решений о accepted/rejected business outcome.
 - Approval flow и user interaction flow разделены как разные bounded contexts; approval vocabulary не используется как primary model для user responses.
-- Built-in `codex_k8s` остаётся единственной core точкой расширения; adapters остаются replaceable transport layers без Telegram-first lock-in.
+- Built-in `kodex` остаётся единственной core точкой расширения; adapters остаются replaceable transport layers без Telegram-first lock-in.
 
 ## Context7 верификация
 - Выполнена попытка использовать Context7 для Mermaid/C4 documentation.

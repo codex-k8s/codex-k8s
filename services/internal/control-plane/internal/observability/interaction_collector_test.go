@@ -11,7 +11,7 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 
-	interactionrequestrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/interactionrequest"
+	interactionrequestrepo "github.com/codex-k8s/kodex/services/internal/control-plane/internal/repository/postgres/interactionrequest"
 )
 
 func TestInteractionCollectorCollectsSnapshotMetrics(t *testing.T) {
@@ -73,11 +73,11 @@ func TestInteractionCollectorCollectsSnapshotMetrics(t *testing.T) {
 	}
 
 	rendered := builder.String()
-	assertMetricContains(t, rendered, `codexk8s_interaction_requests_state{interaction_kind="decision_request",state="open"} 2`)
-	assertMetricContains(t, rendered, `codexk8s_interaction_pending_dispatch_backlog{interaction_kind="decision_request",queue_kind="retry"} 1`)
-	assertMetricContains(t, rendered, `codexk8s_interaction_wait_deadline_overdue{interaction_kind="decision_request"} 3`)
-	assertMetricContains(t, rendered, `codexk8s_interaction_callback_events_total{callback_kind="decision_response",classification="duplicate"} 4`)
-	assertMetricContains(t, rendered, `codexk8s_interaction_dispatch_attempts_total{adapter_kind="noop",interaction_kind="decision_request",status="failed"} 5`)
+	assertMetricContains(t, rendered, `kodex_interaction_requests_state{interaction_kind="decision_request",state="open"} 2`)
+	assertMetricContains(t, rendered, `kodex_interaction_pending_dispatch_backlog{interaction_kind="decision_request",queue_kind="retry"} 1`)
+	assertMetricContains(t, rendered, `kodex_interaction_wait_deadline_overdue{interaction_kind="decision_request"} 3`)
+	assertMetricContains(t, rendered, `kodex_interaction_callback_events_total{callback_kind="decision_response",classification="duplicate"} 4`)
+	assertMetricContains(t, rendered, `kodex_interaction_dispatch_attempts_total{adapter_kind="noop",interaction_kind="decision_request",status="failed"} 5`)
 }
 
 type fakeInteractionMetricsSnapshotReader struct {

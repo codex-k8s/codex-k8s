@@ -17,7 +17,7 @@ approvals:
 # Epic S6 Day 10: Postdeploy review для lifecycle управления агентами и шаблонами промптов (Issue #263)
 
 ## TL;DR
-- Postdeploy-проверка runtime в текущем full-env контуре (`codex-k8s-dev-1`) прошла без blocker-инцидентов.
+- Postdeploy-проверка runtime в текущем full-env контуре (`kodex-dev-1`) прошла без blocker-инцидентов.
 - Критичные сервисы (`api-gateway`, `control-plane`, `worker`, `web-console`, `postgres`) в `Running`, restart count = `0`.
 - Подтверждена readiness базовых health-checks (`/healthz`, `/health/readyz`, `pg_isready`) и отсутствие деградации в логах запуска.
 - Для следующего этапа `run:ops` подготовлен отдельный операционный handover: runbook + monitoring + alerts + SLO + rollback checks.
@@ -30,7 +30,7 @@ approvals:
 
 ## Scope
 ### In scope
-- Runtime-диагностика в namespace активного запуска (`codex-k8s-dev-1`).
+- Runtime-диагностика в namespace активного запуска (`kodex-dev-1`).
 - Фиксация postdeploy evidence (health/logs/events/services/jobs).
 - Уточнение операционных рисков и handover в `run:ops`.
 - Синхронизация delivery/traceability документов Sprint S6.
@@ -43,15 +43,15 @@ approvals:
 
 | Проверка | Команда | Факт | Статус |
 |---|---|---|---|
-| Состояние workload | `kubectl -n codex-k8s-dev-1 get pods,deploy,job -o wide` | Все основные pod/deploy в `Running`, migration и mirror jobs в `Completed`, активный run-job выполняется | passed |
-| Логи control-plane | `kubectl -n codex-k8s-dev-1 logs deploy/codex-k8s-control-plane --tail=200` | Успешный старт HTTP/gRPC, runtime deploy loop активен, ошибок startup после readiness нет | passed |
-| Логи worker | `kubectl -n codex-k8s-dev-1 logs deploy/codex-k8s-worker --tail=200` | Worker стартовал штатно, без crash/retry | passed |
-| Логи api-gateway | `kubectl -n codex-k8s-dev-1 logs deploy/codex-k8s --tail=200` | OpenAPI request validation включена, сервис поднят на `:8080` | passed |
-| Сетевой контур | `kubectl -n codex-k8s-dev-1 get svc,ingress -o wide` | Сервисы и ingress присутствуют, DNS-host выдан для окружения | passed |
-| Health API | `kubectl exec deploy/codex-k8s -- wget -qO- http://127.0.0.1:8080/healthz` | `alive` | passed |
-| Readiness control-plane | `kubectl exec deploy/codex-k8s-control-plane -- wget -qO- http://127.0.0.1:8081/health/readyz` | `ok` | passed |
+| Состояние workload | `kubectl -n kodex-dev-1 get pods,deploy,job -o wide` | Все основные pod/deploy в `Running`, migration и mirror jobs в `Completed`, активный run-job выполняется | passed |
+| Логи control-plane | `kubectl -n kodex-dev-1 logs deploy/kodex-control-plane --tail=200` | Успешный старт HTTP/gRPC, runtime deploy loop активен, ошибок startup после readiness нет | passed |
+| Логи worker | `kubectl -n kodex-dev-1 logs deploy/kodex-worker --tail=200` | Worker стартовал штатно, без crash/retry | passed |
+| Логи api-gateway | `kubectl -n kodex-dev-1 logs deploy/kodex --tail=200` | OpenAPI request validation включена, сервис поднят на `:8080` | passed |
+| Сетевой контур | `kubectl -n kodex-dev-1 get svc,ingress -o wide` | Сервисы и ingress присутствуют, DNS-host выдан для окружения | passed |
+| Health API | `kubectl exec deploy/kodex -- wget -qO- http://127.0.0.1:8080/healthz` | `alive` | passed |
+| Readiness control-plane | `kubectl exec deploy/kodex-control-plane -- wget -qO- http://127.0.0.1:8081/health/readyz` | `ok` | passed |
 | Доступность PostgreSQL | `kubectl exec statefulset/postgres -- pg_isready` | `accepting connections` | passed |
-| События namespace | `kubectl -n codex-k8s-dev-1 get events --sort-by=.lastTimestamp` | Зафиксированы единичные startup probe warnings на этапе старта; далее контейнеры перешли в stable `Running` | passed |
+| События namespace | `kubectl -n kodex-dev-1 get events --sort-by=.lastTimestamp` | Зафиксированы единичные startup probe warnings на этапе старта; далее контейнеры перешли в stable `Running` | passed |
 
 ## Monitoring / Alerts / SLO / Rollback (handover)
 - Операционный handover оформлен в `docs/ops/handovers/s6/postdeploy_ops_handover.md` и включает:

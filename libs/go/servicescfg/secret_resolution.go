@@ -35,10 +35,10 @@ func DefaultSecretResolution() SecretResolution {
 		},
 		Patterns: []SecretOverridePattern{
 			{
-				SourcePrefix:     "CODEXK8S_",
-				ExcludePrefixes:  []string{"CODEXK8S_AI_", "CODEXK8S_PRODUCTION_"},
+				SourcePrefix:     "KODEX_",
+				ExcludePrefixes:  []string{"KODEX_AI_", "KODEX_PRODUCTION_"},
 				Environments:     []string{"production", "ai"},
-				OverrideTemplate: "CODEXK8S_{env_upper}_{suffix}",
+				OverrideTemplate: "KODEX_{env_upper}_{suffix}",
 			},
 		},
 	}

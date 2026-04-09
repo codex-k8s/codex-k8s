@@ -1,6 +1,6 @@
 package query
 
-import enumtypes "github.com/codex-k8s/codex-k8s/services/jobs/worker/internal/domain/types/enum"
+import enumtypes "github.com/codex-k8s/kodex/services/jobs/worker/internal/domain/types/enum"
 
 // LearningFeedbackInsertParams defines inputs for inserting learning mode feedback.
 type LearningFeedbackInsertParams struct {

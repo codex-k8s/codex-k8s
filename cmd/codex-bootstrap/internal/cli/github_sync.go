@@ -14,7 +14,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/codex-k8s/codex-k8s/cmd/codex-bootstrap/internal/envfile"
+	"github.com/codex-k8s/kodex/cmd/codex-bootstrap/internal/envfile"
 	gh "github.com/google/go-github/v82/github"
 )
 
@@ -22,15 +22,15 @@ const (
 	defaultGitHubSyncTimeout      = 15 * time.Minute
 	defaultGitHubSyncWorkers      = 2
 	defaultGitHubWebhookEvents    = "push,pull_request,issues,issue_comment,pull_request_review,pull_request_review_comment"
-	defaultGitHubLabelDescription = "codex-k8s managed label"
+	defaultGitHubLabelDescription = "kodex managed label"
 	defaultGitHubLabelColor       = "1f6feb"
 )
 
 var githubRequiredSyncKeys = []string{
-	"CODEXK8S_GITHUB_REPO",
-	"CODEXK8S_GITHUB_PAT",
-	"CODEXK8S_GITHUB_WEBHOOK_SECRET",
-	"CODEXK8S_PRODUCTION_DOMAIN",
+	"KODEX_GITHUB_REPO",
+	"KODEX_GITHUB_PAT",
+	"KODEX_GITHUB_WEBHOOK_SECRET",
+	"KODEX_PRODUCTION_DOMAIN",
 }
 
 type githubRepositoryRef struct {
@@ -85,17 +85,17 @@ func runGitHubSync(args []string, stdout io.Writer, stderr io.Writer) int {
 		return 1
 	}
 
-	platformRepo, err := parseGitHubRepository(values["CODEXK8S_GITHUB_REPO"])
+	platformRepo, err := parseGitHubRepository(values["KODEX_GITHUB_REPO"])
 	if err != nil {
-		writef(stderr, "github-sync failed: CODEXK8S_GITHUB_REPO: %v\n", err)
+		writef(stderr, "github-sync failed: KODEX_GITHUB_REPO: %v\n", err)
 		return 1
 	}
-	firstProjectRaw := strings.TrimSpace(values["CODEXK8S_FIRST_PROJECT_GITHUB_REPO"])
+	firstProjectRaw := strings.TrimSpace(values["KODEX_FIRST_PROJECT_GITHUB_REPO"])
 	firstProjectRepo := platformRepo
 	if firstProjectRaw != "" {
 		firstProjectRepo, err = parseGitHubRepository(firstProjectRaw)
 		if err != nil {
-			writef(stderr, "github-sync failed: CODEXK8S_FIRST_PROJECT_GITHUB_REPO: %v\n", err)
+			writef(stderr, "github-sync failed: KODEX_FIRST_PROJECT_GITHUB_REPO: %v\n", err)
 			return 1
 		}
 	}
@@ -107,10 +107,10 @@ func runGitHubSync(args []string, stdout io.Writer, stderr io.Writer) int {
 
 	labels := collectGitHubLabels(values)
 	webhookURL := resolveWebhookURL(values)
-	webhookEvents := normalizeGitHubEvents(values["CODEXK8S_GITHUB_WEBHOOK_EVENTS"])
-	webhookSecret := strings.TrimSpace(values["CODEXK8S_GITHUB_WEBHOOK_SECRET"])
+	webhookEvents := normalizeGitHubEvents(values["KODEX_GITHUB_WEBHOOK_EVENTS"])
+	webhookSecret := strings.TrimSpace(values["KODEX_GITHUB_WEBHOOK_SECRET"])
 	if webhookSecret == "" {
-		writef(stderr, "github-sync failed: CODEXK8S_GITHUB_WEBHOOK_SECRET is required\n")
+		writef(stderr, "github-sync failed: KODEX_GITHUB_WEBHOOK_SECRET is required\n")
 		return 1
 	}
 
@@ -124,7 +124,7 @@ func runGitHubSync(args []string, stdout io.Writer, stderr io.Writer) int {
 		return 0
 	}
 
-	client := gh.NewClient(&http.Client{Timeout: *timeout}).WithAuthToken(strings.TrimSpace(values["CODEXK8S_GITHUB_PAT"]))
+	client := gh.NewClient(&http.Client{Timeout: *timeout}).WithAuthToken(strings.TrimSpace(values["KODEX_GITHUB_PAT"]))
 	ctx, cancel := context.WithTimeout(context.Background(), *timeout)
 	defer cancel()
 
@@ -150,19 +150,19 @@ func runGitHubSync(args []string, stdout io.Writer, stderr io.Writer) int {
 }
 
 func applyGitHubSyncDefaults(values map[string]string) {
-	setEnvDefault(values, "CODEXK8S_PRODUCTION_NAMESPACE", "codex-k8s-prod")
-	setEnvDefault(values, "CODEXK8S_PRODUCTION_DOMAIN", "platform.codex-k8s.dev")
-	if strings.TrimSpace(values["CODEXK8S_AI_DOMAIN"]) == "" {
-		if productionDomain := strings.TrimSpace(values["CODEXK8S_PRODUCTION_DOMAIN"]); productionDomain != "" {
-			values["CODEXK8S_AI_DOMAIN"] = "ai." + productionDomain
+	setEnvDefault(values, "KODEX_PRODUCTION_NAMESPACE", "kodex-prod")
+	setEnvDefault(values, "KODEX_PRODUCTION_DOMAIN", "platform.kodex.works")
+	if strings.TrimSpace(values["KODEX_AI_DOMAIN"]) == "" {
+		if productionDomain := strings.TrimSpace(values["KODEX_PRODUCTION_DOMAIN"]); productionDomain != "" {
+			values["KODEX_AI_DOMAIN"] = "ai." + productionDomain
 		}
 	}
-	setEnvDefault(values, "CODEXK8S_INTERNAL_REGISTRY_SERVICE", "codex-k8s-registry")
-	setEnvDefault(values, "CODEXK8S_INTERNAL_REGISTRY_PORT", "5000")
-	setEnvDefault(values, "CODEXK8S_INTERNAL_REGISTRY_STORAGE_SIZE", "20Gi")
-	setEnvDefault(values, "CODEXK8S_INTERNAL_REGISTRY_HOST", "127.0.0.1:"+strings.TrimSpace(values["CODEXK8S_INTERNAL_REGISTRY_PORT"]))
-	setEnvDefault(values, "CODEXK8S_GITHUB_WEBHOOK_EVENTS", defaultGitHubWebhookEvents)
-	setEnvDefault(values, "CODEXK8S_GITHUB_WEBHOOK_URL", resolveWebhookURL(values))
+	setEnvDefault(values, "KODEX_INTERNAL_REGISTRY_SERVICE", "kodex-registry")
+	setEnvDefault(values, "KODEX_INTERNAL_REGISTRY_PORT", "5000")
+	setEnvDefault(values, "KODEX_INTERNAL_REGISTRY_STORAGE_SIZE", "20Gi")
+	setEnvDefault(values, "KODEX_INTERNAL_REGISTRY_HOST", "127.0.0.1:"+strings.TrimSpace(values["KODEX_INTERNAL_REGISTRY_PORT"]))
+	setEnvDefault(values, "KODEX_GITHUB_WEBHOOK_EVENTS", defaultGitHubWebhookEvents)
+	setEnvDefault(values, "KODEX_GITHUB_WEBHOOK_URL", resolveWebhookURL(values))
 }
 
 func setEnvDefault(values map[string]string, key string, fallback string) {
@@ -196,13 +196,13 @@ func collectGitHubLabels(values map[string]string) map[string]string {
 }
 
 func labelDescriptionForKey(key string) string {
-	labelKey := strings.TrimPrefix(strings.TrimSpace(key), "CODEXK8S_")
+	labelKey := strings.TrimPrefix(strings.TrimSpace(key), "KODEX_")
 	labelKey = strings.TrimSuffix(labelKey, "_LABEL")
 	labelKey = strings.ToLower(strings.ReplaceAll(labelKey, "_", " "))
 	if labelKey == "" {
 		return defaultGitHubLabelDescription
 	}
-	return "codex-k8s managed label: " + labelKey
+	return "kodex managed label: " + labelKey
 }
 
 func normalizeGitHubEvents(raw string) []string {

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	runqueuerepo "github.com/codex-k8s/codex-k8s/services/jobs/worker/internal/domain/repository/runqueue"
+	runqueuerepo "github.com/codex-k8s/kodex/services/jobs/worker/internal/domain/repository/runqueue"
 )
 
 func (s *Service) scheduleInteractionResume(ctx context.Context, runID string, interactionID string, resumeCorrelationID string) error {

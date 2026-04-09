@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"sync"
 
-	sharedsystemsettings "github.com/codex-k8s/codex-k8s/libs/go/systemsettings"
+	sharedsystemsettings "github.com/codex-k8s/kodex/libs/go/systemsettings"
 )
 
 type repository interface {

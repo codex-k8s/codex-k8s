@@ -2,7 +2,7 @@ import { defineStore } from "pinia";
 
 import { deleteCookie, getCookie, setCookie } from "../../shared/lib/cookies";
 
-const cookieKeyProjectId = "codexk8s_project_id";
+const cookieKeyProjectId = "kodex_project_id";
 
 export const useUiContextStore = defineStore("uiContext", {
   state: () => ({

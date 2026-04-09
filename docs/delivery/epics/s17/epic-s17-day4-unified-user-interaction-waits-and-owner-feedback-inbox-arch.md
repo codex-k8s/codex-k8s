@@ -68,7 +68,7 @@ approvals:
 ## Acceptance criteria (Issue #559)
 - [x] Подготовлен architecture package Sprint S17 и синхронизирован в traceability-документах.
 - [x] Зафиксированы service boundaries, ownership matrix, live wait lifetime policy, persisted request truth и wait/continuation semantics.
-- [x] Сохранены blocking baselines: same-session happy-path, max timeout/TTL built-in `codex_k8s` MCP wait path не ниже owner wait window, recovery-only snapshot-resume, delivery-before-wait lifecycle, dual-channel inbox и `run:self-improve` exclusion.
+- [x] Сохранены blocking baselines: same-session happy-path, max timeout/TTL built-in `kodex` MCP wait path не ниже owner wait window, recovery-only snapshot-resume, delivery-before-wait lifecycle, dual-channel inbox и `run:self-improve` exclusion.
 - [x] Design-level schema/API/UI решения оставлены следующему stage и не подменяют architecture package.
 - [x] Создана follow-up issue `#568` для stage `run:design` без trigger-лейбла.
 

@@ -3,7 +3,7 @@ package main
 import (
 	"os"
 
-	"github.com/codex-k8s/codex-k8s/cmd/codex-bootstrap/internal/cli"
+	"github.com/codex-k8s/kodex/cmd/codex-bootstrap/internal/cli"
 )
 
 func main() {

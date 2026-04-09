@@ -10,15 +10,15 @@ import (
 	"strings"
 	"time"
 
-	jwtlib "github.com/codex-k8s/codex-k8s/libs/go/auth/jwt"
-	"github.com/codex-k8s/codex-k8s/libs/go/errs"
-	controlplanev1 "github.com/codex-k8s/codex-k8s/proto/gen/go/codexk8s/controlplane/v1"
+	jwtlib "github.com/codex-k8s/kodex/libs/go/auth/jwt"
+	"github.com/codex-k8s/kodex/libs/go/errs"
+	controlplanev1 "github.com/codex-k8s/kodex/proto/gen/go/kodex/controlplane/v1"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/github"
 )
 
 const (
-	jwtIssuer = "codex-k8s"
+	jwtIssuer = "kodex"
 )
 
 // Config defines staff authentication settings.

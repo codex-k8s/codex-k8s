@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	agentdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/agent"
+	agentdomain "github.com/codex-k8s/kodex/libs/go/domain/agent"
 )
 
 // IssueMCPTokenParams describes one MCP token issuance request for run.

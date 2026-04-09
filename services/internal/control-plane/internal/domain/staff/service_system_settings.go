@@ -3,10 +3,10 @@ package staff
 import (
 	"context"
 
-	"github.com/codex-k8s/codex-k8s/libs/go/errs"
-	entitytypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/entity"
-	enumtypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/enum"
-	querytypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/query"
+	"github.com/codex-k8s/kodex/libs/go/errs"
+	entitytypes "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/types/entity"
+	enumtypes "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/types/enum"
+	querytypes "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/types/query"
 )
 
 func (s *Service) ListSystemSettings(_ context.Context, principal Principal) ([]entitytypes.SystemSetting, error) {

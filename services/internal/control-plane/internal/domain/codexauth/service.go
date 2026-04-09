@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	defaultKubernetesSecretName = "codex-k8s-codex-auth"
+	defaultKubernetesSecretName = "kodex-codex-auth"
 	defaultKubernetesSecretKey  = "auth.json"
 )
 

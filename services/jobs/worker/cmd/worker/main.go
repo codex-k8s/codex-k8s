@@ -3,7 +3,7 @@ package main
 import (
 	"log"
 
-	"github.com/codex-k8s/codex-k8s/services/jobs/worker/internal/app"
+	"github.com/codex-k8s/kodex/services/jobs/worker/internal/app"
 )
 
 func main() {

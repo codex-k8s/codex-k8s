@@ -3,8 +3,8 @@ package http
 import (
 	"testing"
 
-	sharedsystemsettings "github.com/codex-k8s/codex-k8s/libs/go/systemsettings"
-	"github.com/codex-k8s/codex-k8s/services/external/api-gateway/internal/transport/http/models"
+	sharedsystemsettings "github.com/codex-k8s/kodex/libs/go/systemsettings"
+	"github.com/codex-k8s/kodex/services/external/api-gateway/internal/transport/http/models"
 )
 
 func TestFilterRealtimeSystemSettings_ExcludesHiddenVisibilities(t *testing.T) {

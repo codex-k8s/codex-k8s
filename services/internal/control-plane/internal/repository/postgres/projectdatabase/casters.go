@@ -1,8 +1,8 @@
 package projectdatabase
 
 import (
-	domainrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/projectdatabase"
-	"github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/projectdatabase/dbmodel"
+	domainrepo "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/repository/projectdatabase"
+	"github.com/codex-k8s/kodex/services/internal/control-plane/internal/repository/postgres/projectdatabase/dbmodel"
 )
 
 func fromDBModel(row dbmodel.ProjectDatabaseRow) domainrepo.Item {

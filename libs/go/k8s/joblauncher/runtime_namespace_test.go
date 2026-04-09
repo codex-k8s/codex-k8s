@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	agentdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/agent"
+	agentdomain "github.com/codex-k8s/kodex/libs/go/domain/agent"
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -19,7 +19,7 @@ func TestLauncher_EnsureNamespace_PreparesBaselineResourcesAndLeaseMetadata(t *t
 
 	ctx := context.Background()
 	client := fake.NewClientset()
-	launcher := NewForClient(Config{Namespace: "codex-k8s-prod"}, client)
+	launcher := NewForClient(Config{Namespace: "kodex-prod"}, client)
 
 	expiresAt := time.Date(2026, 2, 21, 12, 0, 0, 0, time.UTC)
 	spec := NamespaceSpec{
@@ -103,7 +103,7 @@ func TestLauncher_FindReusableNamespace_ReturnsLatestActiveLease(t *testing.T) {
 			expiresAt:    now.Add(3 * time.Hour),
 		}),
 	)
-	launcher := NewForClient(Config{Namespace: "codex-k8s-prod"}, client)
+	launcher := NewForClient(Config{Namespace: "kodex-prod"}, client)
 
 	result, ok, err := launcher.FindReusableNamespace(ctx, NamespaceReuseLookup{
 		ProjectID:   project,
@@ -131,7 +131,7 @@ func TestLauncher_ListManagedRunNamespaces_KeepsKnownSlotNamespacesInCleanupScop
 			runID:     "run-expired",
 			expiresAt: time.Date(2026, 2, 21, 9, 0, 0, 0, time.UTC),
 		}),
-		newLeaseNamespace("codex-k8s-dev-1", leaseNamespaceParams{
+		newLeaseNamespace("kodex-dev-1", leaseNamespaceParams{
 			runID:     "run-slot",
 			expiresAt: time.Date(2026, 2, 21, 8, 0, 0, 0, time.UTC),
 		}),
@@ -140,7 +140,7 @@ func TestLauncher_ListManagedRunNamespaces_KeepsKnownSlotNamespacesInCleanupScop
 			expiresAt: time.Date(2026, 2, 21, 9, 0, 0, 0, time.UTC),
 		}),
 	)
-	launcher := NewForClient(Config{Namespace: "codex-k8s-prod"}, client)
+	launcher := NewForClient(Config{Namespace: "kodex-prod"}, client)
 
 	items, err := launcher.ListManagedRunNamespaces(ctx, ManagedNamespaceListParams{NamespacePrefix: "codex-issue"})
 	if err != nil {
@@ -149,7 +149,7 @@ func TestLauncher_ListManagedRunNamespaces_KeepsKnownSlotNamespacesInCleanupScop
 	if len(items) != 2 {
 		t.Fatalf("expected two managed namespaces in cleanup scope, got %d", len(items))
 	}
-	if got, want := []string{items[0].Namespace, items[1].Namespace}, []string{"codex-issue-expired", "codex-k8s-dev-1"}; !reflect.DeepEqual(got, want) {
+	if got, want := []string{items[0].Namespace, items[1].Namespace}, []string{"codex-issue-expired", "kodex-dev-1"}; !reflect.DeepEqual(got, want) {
 		t.Fatalf("unexpected managed namespaces: got %v want %v", got, want)
 	}
 	if got, want := items[0].RunID, "run-expired"; got != want {
@@ -206,7 +206,7 @@ func TestLauncher_InspectNamespaceWorkloads_DetectsActiveResources(t *testing.T)
 			Spec:       appsv1.ReplicaSetSpec{Replicas: &zeroReplicas},
 		},
 	)
-	launcher := NewForClient(Config{Namespace: "codex-k8s-prod"}, client)
+	launcher := NewForClient(Config{Namespace: "kodex-prod"}, client)
 
 	workloads, err := launcher.InspectNamespaceWorkloads(ctx, namespace)
 	if err != nil {
@@ -244,7 +244,7 @@ func TestLauncher_CleanupNamespace_DeletesManagedNamespace(t *testing.T) {
 			},
 		},
 	})
-	launcher := NewForClient(Config{Namespace: "codex-k8s-prod"}, client)
+	launcher := NewForClient(Config{Namespace: "kodex-prod"}, client)
 
 	err := launcher.CleanupNamespace(ctx, NamespaceSpec{
 		RunID:       "run-1",
@@ -265,7 +265,7 @@ func TestLauncher_EnsureNamespace_RunRoleDoesNotGrantSecretsAccess(t *testing.T)
 
 	ctx := context.Background()
 	client := fake.NewClientset()
-	launcher := NewForClient(Config{Namespace: "codex-k8s-prod"}, client)
+	launcher := NewForClient(Config{Namespace: "kodex-prod"}, client)
 
 	spec := NamespaceSpec{
 		RunID:         "run-2",
@@ -307,9 +307,9 @@ func TestLauncher_EnsureAccessProfile_ProductionReadOnlyForbidsExecPortForwardAn
 
 	ctx := context.Background()
 	client := fake.NewClientset()
-	launcher := NewForClient(Config{Namespace: "codex-k8s-prod"}, client)
+	launcher := NewForClient(Config{Namespace: "kodex-prod"}, client)
 
-	serviceAccountName, err := launcher.EnsureAccessProfile(ctx, "codex-k8s-prod", agentdomain.RuntimeAccessProfileProductionReadOnly)
+	serviceAccountName, err := launcher.EnsureAccessProfile(ctx, "kodex-prod", agentdomain.RuntimeAccessProfileProductionReadOnly)
 	if err != nil {
 		t.Fatalf("EnsureAccessProfile() error = %v", err)
 	}
@@ -317,7 +317,7 @@ func TestLauncher_EnsureAccessProfile_ProductionReadOnlyForbidsExecPortForwardAn
 		t.Fatalf("service account = %q, want %q", got, want)
 	}
 
-	role, err := client.RbacV1().Roles("codex-k8s-prod").Get(ctx, launcher.cfg.RunReadOnlyRoleName, metav1.GetOptions{})
+	role, err := client.RbacV1().Roles("kodex-prod").Get(ctx, launcher.cfg.RunReadOnlyRoleName, metav1.GetOptions{})
 	if err != nil {
 		t.Fatalf("load readonly role failed: %v", err)
 	}

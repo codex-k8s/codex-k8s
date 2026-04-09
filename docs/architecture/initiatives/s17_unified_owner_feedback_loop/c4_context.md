@@ -17,7 +17,7 @@ approvals:
 # C4 Context: Sprint S17 Day 4 unified owner feedback loop
 
 ## TL;DR
-- Unified owner feedback loop остаётся platform capability внутри `codex-k8s`, а не Telegram-first contour и не отдельная внешняя система.
+- Unified owner feedback loop остаётся platform capability внутри `kodex`, а не Telegram-first contour и не отдельная внешняя система.
 - Staff-console fallback входит в platform-owned slice, а Telegram остаётся первым внешним channel path поверх того же persisted truth.
 
 ## Диаграмма (Mermaid C4Context)
@@ -29,7 +29,7 @@ Person(agent, "System agent", "Вызывает built-in owner feedback wait pat
 Person(owner, "Owner / Product lead", "Получает pending request и отвечает в Telegram или staff-console")
 Person(operator, "Staff / operator", "Отслеживает overdue / expired / manual-fallback состояния")
 
-System(system, "codex-k8s owner feedback continuity slice", "Platform-owned live wait, persisted request truth and continuation capability including staff-console fallback")
+System(system, "kodex owner feedback continuity slice", "Platform-owned live wait, persisted request truth and continuation capability including staff-console fallback")
 
 System_Ext(tgadapter, "Telegram interaction adapter", "External Telegram delivery, raw webhook handling and reply normalization")
 System_Ext(github, "GitHub", "Issue/PR context, service messages and degraded fallback links")

@@ -207,7 +207,7 @@ sequenceDiagram
   - `docs/architecture/initiatives/s11_telegram_user_interaction_adapter/api_contract.md`
 - Source of truth для будущего `run:dev`:
   - OpenAPI callback path: `services/external/api-gateway/api/server/api.yaml`
-  - Internal gRPC bridge: `proto/codexk8s/controlplane/v1/controlplane.proto`
+  - Internal gRPC bridge: `proto/kodex/controlplane/v1/controlplane.proto`
   - Built-in tool surface and callback lifecycle: `control-plane` interaction domain
 - Contract invariants:
   - agent-facing tools remain channel-neutral;
@@ -252,11 +252,11 @@ sequenceDiagram
   - `telegram.interaction.continuation.follow_up_sent`
   - `telegram.interaction.operator_signal.raised`
 - Метрики:
-  - `codexk8s_telegram_interaction_dispatch_attempt_total{delivery_role,status}`
-  - `codexk8s_telegram_interaction_callback_total{callback_kind,classification}`
-  - `codexk8s_telegram_interaction_continuation_total{action_kind,status}`
-  - `codexk8s_telegram_interaction_operator_signal_total{signal_code}`
-  - `codexk8s_telegram_interaction_decision_turnaround_seconds`
+  - `kodex_telegram_interaction_dispatch_attempt_total{delivery_role,status}`
+  - `kodex_telegram_interaction_callback_total{callback_kind,classification}`
+  - `kodex_telegram_interaction_continuation_total{action_kind,status}`
+  - `kodex_telegram_interaction_operator_signal_total{signal_code}`
+  - `kodex_telegram_interaction_decision_turnaround_seconds`
 - Трейсы:
   - `worker -> adapter -> api-gateway -> control-plane -> postgres`
   - `control-plane -> worker -> agent-runner resume`

@@ -75,15 +75,15 @@ approvals:
 - Реализована детерминированная цепочка резолва:
   - `env override -> environment-scoped k8s secret -> shared/platform k8s secret -> base value`.
 - OAuth split production/ai доведен до env-aware резолва:
-  - `CODEXK8S_GITHUB_OAUTH_CLIENT_ID/SECRET` теперь резолвятся через общий resolver;
+  - `KODEX_GITHUB_OAUTH_CLIENT_ID/SECRET` теперь резолвятся через общий resolver;
   - в task logs пишется источник резолва OAuth ключей (без утечки значений).
-- В `services.yaml` codex-k8s добавлены правила для OAuth credentials:
+- В `services.yaml` kodex добавлены правила для OAuth credentials:
   - explicit `*_AI` override keys;
-  - pattern-mode `CODEXK8S_<NAME>_AI`.
+  - pattern-mode `KODEX_<NAME>_AI`.
 - `bootstrap/host/config.env.example` обновлен:
   - задокументированы оба override-режима;
-  - добавлены `CODEXK8S_GITHUB_OAUTH_CLIENT_ID_AI`, `CODEXK8S_GITHUB_OAUTH_CLIENT_SECRET_AI`,
-    `CODEXK8S_PRODUCTION_GITHUB_OAUTH_CLIENT_ID`, `CODEXK8S_PRODUCTION_GITHUB_OAUTH_CLIENT_SECRET`.
+  - добавлены `KODEX_GITHUB_OAUTH_CLIENT_ID_AI`, `KODEX_GITHUB_OAUTH_CLIENT_SECRET_AI`,
+    `KODEX_PRODUCTION_GITHUB_OAUTH_CLIENT_ID`, `KODEX_PRODUCTION_GITHUB_OAUTH_CLIENT_SECRET`.
 
 ## Проверки
 - `go test ./libs/go/servicescfg` — passed.

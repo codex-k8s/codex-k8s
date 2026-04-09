@@ -19,7 +19,7 @@ approvals:
 # Epic Catalog: Sprint S2 (Dogfooding via Issues)
 
 ## TL;DR
-- Цель Sprint S2: довести `codex-k8s` до режима dogfooding, где разработка `codex-k8s` запускается через GitHub Issue + лейблы `run:dev` и `run:dev:revise`, а агент работает в отдельном namespace со стеком и завершает цикл созданием PR.
+- Цель Sprint S2: довести `kodex` до режима dogfooding, где разработка `kodex` запускается через GitHub Issue + лейблы `run:dev` и `run:dev:revise`, а агент работает в отдельном namespace со стеком и завершает цикл созданием PR.
 - Первый приоритет: исправить архитектурное отклонение (thin-edge в `external/api-gateway`, домен и БД ownership в `internal/control-plane`).
 - Второй приоритет: зафиксировать contract-first OpenAPI для external/staff API и только после этого расширять issue-driven run pipeline (webhook issue label -> run request -> namespace -> agent job -> PR).
 - Завершающий приоритет S2: подготовить governance baseline для Sprint S3 (approval matrix, MCP control tools, regression gate).

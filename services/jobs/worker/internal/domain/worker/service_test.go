@@ -10,11 +10,11 @@ import (
 	"testing"
 	"time"
 
-	agentdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/agent"
-	floweventdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/flowevent"
-	rundomain "github.com/codex-k8s/codex-k8s/libs/go/domain/run"
-	floweventrepo "github.com/codex-k8s/codex-k8s/services/jobs/worker/internal/domain/repository/flowevent"
-	runqueuerepo "github.com/codex-k8s/codex-k8s/services/jobs/worker/internal/domain/repository/runqueue"
+	agentdomain "github.com/codex-k8s/kodex/libs/go/domain/agent"
+	floweventdomain "github.com/codex-k8s/kodex/libs/go/domain/flowevent"
+	rundomain "github.com/codex-k8s/kodex/libs/go/domain/run"
+	floweventrepo "github.com/codex-k8s/kodex/services/jobs/worker/internal/domain/repository/flowevent"
+	runqueuerepo "github.com/codex-k8s/kodex/services/jobs/worker/internal/domain/repository/runqueue"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -28,7 +28,7 @@ func TestTickLaunchesPendingRun(t *testing.T) {
 				RunID:         "run-1",
 				CorrelationID: "corr-1",
 				ProjectID:     "proj-1",
-				RunPayload:    json.RawMessage(`{"repository":{"full_name":"codex-k8s/codex-k8s"},"trigger":{"kind":"dev"},"issue":{"number":1},"agent":{"key":"dev","name":"AI Developer"}}`),
+				RunPayload:    json.RawMessage(`{"repository":{"full_name":"codex-k8s/kodex"},"trigger":{"kind":"dev"},"issue":{"number":1},"agent":{"key":"dev","name":"AI Developer"}}`),
 				SlotNo:        1,
 			},
 		},
@@ -37,7 +37,7 @@ func TestTickLaunchesPendingRun(t *testing.T) {
 	launcher := &fakeLauncher{states: map[string]JobState{}}
 	deployer := &fakeRuntimePreparer{
 		result: PrepareRunEnvironmentResult{
-			Namespace: "codex-k8s-dev-1",
+			Namespace: "kodex-dev-1",
 			TargetEnv: "ai",
 		},
 	}
@@ -51,8 +51,8 @@ func TestTickLaunchesPendingRun(t *testing.T) {
 		RunningCheckLimit:      10,
 		SlotsPerProject:        2,
 		SlotLeaseTTL:           time.Minute,
-		ProductionNamespace:    "codex-k8s-prod",
-		ControlPlaneMCPBaseURL: "http://codex-k8s-control-plane.test.svc:8081/mcp",
+		ProductionNamespace:    "kodex-prod",
+		ControlPlaneMCPBaseURL: "http://kodex-control-plane.test.svc:8081/mcp",
 	}, Dependencies{
 		Runs:            runs,
 		Events:          events,
@@ -71,10 +71,10 @@ func TestTickLaunchesPendingRun(t *testing.T) {
 	if len(launcher.launched) != 1 {
 		t.Fatalf("expected 1 launched job, got %d", len(launcher.launched))
 	}
-	if launcher.launched[0].MCPBaseURL != "http://codex-k8s-control-plane.test.svc:8081/mcp" {
+	if launcher.launched[0].MCPBaseURL != "http://kodex-control-plane.test.svc:8081/mcp" {
 		t.Fatalf("expected mcp base url to be propagated, got %q", launcher.launched[0].MCPBaseURL)
 	}
-	if launcher.launched[0].ControlPlaneGRPCTarget != "codex-k8s-control-plane.codex-k8s-prod.svc.cluster.local:9090" {
+	if launcher.launched[0].ControlPlaneGRPCTarget != "kodex-control-plane.kodex-prod.svc.cluster.local:9090" {
 		t.Fatalf("expected production gRPC target, got %q", launcher.launched[0].ControlPlaneGRPCTarget)
 	}
 	if launcher.launched[0].MCPBearerToken != "token-run-1" {
@@ -113,7 +113,7 @@ func TestTickLaunchesPendingRunWithPersistedInteractionResumePayload(t *testing.
 				CorrelationID: "corr-resume",
 				ProjectID:     "proj-1",
 				RunPayload: json.RawMessage(`{
-					"repository":{"full_name":"codex-k8s/codex-k8s"},
+					"repository":{"full_name":"codex-k8s/kodex"},
 					"trigger":{"kind":"dev"},
 					"issue":{"number":394},
 					"agent":{"key":"dev","name":"AI Developer"},
@@ -134,7 +134,7 @@ func TestTickLaunchesPendingRunWithPersistedInteractionResumePayload(t *testing.
 	launcher := &fakeLauncher{states: map[string]JobState{}}
 	deployer := &fakeRuntimePreparer{
 		result: PrepareRunEnvironmentResult{
-			Namespace: "codex-k8s-dev-resume",
+			Namespace: "kodex-dev-resume",
 			TargetEnv: "ai",
 		},
 	}
@@ -148,7 +148,7 @@ func TestTickLaunchesPendingRunWithPersistedInteractionResumePayload(t *testing.
 		RunningCheckLimit:      10,
 		SlotsPerProject:        2,
 		SlotLeaseTTL:           time.Minute,
-		ControlPlaneMCPBaseURL: "http://codex-k8s-control-plane.test.svc:8081/mcp",
+		ControlPlaneMCPBaseURL: "http://kodex-control-plane.test.svc:8081/mcp",
 	}, Dependencies{
 		Runs:            runs,
 		Events:          events,
@@ -181,7 +181,7 @@ func TestTickLaunchesCodeOnlyRunWorkload(t *testing.T) {
 				RunID:         "run-code-only",
 				CorrelationID: "corr-code-only",
 				ProjectID:     "proj-1",
-				RunPayload:    json.RawMessage(`{"repository":{"full_name":"codex-k8s/codex-k8s"},"issue":{"number":123},"agent":{"key":"dev","name":"AI Developer"}}`),
+				RunPayload:    json.RawMessage(`{"repository":{"full_name":"codex-k8s/kodex"},"issue":{"number":123},"agent":{"key":"dev","name":"AI Developer"}}`),
 				SlotNo:        1,
 			},
 		},
@@ -237,7 +237,7 @@ func TestTickMissionControlErrorDoesNotBlockPendingRuns(t *testing.T) {
 				RunID:         "run-mc-isolation",
 				CorrelationID: "corr-mc-isolation",
 				ProjectID:     "proj-1",
-				RunPayload:    json.RawMessage(`{"repository":{"full_name":"codex-k8s/codex-k8s"},"issue":{"number":123},"agent":{"key":"dev","name":"AI Developer"}}`),
+				RunPayload:    json.RawMessage(`{"repository":{"full_name":"codex-k8s/kodex"},"issue":{"number":123},"agent":{"key":"dev","name":"AI Developer"}}`),
 				SlotNo:        1,
 			},
 		},
@@ -253,7 +253,7 @@ func TestTickMissionControlErrorDoesNotBlockPendingRuns(t *testing.T) {
 		SlotsPerProject:        2,
 		SlotLeaseTTL:           time.Minute,
 		RunNamespacePrefix:     "codex-issue",
-		ControlPlaneGRPCTarget: "codex-k8s-control-plane:9090",
+		ControlPlaneGRPCTarget: "kodex-control-plane:9090",
 	}, Dependencies{
 		Runs:           runs,
 		Events:         events,
@@ -280,11 +280,11 @@ func TestTickLaunchesAIRepairCodeOnlyRunAsPodWorkload(t *testing.T) {
 				CorrelationID: "corr-ai-repair",
 				ProjectID:     "proj-1",
 				RunPayload: json.RawMessage(`{
-					"repository":{"full_name":"codex-k8s/codex-k8s"},
+					"repository":{"full_name":"codex-k8s/kodex"},
 					"trigger":{"kind":"ai_repair"},
 					"issue":{"number":45},
 					"agent":{"key":"sre","name":"AI SRE"},
-					"runtime":{"mode":"code-only","namespace":"codex-k8s-prod"}
+					"runtime":{"mode":"code-only","namespace":"kodex-prod"}
 				}`),
 				SlotNo: 1,
 			},
@@ -303,8 +303,8 @@ func TestTickLaunchesAIRepairCodeOnlyRunAsPodWorkload(t *testing.T) {
 		SlotsPerProject:        2,
 		SlotLeaseTTL:           time.Minute,
 		AgentBaseBranch:        "main",
-		AIRepairNamespace:      "codex-k8s-prod",
-		AIRepairServiceAccount: "codex-k8s-control-plane",
+		AIRepairNamespace:      "kodex-prod",
+		AIRepairServiceAccount: "kodex-control-plane",
 	}, Dependencies{
 		Runs:            runs,
 		Events:          events,
@@ -325,10 +325,10 @@ func TestTickLaunchesAIRepairCodeOnlyRunAsPodWorkload(t *testing.T) {
 	if len(launcher.launched) != 1 {
 		t.Fatalf("expected 1 launched workload, got %d", len(launcher.launched))
 	}
-	if got, want := launcher.launched[0].Namespace, "codex-k8s-prod"; got != want {
+	if got, want := launcher.launched[0].Namespace, "kodex-prod"; got != want {
 		t.Fatalf("expected ai-repair namespace %q, got %q", want, got)
 	}
-	if got, want := launcher.launched[0].ServiceAccountName, "codex-k8s-control-plane"; got != want {
+	if got, want := launcher.launched[0].ServiceAccountName, "kodex-control-plane"; got != want {
 		t.Fatalf("expected ai-repair service account %q, got %q", want, got)
 	}
 	if got, want := launcher.launched[0].TargetBranch, "main"; got != want {
@@ -355,14 +355,14 @@ func TestTickLaunchesProductionReadOnlyRunWithoutRuntimePrepare(t *testing.T) {
 				CorrelationID: "corr-postdeploy",
 				ProjectID:     "proj-1",
 				RunPayload: json.RawMessage(`{
-					"repository":{"full_name":"codex-k8s/codex-k8s"},
+					"repository":{"full_name":"codex-k8s/kodex"},
 					"trigger":{"kind":"postdeploy"},
 					"issue":{"number":46},
 					"agent":{"key":"sre","name":"AI SRE"},
 					"runtime":{
 						"mode":"full-env",
 						"target_env":"production",
-						"namespace":"codex-k8s-prod",
+						"namespace":"kodex-prod",
 						"build_ref":"0123456789abcdef0123456789abcdef01234567",
 						"access_profile":"production-readonly"
 					}
@@ -383,7 +383,7 @@ func TestTickLaunchesProductionReadOnlyRunWithoutRuntimePrepare(t *testing.T) {
 		RunningCheckLimit:   10,
 		SlotsPerProject:     2,
 		SlotLeaseTTL:        time.Minute,
-		ProductionNamespace: "codex-k8s-prod",
+		ProductionNamespace: "kodex-prod",
 	}, Dependencies{
 		Runs:            runs,
 		Events:          events,
@@ -410,7 +410,7 @@ func TestTickLaunchesProductionReadOnlyRunWithoutRuntimePrepare(t *testing.T) {
 	if len(launcher.launched) != 1 {
 		t.Fatalf("expected one launched workload, got %d", len(launcher.launched))
 	}
-	if got, want := launcher.launched[0].Namespace, "codex-k8s-prod"; got != want {
+	if got, want := launcher.launched[0].Namespace, "kodex-prod"; got != want {
 		t.Fatalf("namespace = %q, want %q", got, want)
 	}
 	if got, want := launcher.launched[0].RuntimeTargetEnv, "production"; got != want {
@@ -428,14 +428,14 @@ func TestTickRecoversProductionReadOnlyRunningRunWithoutRuntimePrepare(t *testin
 	t.Parallel()
 
 	payload := json.RawMessage(`{
-		"repository":{"full_name":"codex-k8s/codex-k8s"},
+		"repository":{"full_name":"codex-k8s/kodex"},
 		"trigger":{"kind":"ops"},
 		"issue":{"number":46},
 		"agent":{"key":"sre","name":"AI SRE"},
 		"runtime":{
 			"mode":"full-env",
 			"target_env":"production",
-			"namespace":"codex-k8s-prod",
+			"namespace":"kodex-prod",
 			"build_ref":"0123456789abcdef0123456789abcdef01234567",
 			"access_profile":"production-readonly"
 		}
@@ -468,7 +468,7 @@ func TestTickRecoversProductionReadOnlyRunningRunWithoutRuntimePrepare(t *testin
 		RunningCheckLimit:   10,
 		SlotsPerProject:     2,
 		SlotLeaseTTL:        time.Minute,
-		ProductionNamespace: "codex-k8s-prod",
+		ProductionNamespace: "kodex-prod",
 	}, Dependencies{
 		Runs:            runs,
 		Events:          events,
@@ -495,7 +495,7 @@ func TestTickRecoversProductionReadOnlyRunningRunWithoutRuntimePrepare(t *testin
 	if len(launcher.launched) != 1 {
 		t.Fatalf("expected one relaunched workload, got %d", len(launcher.launched))
 	}
-	if got, want := launcher.launched[0].Namespace, "codex-k8s-prod"; got != want {
+	if got, want := launcher.launched[0].Namespace, "kodex-prod"; got != want {
 		t.Fatalf("namespace = %q, want %q", got, want)
 	}
 	if got, want := launcher.launched[0].RuntimeAccessProfile, agentdomain.RuntimeAccessProfileProductionReadOnly; got != want {
@@ -522,11 +522,11 @@ func TestTickDeployOnlyRun_PreparesEnvironmentWithoutLaunchingJob(t *testing.T) 
 	t.Parallel()
 
 	payload := json.RawMessage(`{
-		"repository":{"full_name":"codex-k8s/codex-k8s"},
+		"repository":{"full_name":"codex-k8s/kodex"},
 		"runtime":{
 			"mode":"full-env",
 			"target_env":"production",
-			"namespace":"codex-k8s-prod",
+			"namespace":"kodex-prod",
 			"build_ref":"0123456789abcdef0123456789abcdef01234567",
 			"deploy_only":true
 		}
@@ -546,7 +546,7 @@ func TestTickDeployOnlyRun_PreparesEnvironmentWithoutLaunchingJob(t *testing.T) 
 	launcher := &fakeLauncher{states: map[string]JobState{}}
 	deployer := &fakeRuntimePreparer{
 		result: PrepareRunEnvironmentResult{
-			Namespace: "codex-k8s-prod",
+			Namespace: "kodex-prod",
 			TargetEnv: "production",
 		},
 	}
@@ -577,7 +577,7 @@ func TestTickDeployOnlyRun_PreparesEnvironmentWithoutLaunchingJob(t *testing.T) 
 	if !deployer.prepared[0].DeployOnly {
 		t.Fatal("expected deploy-only runtime deploy params")
 	}
-	if got, want := deployer.prepared[0].Namespace, "codex-k8s-prod"; got != want {
+	if got, want := deployer.prepared[0].Namespace, "kodex-prod"; got != want {
 		t.Fatalf("unexpected deploy namespace: got %q want %q", got, want)
 	}
 	if len(launcher.prepared) != 0 {
@@ -601,11 +601,11 @@ func TestTickDeployOnlyRun_RuntimeTaskCanceled_FinishesRunCanceled(t *testing.T)
 	t.Parallel()
 
 	payload := json.RawMessage(`{
-		"repository":{"full_name":"codex-k8s/codex-k8s"},
+		"repository":{"full_name":"codex-k8s/kodex"},
 		"runtime":{
 			"mode":"full-env",
 			"target_env":"production",
-			"namespace":"codex-k8s-prod",
+			"namespace":"kodex-prod",
 			"build_ref":"0123456789abcdef0123456789abcdef01234567",
 			"deploy_only":true
 		}
@@ -662,7 +662,7 @@ func TestTickDeployOnlyRunningRun_IsReconciledWithoutKubernetesJob(t *testing.T)
 	t.Parallel()
 
 	payload := json.RawMessage(`{
-		"repository":{"full_name":"codex-k8s/codex-k8s"},
+		"repository":{"full_name":"codex-k8s/kodex"},
 		"runtime":{
 			"mode":"full-env",
 			"target_env":"production",
@@ -685,7 +685,7 @@ func TestTickDeployOnlyRunningRun_IsReconciledWithoutKubernetesJob(t *testing.T)
 	launcher := &fakeLauncher{states: map[string]JobState{}, statusErr: context.Canceled}
 	deployer := &fakeRuntimePreparer{
 		result: PrepareRunEnvironmentResult{
-			Namespace: "codex-k8s-prod",
+			Namespace: "kodex-prod",
 			TargetEnv: "production",
 		},
 	}
@@ -727,7 +727,7 @@ func TestTickDeployOnlyRunningRun_IsReconciledWithoutKubernetesJob(t *testing.T)
 func TestTickCodeOnlyRunningRun_IsReconciledByWorkloadState(t *testing.T) {
 	t.Parallel()
 
-	payload := json.RawMessage(`{"repository":{"full_name":"codex-k8s/codex-k8s"}}`)
+	payload := json.RawMessage(`{"repository":{"full_name":"codex-k8s/kodex"}}`)
 	runs := &fakeRunQueue{
 		running: []runqueuerepo.RunningRun{
 			{
@@ -776,10 +776,10 @@ func TestTickAIRepairRunningRun_IsReconciledByWorkloadState(t *testing.T) {
 	t.Parallel()
 
 	payload := json.RawMessage(`{
-		"repository":{"full_name":"codex-k8s/codex-k8s"},
+		"repository":{"full_name":"codex-k8s/kodex"},
 		"trigger":{"kind":"ai_repair"},
 		"issue":{"number":45},
-		"runtime":{"mode":"code-only","namespace":"codex-k8s-prod"},
+		"runtime":{"mode":"code-only","namespace":"kodex-prod"},
 		"agent":{"key":"sre","name":"AI SRE"}
 	}`)
 	runs := &fakeRunQueue{
@@ -865,7 +865,7 @@ func TestTickFinalizesSucceededRun(t *testing.T) {
 func TestTickFinalizesCodeOnlyRun_UpdatesFinishedStatusComment(t *testing.T) {
 	t.Parallel()
 
-	payload := json.RawMessage(`{"repository":{"full_name":"codex-k8s/codex-k8s"},"trigger":{"kind":"prd"},"issue":{"number":119},"agent":{"key":"pm","name":"AI Product Manager"},"runtime":{"mode":"code-only"}}`)
+	payload := json.RawMessage(`{"repository":{"full_name":"codex-k8s/kodex"},"trigger":{"kind":"prd"},"issue":{"number":119},"agent":{"key":"pm","name":"AI Product Manager"},"runtime":{"mode":"code-only"}}`)
 	runs := &fakeRunQueue{
 		running: []runqueuerepo.RunningRun{{
 			RunID:         "run-code-only-finish",
@@ -906,7 +906,7 @@ func TestTickFinalizesCodeOnlyRun_UpdatesFinishedStatusComment(t *testing.T) {
 func TestTickLaunchesFullEnvRunWithNamespacePreparation(t *testing.T) {
 	t.Parallel()
 
-	payload := json.RawMessage(`{"repository":{"full_name":"codex-k8s/codex-k8s"},"trigger":{"kind":"dev"},"issue":{"number":77},"agent":{"key":"dev","name":"AI Developer"}}`)
+	payload := json.RawMessage(`{"repository":{"full_name":"codex-k8s/kodex"},"trigger":{"kind":"dev"},"issue":{"number":77},"agent":{"key":"dev","name":"AI Developer"}}`)
 	runs := &fakeRunQueue{
 		claims: []runqueuerepo.ClaimedRun{
 			{RunID: "run-3", CorrelationID: "corr-3", ProjectID: "550e8400-e29b-41d4-a716-446655440000", RunPayload: payload, SlotNo: 1},
@@ -917,7 +917,7 @@ func TestTickLaunchesFullEnvRunWithNamespacePreparation(t *testing.T) {
 	mcpTokens := &fakeMCPTokenIssuer{token: "token-run-3"}
 	deployer := &fakeRuntimePreparer{
 		result: PrepareRunEnvironmentResult{
-			Namespace: "codex-k8s-dev-1",
+			Namespace: "kodex-dev-1",
 			TargetEnv: "ai",
 		},
 	}
@@ -930,7 +930,7 @@ func TestTickLaunchesFullEnvRunWithNamespacePreparation(t *testing.T) {
 		SlotsPerProject:        2,
 		SlotLeaseTTL:           time.Minute,
 		RunNamespacePrefix:     "codex-issue",
-		ControlPlaneMCPBaseURL: "http://codex-k8s-control-plane.test.svc:8081/mcp",
+		ControlPlaneMCPBaseURL: "http://kodex-control-plane.test.svc:8081/mcp",
 	}, Dependencies{
 		Runs:            runs,
 		Events:          events,
@@ -963,7 +963,7 @@ func TestTickLaunchesFullEnvRunWithNamespacePreparation(t *testing.T) {
 	if launcher.prepared[0].RuntimeMode != agentdomain.RuntimeModeFullEnv {
 		t.Fatalf("expected full-env runtime mode, got %q", launcher.prepared[0].RuntimeMode)
 	}
-	if got, want := launcher.prepared[0].Namespace, "codex-k8s-dev-1"; got != want {
+	if got, want := launcher.prepared[0].Namespace, "kodex-dev-1"; got != want {
 		t.Fatalf("expected prepared namespace %q, got %q", want, got)
 	}
 	if len(launcher.launched) != 1 {
@@ -972,7 +972,7 @@ func TestTickLaunchesFullEnvRunWithNamespacePreparation(t *testing.T) {
 	if launcher.launched[0].RuntimeMode != agentdomain.RuntimeModeFullEnv {
 		t.Fatalf("expected launched runtime mode full-env, got %q", launcher.launched[0].RuntimeMode)
 	}
-	if got, want := launcher.launched[0].Namespace, "codex-k8s-dev-1"; got != want {
+	if got, want := launcher.launched[0].Namespace, "kodex-dev-1"; got != want {
 		t.Fatalf("expected launched namespace %q, got %q", want, got)
 	}
 	if launcher.launched[0].MCPBearerToken != "token-run-3" {
@@ -998,7 +998,7 @@ func TestTickLaunchesFullEnvRunWithNamespacePreparation(t *testing.T) {
 func TestTickFinalizesFullEnvRunRetainsNamespaceByTTL(t *testing.T) {
 	t.Parallel()
 
-	payload := json.RawMessage(`{"repository":{"full_name":"codex-k8s/codex-k8s"},"trigger":{"kind":"dev_revise"},"issue":{"number":10},"agent":{"key":"dev","name":"AI Developer"}}`)
+	payload := json.RawMessage(`{"repository":{"full_name":"codex-k8s/kodex"},"trigger":{"kind":"dev_revise"},"issue":{"number":10},"agent":{"key":"dev","name":"AI Developer"}}`)
 	runs := &fakeRunQueue{
 		running: []runqueuerepo.RunningRun{{
 			RunID:         "run-4",
@@ -1045,7 +1045,7 @@ func TestTickFinalizesFullEnvRunRetainsNamespaceByTTL(t *testing.T) {
 func TestTickLaunchesReviseRunReusesNamespaceAndExtendsTTL(t *testing.T) {
 	t.Parallel()
 
-	payload := json.RawMessage(`{"repository":{"full_name":"codex-k8s/codex-k8s"},"trigger":{"kind":"dev_revise"},"issue":{"number":74},"agent":{"key":"dev","name":"AI Developer"}}`)
+	payload := json.RawMessage(`{"repository":{"full_name":"codex-k8s/kodex"},"trigger":{"kind":"dev_revise"},"issue":{"number":74},"agent":{"key":"dev","name":"AI Developer"}}`)
 	runs := &fakeRunQueue{
 		claims: []runqueuerepo.ClaimedRun{
 			{RunID: "run-revise", CorrelationID: "corr-revise", ProjectID: "550e8400-e29b-41d4-a716-446655440000", RunPayload: payload, SlotNo: 1},
@@ -1056,7 +1056,7 @@ func TestTickLaunchesReviseRunReusesNamespaceAndExtendsTTL(t *testing.T) {
 		states:        map[string]JobState{},
 		reusableFound: true,
 		reusable: NamespaceReuseResult{
-			Namespace: "codex-k8s-dev-1",
+			Namespace: "kodex-dev-1",
 			ExpiresAt: time.Date(2026, 2, 11, 15, 0, 0, 0, time.UTC),
 		},
 		ensureResult: NamespaceEnsureResult{Reused: true, LeaseExpiresAt: time.Date(2026, 2, 12, 10, 0, 0, 0, time.UTC)},
@@ -1065,13 +1065,13 @@ func TestTickLaunchesReviseRunReusesNamespaceAndExtendsTTL(t *testing.T) {
 	deployer := &fakeRuntimePreparer{
 		evaluateResult: EvaluateRuntimeReuseResult{
 			Reusable:          true,
-			Namespace:         "codex-k8s-dev-1",
+			Namespace:         "kodex-dev-1",
 			TargetEnv:         "ai",
 			EffectiveBuildRef: "0123456789abcdef0123456789abcdef01234567",
 			FingerprintHash:   "fingerprint-1",
 		},
 		result: PrepareRunEnvironmentResult{
-			Namespace: "codex-k8s-dev-1",
+			Namespace: "kodex-dev-1",
 			TargetEnv: "ai",
 		},
 	}
@@ -1106,7 +1106,7 @@ func TestTickLaunchesReviseRunReusesNamespaceAndExtendsTTL(t *testing.T) {
 	if len(launcher.launched) != 1 {
 		t.Fatalf("expected one launched job, got %d", len(launcher.launched))
 	}
-	if got, want := launcher.launched[0].Namespace, "codex-k8s-dev-1"; got != want {
+	if got, want := launcher.launched[0].Namespace, "kodex-dev-1"; got != want {
 		t.Fatalf("expected launched namespace %q, got %q", want, got)
 	}
 	if len(events.inserted) < 5 {
@@ -1123,7 +1123,7 @@ func TestTickLaunchesReviseRunReusesNamespaceAndExtendsTTL(t *testing.T) {
 func TestTickLaunchesReviseRunFallsBackToRuntimeRedeployWhenReuseFingerprintIsMissing(t *testing.T) {
 	t.Parallel()
 
-	payload := json.RawMessage(`{"repository":{"full_name":"codex-k8s/codex-k8s"},"trigger":{"kind":"dev_revise"},"issue":{"number":74},"agent":{"key":"dev","name":"AI Developer"}}`)
+	payload := json.RawMessage(`{"repository":{"full_name":"codex-k8s/kodex"},"trigger":{"kind":"dev_revise"},"issue":{"number":74},"agent":{"key":"dev","name":"AI Developer"}}`)
 	runs := &fakeRunQueue{
 		claims: []runqueuerepo.ClaimedRun{
 			{RunID: "run-revise-fallback", CorrelationID: "corr-revise-fallback", ProjectID: "550e8400-e29b-41d4-a716-446655440000", RunPayload: payload, SlotNo: 1},
@@ -1134,7 +1134,7 @@ func TestTickLaunchesReviseRunFallsBackToRuntimeRedeployWhenReuseFingerprintIsMi
 		states:        map[string]JobState{},
 		reusableFound: true,
 		reusable: NamespaceReuseResult{
-			Namespace: "codex-k8s-dev-1",
+			Namespace: "kodex-dev-1",
 			ExpiresAt: time.Date(2026, 2, 11, 15, 0, 0, 0, time.UTC),
 		},
 		ensureResult: NamespaceEnsureResult{Reused: true, LeaseExpiresAt: time.Date(2026, 2, 12, 10, 0, 0, 0, time.UTC)},
@@ -1143,13 +1143,13 @@ func TestTickLaunchesReviseRunFallsBackToRuntimeRedeployWhenReuseFingerprintIsMi
 	deployer := &fakeRuntimePreparer{
 		evaluateResult: EvaluateRuntimeReuseResult{
 			Reusable:          false,
-			Namespace:         "codex-k8s-dev-1",
+			Namespace:         "kodex-dev-1",
 			TargetEnv:         "ai",
 			EffectiveBuildRef: "0123456789abcdef0123456789abcdef01234567",
 			Reason:            "fingerprint_missing",
 		},
 		result: PrepareRunEnvironmentResult{
-			Namespace: "codex-k8s-dev-1",
+			Namespace: "kodex-dev-1",
 			TargetEnv: "ai",
 		},
 	}
@@ -1181,7 +1181,7 @@ func TestTickLaunchesReviseRunFallsBackToRuntimeRedeployWhenReuseFingerprintIsMi
 	if len(deployer.prepared) != 1 {
 		t.Fatalf("expected one runtime prepare call after fallback, got %d", len(deployer.prepared))
 	}
-	if got, want := deployer.prepared[0].Namespace, "codex-k8s-dev-1"; got != want {
+	if got, want := deployer.prepared[0].Namespace, "kodex-dev-1"; got != want {
 		t.Fatalf("expected runtime prepare namespace %q, got %q", want, got)
 	}
 	if len(events.inserted) == 0 || events.inserted[0].EventType != floweventdomain.EventTypeRunNamespaceReuseFallback {
@@ -1190,7 +1190,7 @@ func TestTickLaunchesReviseRunFallsBackToRuntimeRedeployWhenReuseFingerprintIsMi
 	if len(launcher.launched) != 1 {
 		t.Fatalf("expected one launched job after fallback redeploy, got %d", len(launcher.launched))
 	}
-	if got, want := launcher.launched[0].Namespace, "codex-k8s-dev-1"; got != want {
+	if got, want := launcher.launched[0].Namespace, "kodex-dev-1"; got != want {
 		t.Fatalf("expected launched namespace %q after fallback, got %q", want, got)
 	}
 }
@@ -1198,7 +1198,7 @@ func TestTickLaunchesReviseRunFallsBackToRuntimeRedeployWhenReuseFingerprintIsMi
 func TestTickLaunchesReviseRunClearsStaleNamespaceWhenReuseVerdictRejectsCandidateNamespace(t *testing.T) {
 	t.Parallel()
 
-	payload := json.RawMessage(`{"repository":{"full_name":"codex-k8s/codex-k8s"},"trigger":{"kind":"dev_revise"},"issue":{"number":74},"agent":{"key":"dev","name":"AI Developer"}}`)
+	payload := json.RawMessage(`{"repository":{"full_name":"codex-k8s/kodex"},"trigger":{"kind":"dev_revise"},"issue":{"number":74},"agent":{"key":"dev","name":"AI Developer"}}`)
 	runs := &fakeRunQueue{
 		claims: []runqueuerepo.ClaimedRun{
 			{RunID: "run-revise-namespace-reset", CorrelationID: "corr-revise-namespace-reset", ProjectID: "550e8400-e29b-41d4-a716-446655440000", RunPayload: payload, SlotNo: 1},
@@ -1209,7 +1209,7 @@ func TestTickLaunchesReviseRunClearsStaleNamespaceWhenReuseVerdictRejectsCandida
 		states:        map[string]JobState{},
 		reusableFound: true,
 		reusable: NamespaceReuseResult{
-			Namespace: "codex-k8s-dev-1",
+			Namespace: "kodex-dev-1",
 			ExpiresAt: time.Date(2026, 2, 11, 15, 0, 0, 0, time.UTC),
 		},
 		ensureResult: NamespaceEnsureResult{Reused: true, LeaseExpiresAt: time.Date(2026, 2, 12, 10, 0, 0, 0, time.UTC)},
@@ -1218,7 +1218,7 @@ func TestTickLaunchesReviseRunClearsStaleNamespaceWhenReuseVerdictRejectsCandida
 	deployer := &fakeRuntimePreparer{
 		evaluateResult: EvaluateRuntimeReuseResult{
 			Reusable:          false,
-			Namespace:         "codex-k8s-dev-1",
+			Namespace:         "kodex-dev-1",
 			TargetEnv:         "ai",
 			EffectiveBuildRef: "0123456789abcdef0123456789abcdef01234567",
 			Reason:            runtimeReuseReasonNamespaceMismatch,
@@ -1341,7 +1341,7 @@ func TestTickCleanupExpiredNamespaces_SkipsActiveRunsAndWorkloads(t *testing.T) 
 				LeaseExpiresAt: time.Date(2026, 2, 11, 9, 0, 0, 0, time.UTC),
 			},
 			{
-				Namespace:      "codex-k8s-dev-1",
+				Namespace:      "kodex-dev-1",
 				RunID:          "run-cron",
 				RuntimeMode:    agentdomain.RuntimeModeFullEnv,
 				LeaseTTL:       24 * time.Hour,
@@ -1350,7 +1350,7 @@ func TestTickCleanupExpiredNamespaces_SkipsActiveRunsAndWorkloads(t *testing.T) 
 		},
 		workloadStates: map[string]NamespaceWorkloadState{
 			"codex-issue-proj-i74-pods": {ActivePods: []string{"discussion-pod"}},
-			"codex-k8s-dev-1":           {ActiveCronJobs: []string{"daily-sync"}},
+			"kodex-dev-1":           {ActiveCronJobs: []string{"daily-sync"}},
 		},
 	}
 	runStatus := &fakeRunStatusNotifier{}
@@ -1395,8 +1395,8 @@ func TestTickCleanupExpiredNamespaces_SkipsActiveRunsAndWorkloads(t *testing.T) 
 func TestTickPendingFullEnvPreparing_DoesNotBlockNextClaim(t *testing.T) {
 	t.Parallel()
 
-	fullEnvPayload := json.RawMessage(`{"repository":{"full_name":"codex-k8s/codex-k8s"},"trigger":{"kind":"dev"},"issue":{"number":74},"agent":{"key":"dev","name":"AI Developer"}}`)
-	codeOnlyPayload := json.RawMessage(`{"repository":{"full_name":"codex-k8s/codex-k8s"},"issue":{"number":75},"agent":{"key":"km","name":"Knowledge Manager"}}`)
+	fullEnvPayload := json.RawMessage(`{"repository":{"full_name":"codex-k8s/kodex"},"trigger":{"kind":"dev"},"issue":{"number":74},"agent":{"key":"dev","name":"AI Developer"}}`)
+	codeOnlyPayload := json.RawMessage(`{"repository":{"full_name":"codex-k8s/kodex"},"issue":{"number":75},"agent":{"key":"km","name":"Knowledge Manager"}}`)
 	runs := &fakeRunQueue{
 		claims: []runqueuerepo.ClaimedRun{
 			{
@@ -1456,7 +1456,7 @@ func TestTickPendingFullEnvPreparing_DoesNotBlockNextClaim(t *testing.T) {
 func TestTickRunningFullEnvJobNotFound_RuntimePreparingKeepsRunRunning(t *testing.T) {
 	t.Parallel()
 
-	fullEnvPayload := json.RawMessage(`{"repository":{"full_name":"codex-k8s/codex-k8s"},"trigger":{"kind":"dev"},"issue":{"number":74},"agent":{"key":"dev","name":"AI Developer"}}`)
+	fullEnvPayload := json.RawMessage(`{"repository":{"full_name":"codex-k8s/kodex"},"trigger":{"kind":"dev"},"issue":{"number":74},"agent":{"key":"dev","name":"AI Developer"}}`)
 	runs := &fakeRunQueue{
 		running: []runqueuerepo.RunningRun{
 			{
@@ -1541,7 +1541,7 @@ func TestTickReleasesStaleRunLeaseAndEmitsRecoveryEvents(t *testing.T) {
 
 	svc := NewService(Config{
 		WorkerID:             "worker-1",
-		WorkerPodNamespace:   "codex-k8s-prod",
+		WorkerPodNamespace:   "kodex-prod",
 		ClaimLimit:           1,
 		RunningCheckLimit:    10,
 		StaleLeaseSweepLimit: 5,
@@ -1571,7 +1571,7 @@ func TestTickReleasesStaleRunLeaseAndEmitsRecoveryEvents(t *testing.T) {
 	if got, want := strings.Join(runs.releaseStaleParams[0].ActiveWorkerIDs, ","), "worker-1,worker-2"; got != want {
 		t.Fatalf("expected active worker ids %q, got %q", want, got)
 	}
-	if got, want := strings.Join(launcher.workerPodListNamespaces, ","), "codex-k8s-prod"; got != want {
+	if got, want := strings.Join(launcher.workerPodListNamespaces, ","), "kodex-prod"; got != want {
 		t.Fatalf("expected worker pod lookup namespace %q, got %q", want, got)
 	}
 	if len(events.inserted) != 3 {
@@ -1601,7 +1601,7 @@ func TestTickStaleLeaseFallsBackToLeaseTTLWhenWorkerPodLookupFails(t *testing.T)
 
 	svc := NewService(Config{
 		WorkerID:             "worker-1",
-		WorkerPodNamespace:   "codex-k8s-prod",
+		WorkerPodNamespace:   "kodex-prod",
 		ClaimLimit:           1,
 		RunningCheckLimit:    10,
 		StaleLeaseSweepLimit: 5,
@@ -1635,7 +1635,7 @@ func TestTickStaleLeaseFallsBackToLeaseTTLWhenWorkerPodLookupFails(t *testing.T)
 func TestTickReclaimsRunAfterStaleLeaseAndLaunchesMissingWorkload(t *testing.T) {
 	t.Parallel()
 
-	payload := json.RawMessage(`{"repository":{"full_name":"codex-k8s/codex-k8s"},"trigger":{"kind":"dev"},"issue":{"number":74},"agent":{"key":"dev","name":"AI Developer"}}`)
+	payload := json.RawMessage(`{"repository":{"full_name":"codex-k8s/kodex"},"trigger":{"kind":"dev"},"issue":{"number":74},"agent":{"key":"dev","name":"AI Developer"}}`)
 	runs := &fakeRunQueue{
 		releasedStaleLeases: []runqueuerepo.ReleasedStaleLease{{
 			RunID:              "run-stale",
@@ -1661,7 +1661,7 @@ func TestTickReclaimsRunAfterStaleLeaseAndLaunchesMissingWorkload(t *testing.T) 
 	launcher := &fakeLauncher{states: map[string]JobState{"run-stale": JobStateNotFound}}
 	deployer := &fakeRuntimePreparer{
 		result: PrepareRunEnvironmentResult{
-			Namespace: "codex-k8s-dev-1",
+			Namespace: "kodex-dev-1",
 			TargetEnv: "ai",
 		},
 	}
@@ -1676,7 +1676,7 @@ func TestTickReclaimsRunAfterStaleLeaseAndLaunchesMissingWorkload(t *testing.T) 
 		SlotsPerProject:        2,
 		SlotLeaseTTL:           time.Minute,
 		RunNamespacePrefix:     "codex-issue",
-		ControlPlaneMCPBaseURL: "http://codex-k8s-control-plane.test.svc:8081/mcp",
+		ControlPlaneMCPBaseURL: "http://kodex-control-plane.test.svc:8081/mcp",
 	}, Dependencies{
 		Runs:            runs,
 		Events:          events,
@@ -1694,7 +1694,7 @@ func TestTickReclaimsRunAfterStaleLeaseAndLaunchesMissingWorkload(t *testing.T) 
 	if len(launcher.launched) != 1 {
 		t.Fatalf("expected one relaunched workload, got %d", len(launcher.launched))
 	}
-	if got, want := launcher.launched[0].Namespace, "codex-k8s-dev-1"; got != want {
+	if got, want := launcher.launched[0].Namespace, "kodex-dev-1"; got != want {
 		t.Fatalf("expected relaunched namespace %q, got %q", want, got)
 	}
 	if len(runs.finished) != 0 {
@@ -1771,7 +1771,7 @@ func TestReleaseOwnedRunLeasesOnShutdown_ReleasesOwnedLeasesAndEmitsEvent(t *tes
 func TestTickRunningFullEnvJobNotFound_ReviseReuseFastPathRelaunchesWithoutRuntimePrepare(t *testing.T) {
 	t.Parallel()
 
-	payload := json.RawMessage(`{"repository":{"full_name":"codex-k8s/codex-k8s"},"trigger":{"kind":"dev_revise"},"issue":{"number":74},"agent":{"key":"dev","name":"AI Developer"}}`)
+	payload := json.RawMessage(`{"repository":{"full_name":"codex-k8s/kodex"},"trigger":{"kind":"dev_revise"},"issue":{"number":74},"agent":{"key":"dev","name":"AI Developer"}}`)
 	runs := &fakeRunQueue{
 		running: []runqueuerepo.RunningRun{
 			{
@@ -1791,7 +1791,7 @@ func TestTickRunningFullEnvJobNotFound_ReviseReuseFastPathRelaunchesWithoutRunti
 		},
 		reusableFound: true,
 		reusable: NamespaceReuseResult{
-			Namespace: "codex-k8s-dev-1",
+			Namespace: "kodex-dev-1",
 			ExpiresAt: time.Date(2026, 2, 20, 2, 0, 0, 0, time.UTC),
 		},
 		ensureResult: NamespaceEnsureResult{Reused: true, LeaseExpiresAt: time.Date(2026, 2, 21, 1, 0, 0, 0, time.UTC)},
@@ -1799,7 +1799,7 @@ func TestTickRunningFullEnvJobNotFound_ReviseReuseFastPathRelaunchesWithoutRunti
 	deployer := &fakeRuntimePreparer{
 		evaluateResult: EvaluateRuntimeReuseResult{
 			Reusable:          true,
-			Namespace:         "codex-k8s-dev-1",
+			Namespace:         "kodex-dev-1",
 			TargetEnv:         "ai",
 			EffectiveBuildRef: "0123456789abcdef0123456789abcdef01234567",
 			FingerprintHash:   "fingerprint-2",
@@ -1837,7 +1837,7 @@ func TestTickRunningFullEnvJobNotFound_ReviseReuseFastPathRelaunchesWithoutRunti
 	if len(launcher.launched) != 1 {
 		t.Fatalf("expected one relaunched job, got %d", len(launcher.launched))
 	}
-	if got, want := launcher.launched[0].Namespace, "codex-k8s-dev-1"; got != want {
+	if got, want := launcher.launched[0].Namespace, "kodex-dev-1"; got != want {
 		t.Fatalf("expected relaunched namespace %q, got %q", want, got)
 	}
 	if len(events.inserted) == 0 || events.inserted[0].EventType != floweventdomain.EventTypeRunNamespaceReuseFastPath {

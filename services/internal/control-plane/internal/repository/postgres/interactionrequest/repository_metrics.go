@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/interactionrequest/dbmodel"
+	"github.com/codex-k8s/kodex/services/internal/control-plane/internal/repository/postgres/interactionrequest/dbmodel"
 	"github.com/jackc/pgx/v5"
 )
 

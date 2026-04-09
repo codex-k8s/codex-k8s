@@ -3,7 +3,7 @@ package runner
 import (
 	"context"
 
-	cpclient "github.com/codex-k8s/codex-k8s/services/jobs/agent-runner/internal/controlplane"
+	cpclient "github.com/codex-k8s/kodex/services/jobs/agent-runner/internal/controlplane"
 )
 
 func (f *fakeSessionRestoreControlPlane) ReportChangeGovernanceDraftSignal(context.Context, cpclient.ReportChangeGovernanceDraftSignalParams) (cpclient.ReportChangeGovernanceDraftSignalResult, error) {

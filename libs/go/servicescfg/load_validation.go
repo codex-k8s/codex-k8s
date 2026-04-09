@@ -140,16 +140,16 @@ func normalizeAndValidate(stack *Stack, env string) error {
 	if projectName == "" {
 		projectName = strings.TrimSpace(stack.Metadata.Name)
 	}
-	if projectName == "codex-k8s" {
+	if projectName == "kodex" {
 		production, ok := stack.Spec.Environments["production"]
 		if !ok {
-			return fmt.Errorf("codex-k8s requires production environment")
+			return fmt.Errorf("kodex requires production environment")
 		}
 		namespaceTemplate := strings.TrimSpace(production.NamespaceTemplate)
 		expectedTemplate := "{{ .Project }}-prod"
 		expectedResolved := fmt.Sprintf("%s-prod", projectName)
 		if namespaceTemplate != expectedTemplate && namespaceTemplate != expectedResolved {
-			return fmt.Errorf("codex-k8s requires production namespace template {{ .Project }}-prod")
+			return fmt.Errorf("kodex requires production namespace template {{ .Project }}-prod")
 		}
 	}
 

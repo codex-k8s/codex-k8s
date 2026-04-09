@@ -9,8 +9,8 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/codex-k8s/codex-k8s/libs/go/servicescfg"
-	valuetypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/value"
+	"github.com/codex-k8s/kodex/libs/go/servicescfg"
+	valuetypes "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/types/value"
 	"gopkg.in/yaml.v3"
 )
 
@@ -149,21 +149,21 @@ func resolveServicesYAMLDomain(raw []byte, envName string, slot int, vars map[st
 	if host != "" {
 		source = "domainTemplate"
 	} else if strings.EqualFold(envName, "ai") {
-		base := strings.TrimSpace(vars["CODEXK8S_AI_DOMAIN"])
+		base := strings.TrimSpace(vars["KODEX_AI_DOMAIN"])
 		if base == "" {
-			base = getOptionalEnv("CODEXK8S_AI_DOMAIN")
+			base = getOptionalEnv("KODEX_AI_DOMAIN")
 		}
 		if base != "" && namespace != "" {
 			host = namespace + "." + base
-			source = "default:namespace.CODEXK8S_AI_DOMAIN"
+			source = "default:namespace.KODEX_AI_DOMAIN"
 		}
 	} else {
-		base := strings.TrimSpace(vars["CODEXK8S_PRODUCTION_DOMAIN"])
+		base := strings.TrimSpace(vars["KODEX_PRODUCTION_DOMAIN"])
 		if base == "" {
-			base = getOptionalEnv("CODEXK8S_PRODUCTION_DOMAIN")
+			base = getOptionalEnv("KODEX_PRODUCTION_DOMAIN")
 		}
 		host = base
-		source = "default:CODEXK8S_PRODUCTION_DOMAIN"
+		source = "default:KODEX_PRODUCTION_DOMAIN"
 	}
 
 	host = strings.TrimSpace(host)

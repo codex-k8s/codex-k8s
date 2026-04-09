@@ -32,7 +32,7 @@ approvals:
   - channel-neutral interaction-domain;
   - separation from approval flow;
   - Telegram как отдельный последовательный follow-up stream.
-- Reference repositories `telegram-approver` и `telegram-executor` полезны как UX/stack ориентир, но не могут считаться source of truth для границ `codex-k8s`.
+- Reference repositories `telegram-approver` и `telegram-executor` полезны как UX/stack ориентир, но не могут считаться source of truth для границ `kodex`.
 - Проверка через Context7 на `2026-03-14` подтвердила, что `telego` поддерживает webhook ingestion, inline buttons и callback queries, поэтому библиотека подходит как pragmatic reference baseline для дальнейшей проработки.
 - На `2026-03-14` prerequisite для следующего stage уже проверяем: Issue `#387` и Issue `#389` закрыты, а значит S10 design/plan package уже зафиксировал typed interaction contract для Telegram follow-up stream.
 
@@ -95,7 +95,7 @@ approvals:
 - Channel-specific UX может улучшать delivery experience, но не должен ломать platform-owned audit, wait-state и correlation semantics.
 - Inline callbacks и free-text должны решать базовую потребность пользователя быстро ответить агенту без ухода в сложный conversational продукт.
 - Sequencing важнее скорости: лучше отложить старт Telegram, чем закрепить временный core contract.
-- Reference stack полезен как ускоритель, но продуктовый контракт должен рождаться из stage-проработки внутри `codex-k8s`.
+- Reference stack полезен как ускоритель, но продуктовый контракт должен рождаться из stage-проработки внутри `kodex`.
 
 ## Candidate product waves
 
@@ -126,7 +126,7 @@ approvals:
 ## Risks and Product Assumptions
 - Риск: Telegram-first решения начнут диктовать platform-core semantics и приведут к лишнему coupling.
 - Риск: scope расползётся в voice/STT и advanced conversation flows раньше фиксации базовой ценности канала.
-- Риск: прямое копирование reference repositories принесёт в `codex-k8s` чужие service boundaries и governance assumptions.
+- Риск: прямое копирование reference repositories принесёт в `kodex` чужие service boundaries и governance assumptions.
 - Допущение: closed-plan baseline Sprint S10 (`#389`) продолжит ссылаться на design package `#387` и не будет переоткрыт/суперседирован без явной новой continuity-точки для Telegram stream.
 - Допущение: webhook + inline callbacks + optional free-text достаточно, чтобы доказать ценность первого внешнего канала без richer conversational scope.
 

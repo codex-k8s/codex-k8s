@@ -14,9 +14,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/codex-k8s/codex-k8s/cmd/codex-bootstrap/internal/envfile"
-	"github.com/codex-k8s/codex-k8s/libs/go/manifesttpl"
-	"github.com/codex-k8s/codex-k8s/libs/go/servicescfg"
+	"github.com/codex-k8s/kodex/cmd/codex-bootstrap/internal/envfile"
+	"github.com/codex-k8s/kodex/libs/go/manifesttpl"
+	"github.com/codex-k8s/kodex/libs/go/servicescfg"
 )
 
 // Run executes codex-bootstrap CLI and returns process exit code.
@@ -253,8 +253,8 @@ func runBootstrap(args []string, stdout io.Writer, stderr io.Writer) int {
 	command.Stdout = stdout
 	command.Stderr = stderr
 	command.Env = mergeEnv(os.Environ(), loadedEnv)
-	command.Env = append(command.Env, "CODEXK8S_BOOTSTRAP_CONFIG_FILE="+absEnv)
-	command.Env = append(command.Env, "CODEXK8S_SERVICES_CONFIG="+mustAbs(*configPath))
+	command.Env = append(command.Env, "KODEX_BOOTSTRAP_CONFIG_FILE="+absEnv)
+	command.Env = append(command.Env, "KODEX_SERVICES_CONFIG="+mustAbs(*configPath))
 
 	if err := command.Run(); err != nil {
 		var exitErr *exec.ExitError
@@ -290,34 +290,34 @@ func runRemoteBootstrapDeployPipeline(values map[string]string, stdout io.Writer
 		return fmt.Errorf("TARGET_PORT must be numeric, got %q", port)
 	}
 
-	remoteEnvPath := strings.TrimSpace(values["CODEXK8S_REMOTE_BOOTSTRAP_ENV_FILE"])
+	remoteEnvPath := strings.TrimSpace(values["KODEX_REMOTE_BOOTSTRAP_ENV_FILE"])
 	if remoteEnvPath == "" {
-		remoteEnvPath = "/root/codex-k8s-bootstrap/bootstrap.env"
+		remoteEnvPath = "/root/kodex-bootstrap/bootstrap.env"
 	}
-	remoteKubeconfig := strings.TrimSpace(values["CODEXK8S_REMOTE_KUBECONFIG"])
+	remoteKubeconfig := strings.TrimSpace(values["KODEX_REMOTE_KUBECONFIG"])
 	if remoteKubeconfig == "" {
 		remoteKubeconfig = "/etc/rancher/k3s/k3s.yaml"
 	}
-	githubSyncWorkers := strings.TrimSpace(values["CODEXK8S_GITHUB_SYNC_WORKERS"])
+	githubSyncWorkers := strings.TrimSpace(values["KODEX_GITHUB_SYNC_WORKERS"])
 	if githubSyncWorkers == "" {
 		githubSyncWorkers = "2"
 	}
-	githubSyncTimeout := strings.TrimSpace(values["CODEXK8S_GITHUB_SYNC_TIMEOUT"])
+	githubSyncTimeout := strings.TrimSpace(values["KODEX_GITHUB_SYNC_TIMEOUT"])
 	if githubSyncTimeout == "" {
 		githubSyncTimeout = "15m"
 	}
-	remoteTimeoutRaw := strings.TrimSpace(values["CODEXK8S_REMOTE_DEPLOY_TIMEOUT"])
+	remoteTimeoutRaw := strings.TrimSpace(values["KODEX_REMOTE_DEPLOY_TIMEOUT"])
 	if remoteTimeoutRaw == "" {
 		remoteTimeoutRaw = "90m"
 	}
 	remoteTimeout, err := time.ParseDuration(remoteTimeoutRaw)
 	if err != nil {
-		return fmt.Errorf("parse CODEXK8S_REMOTE_DEPLOY_TIMEOUT=%q: %w", remoteTimeoutRaw, err)
+		return fmt.Errorf("parse KODEX_REMOTE_DEPLOY_TIMEOUT=%q: %w", remoteTimeoutRaw, err)
 	}
 
 	command := strings.Join([]string{
 		"set -euo pipefail",
-		"cd /opt/codex-k8s",
+		"cd /opt/kodex",
 		"go run ./services/internal/control-plane/cmd/runtime-deploy --env-file " + shellQuote(remoteEnvPath) +
 			" --kubeconfig " + shellQuote(remoteKubeconfig) +
 			" --prerequisites-only" +
@@ -326,8 +326,8 @@ func runRemoteBootstrapDeployPipeline(values map[string]string, stdout io.Writer
 		"go run ./cmd/codex-bootstrap github-sync --env-file " + shellQuote(remoteEnvPath) + " --workers " + shellQuote(githubSyncWorkers) + " --timeout " + shellQuote(githubSyncTimeout),
 		"go run ./services/internal/control-plane/cmd/runtime-deploy --env-file " + shellQuote(remoteEnvPath) +
 			" --kubeconfig " + shellQuote(remoteKubeconfig) +
-			" --repository-root /opt/codex-k8s" +
-			" --services-config /opt/codex-k8s/services.yaml" +
+			" --repository-root /opt/kodex" +
+			" --services-config /opt/kodex/services.yaml" +
 			" --target-env production" +
 			" --timeout " + shellQuote(remoteTimeoutRaw),
 	}, "; ")
@@ -356,7 +356,7 @@ func runRemoteBootstrapDeployPipeline(values map[string]string, stdout io.Writer
 }
 
 func printUsage(out io.Writer) {
-	writeln(out, "codex-bootstrap - bootstrap helper for codex-k8s")
+	writeln(out, "codex-bootstrap - bootstrap helper for kodex")
 	writeln(out, "")
 	writeln(out, "Usage:")
 	writeln(out, "  codex-bootstrap validate [flags]")

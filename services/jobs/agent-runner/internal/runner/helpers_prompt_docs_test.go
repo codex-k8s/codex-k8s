@@ -12,7 +12,7 @@ func TestLoadProjectDocsForPrompt_FiltersByRoleAndKeepsOrder(t *testing.T) {
 
 	repoDir := t.TempDir()
 	servicesYAML := `
-apiVersion: codex-k8s.dev/v1alpha1
+apiVersion: kodex.works/v1alpha1
 kind: ServiceStack
 metadata:
   name: demo
@@ -57,7 +57,7 @@ func TestLoadProjectDocsForPrompt_DedupWithRepositoryPriority(t *testing.T) {
 
 	repoDir := t.TempDir()
 	servicesYAML := `
-apiVersion: codex-k8s.dev/v1alpha1
+apiVersion: kodex.works/v1alpha1
 kind: ServiceStack
 metadata:
   name: demo
@@ -122,7 +122,7 @@ func TestLoadRoleDocTemplatesForPrompt_FiltersByRoleAndDedupsByPath(t *testing.T
 
 	repoDir := t.TempDir()
 	servicesYAML := `
-apiVersion: codex-k8s.dev/v1alpha1
+apiVersion: kodex.works/v1alpha1
 kind: ServiceStack
 metadata:
   name: demo
@@ -177,7 +177,7 @@ func TestLoadRoleDocTemplatesForPrompt_NoRoleMatch(t *testing.T) {
 
 	repoDir := t.TempDir()
 	servicesYAML := `
-apiVersion: codex-k8s.dev/v1alpha1
+apiVersion: kodex.works/v1alpha1
 kind: ServiceStack
 metadata:
   name: demo

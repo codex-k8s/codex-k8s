@@ -15,15 +15,15 @@ func TestResolveRunControlPlaneGRPCTarget(t *testing.T) {
 	}{
 		{
 			name:                "uses production fqdn when namespace is configured",
-			productionNamespace: "codex-k8s-prod",
-			fallbackTarget:      "codex-k8s-control-plane:9090",
-			want:                "codex-k8s-control-plane.codex-k8s-prod.svc.cluster.local:9090",
+			productionNamespace: "kodex-prod",
+			fallbackTarget:      "kodex-control-plane:9090",
+			want:                "kodex-control-plane.kodex-prod.svc.cluster.local:9090",
 		},
 		{
 			name:                "falls back when production namespace is empty",
 			productionNamespace: "",
-			fallbackTarget:      "codex-k8s-control-plane:9090",
-			want:                "codex-k8s-control-plane:9090",
+			fallbackTarget:      "kodex-control-plane:9090",
+			want:                "kodex-control-plane:9090",
 		},
 	}
 

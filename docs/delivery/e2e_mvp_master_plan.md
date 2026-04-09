@@ -46,7 +46,7 @@ approvals:
 |---|---|---|
 | `production-like full-env` | финальный go/no-go | full stage flow, MCP controls, TTL/revise reuse, audit completeness |
 | `code-only` | документационные и policy stage run | scope enforcement (только markdown), traceability updates |
-| `cross-project` (`codex-k8s` + `project-example`) | проверка multi-project изоляции | labels isolation, repo token isolation, docs mapping correctness |
+| `cross-project` (`kodex` + `project-example`) | проверка multi-project изоляции | labels isolation, repo token isolation, docs mapping correctness |
 
 ## Матрица label-покрытия
 

@@ -7,15 +7,15 @@ import (
 	"strings"
 	"time"
 
-	controlplanev1 "github.com/codex-k8s/codex-k8s/proto/gen/go/codexk8s/controlplane/v1"
-	agentcallbackdomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/agentcallback"
-	mcpdomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/mcp"
-	agentsessionrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/agentsession"
-	runstatusdomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/runstatus"
-	runtimedeploydomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/runtimedeploy"
-	"github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/staff"
-	querytypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/query"
-	agentcallback "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/transport/agentcallback"
+	controlplanev1 "github.com/codex-k8s/kodex/proto/gen/go/kodex/controlplane/v1"
+	agentcallbackdomain "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/agentcallback"
+	mcpdomain "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/mcp"
+	agentsessionrepo "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/repository/agentsession"
+	runstatusdomain "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/runstatus"
+	runtimedeploydomain "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/runtimedeploy"
+	"github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/staff"
+	querytypes "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/types/query"
+	agentcallback "github.com/codex-k8s/kodex/services/internal/control-plane/internal/transport/agentcallback"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -210,7 +210,7 @@ func (s *Server) StopRuntimeDeployTask(ctx context.Context, req *controlplanev1.
 	return s.requestRuntimeDeployTaskAction(ctx, req, runtimedeploydomain.TaskActionStop)
 }
 
-// TODO(codex-k8s#81): This RPC is temporarily unused after staff UI removed
+// TODO(kodex#81): This RPC is temporarily unused after staff UI removed
 // "platform error" alerts. Decide later whether to keep, repurpose, or remove it.
 func (s *Server) ListRuntimeErrors(ctx context.Context, req *controlplanev1.ListRuntimeErrorsRequest) (*controlplanev1.ListRuntimeErrorsResponse, error) {
 	if req == nil {
@@ -238,7 +238,7 @@ func (s *Server) ListRuntimeErrors(ctx context.Context, req *controlplanev1.List
 	return &controlplanev1.ListRuntimeErrorsResponse{Items: out}, nil
 }
 
-// TODO(codex-k8s#81): This RPC is temporarily unused after staff UI removed
+// TODO(kodex#81): This RPC is temporarily unused after staff UI removed
 // "platform error" alerts. Decide later whether to keep, repurpose, or remove it.
 func (s *Server) MarkRuntimeErrorViewed(ctx context.Context, req *controlplanev1.MarkRuntimeErrorViewedRequest) (*controlplanev1.RuntimeError, error) {
 	return requestStaffEntity(ctx, req, req.GetRuntimeErrorId(), s.staff.MarkRuntimeErrorViewed, runtimeErrorToProto)

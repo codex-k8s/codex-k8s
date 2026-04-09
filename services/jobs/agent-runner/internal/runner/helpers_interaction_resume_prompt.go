@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/codex-k8s/codex-k8s/libs/go/mcp/userinteraction"
+	"github.com/codex-k8s/kodex/libs/go/mcp/userinteraction"
 )
 
 const (

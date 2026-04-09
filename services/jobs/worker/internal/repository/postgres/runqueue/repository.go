@@ -14,10 +14,10 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	agentdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/agent"
-	rundomain "github.com/codex-k8s/codex-k8s/libs/go/domain/run"
-	domainrepo "github.com/codex-k8s/codex-k8s/services/jobs/worker/internal/domain/repository/runqueue"
-	querytypes "github.com/codex-k8s/codex-k8s/services/jobs/worker/internal/domain/types/query"
+	agentdomain "github.com/codex-k8s/kodex/libs/go/domain/agent"
+	rundomain "github.com/codex-k8s/kodex/libs/go/domain/run"
+	domainrepo "github.com/codex-k8s/kodex/services/jobs/worker/internal/domain/repository/runqueue"
+	querytypes "github.com/codex-k8s/kodex/services/jobs/worker/internal/domain/types/query"
 )
 
 var (

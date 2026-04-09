@@ -9,7 +9,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v5"
 
-	"github.com/codex-k8s/codex-k8s/libs/go/errs"
+	"github.com/codex-k8s/kodex/libs/go/errs"
 )
 
 const (

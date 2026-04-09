@@ -30,7 +30,7 @@ approvals:
 - Источник доксета (dev): `../agent-knowledge-base`.
 - Источник доксета (prod): `https://github.com/codex-k8s/agent-knowledge-base.git`.
 - Индекс: `docset.manifest.json` (format `manifest_version=1`).
-- Спецификация import/sync и пример lock-файла: `agent-knowledge-base/docs/codex-k8s/docset_import_and_sync_<locale>.md`.
+- Спецификация import/sync и пример lock-файла: `agent-knowledge-base/docs/kodex/docset_import_and_sync_<locale>.md`.
 - В доксете файлы лежат как `*_ru.md` и `*_en.md`, но `import_path` в манифесте уже без суффикса локали (например `docs/templates/adr.md`).
 - В проекте целевые пути должны быть без `_ru/_en`, потому что ссылки внутри markdown уже без суффиксов локали.
 

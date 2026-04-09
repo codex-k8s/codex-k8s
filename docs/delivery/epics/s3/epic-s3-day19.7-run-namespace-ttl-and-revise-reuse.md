@@ -61,7 +61,7 @@ approvals:
   - Sprint/epic/traceability документы синхронизированы.
 - Contract gate:
   - `services.yaml` валидирует TTL длительности и fallback.
-  - Для `codex-k8s` проставлены `24h` для всех системных ролей.
+  - Для `kodex` проставлены `24h` для всех системных ролей.
 - Runtime gate:
   - после `run:dev` namespace не удаляется immediately;
   - в metadata видны `namespace_lease_ttl` и `namespace_lease_expires_at`.
@@ -69,7 +69,7 @@ approvals:
   - `run:*:revise` продлевает lease от текущего времени;
   - при валидном активном namespace выполняется reuse, иначе create-new.
 - Cleanup gate:
-  - sweep удаляет только managed run namespace (`codex-k8s.dev/managed-by=codex-k8s-worker`, `codex-k8s.dev/namespace-purpose=run`);
+  - sweep удаляет только managed run namespace (`kodex.works/managed-by=kodex-worker`, `kodex.works/namespace-purpose=run`);
   - expired namespace удаляется с audit-событием.
 - Security gate:
   - RBAC ограничения сохраняются: `secrets` read/write в run namespace недоступны.

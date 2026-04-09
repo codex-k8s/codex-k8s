@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	sharedgithubratelimit "github.com/codex-k8s/codex-k8s/libs/go/domain/githubratelimit"
+	sharedgithubratelimit "github.com/codex-k8s/kodex/libs/go/domain/githubratelimit"
 )
 
 const (

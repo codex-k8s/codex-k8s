@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"time"
 
-	rundomain "github.com/codex-k8s/codex-k8s/libs/go/domain/run"
+	rundomain "github.com/codex-k8s/kodex/libs/go/domain/run"
 )
 
 // RunQueueClaimParams defines constraints for claiming a pending run.

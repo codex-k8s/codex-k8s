@@ -7,8 +7,8 @@ import (
 	"sort"
 	"strings"
 
-	webhookdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/webhook"
-	"github.com/codex-k8s/codex-k8s/libs/go/servicescfg"
+	webhookdomain "github.com/codex-k8s/kodex/libs/go/domain/webhook"
+	"github.com/codex-k8s/kodex/libs/go/servicescfg"
 )
 
 const (

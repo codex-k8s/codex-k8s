@@ -30,12 +30,12 @@ approvals:
 
 ### Быстрые проверки
 1. `kubectl -n <ns> get pods,deploy,job -o wide`
-2. `kubectl -n <ns> logs deploy/codex-k8s-control-plane --tail=200`
-3. `kubectl -n <ns> logs deploy/codex-k8s-worker --tail=200`
-4. `kubectl -n <ns> logs deploy/codex-k8s --tail=200`
+2. `kubectl -n <ns> logs deploy/kodex-control-plane --tail=200`
+3. `kubectl -n <ns> logs deploy/kodex-worker --tail=200`
+4. `kubectl -n <ns> logs deploy/kodex --tail=200`
 5. `kubectl -n <ns> get events --sort-by=.lastTimestamp | tail -n 80`
-6. `kubectl -n <ns> exec deploy/codex-k8s -- wget -qO- http://127.0.0.1:8080/healthz`
-7. `kubectl -n <ns> exec deploy/codex-k8s-control-plane -- wget -qO- http://127.0.0.1:8081/health/readyz`
+6. `kubectl -n <ns> exec deploy/kodex -- wget -qO- http://127.0.0.1:8080/healthz`
+7. `kubectl -n <ns> exec deploy/kodex-control-plane -- wget -qO- http://127.0.0.1:8081/health/readyz`
 
 ### Критерии OK
 - Все критичные deployment в `Ready` (`availableReplicas == desiredReplicas`).
@@ -47,7 +47,7 @@ approvals:
 
 ### Availability
 - Доля успешных ответов API gateway (`2xx/3xx`) в 5м/1ч окнах.
-- Up/ready состояние `codex-k8s`, `codex-k8s-control-plane`, `codex-k8s-worker`, `postgres`.
+- Up/ready состояние `kodex`, `kodex-control-plane`, `kodex-worker`, `postgres`.
 
 ### Latency
 - p95/p99 latency для критичных API маршрутов (`/api/v1/webhooks/github`, `/api/v1/staff/*`).

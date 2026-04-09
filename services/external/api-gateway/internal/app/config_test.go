@@ -3,12 +3,12 @@ package app
 import "testing"
 
 func TestLoadConfig_Defaults(t *testing.T) {
-	t.Setenv("CODEXK8S_CONTROL_PLANE_GRPC_TARGET", "codex-k8s-control-plane:9090")
-	t.Setenv("CODEXK8S_PUBLIC_BASE_URL", "https://platform.codex-k8s.dev")
-	t.Setenv("CODEXK8S_GITHUB_OAUTH_CLIENT_ID", "client-id")
-	t.Setenv("CODEXK8S_GITHUB_OAUTH_CLIENT_SECRET", "client-secret")
-	t.Setenv("CODEXK8S_JWT_SIGNING_KEY", "jwt-key")
-	t.Setenv("CODEXK8S_GITHUB_WEBHOOK_SECRET", "secret")
+	t.Setenv("KODEX_CONTROL_PLANE_GRPC_TARGET", "kodex-control-plane:9090")
+	t.Setenv("KODEX_PUBLIC_BASE_URL", "https://platform.kodex.works")
+	t.Setenv("KODEX_GITHUB_OAUTH_CLIENT_ID", "client-id")
+	t.Setenv("KODEX_GITHUB_OAUTH_CLIENT_SECRET", "client-secret")
+	t.Setenv("KODEX_JWT_SIGNING_KEY", "jwt-key")
+	t.Setenv("KODEX_GITHUB_WEBHOOK_SECRET", "secret")
 
 	cfg, err := LoadConfig()
 	if err != nil {
@@ -33,12 +33,12 @@ func TestLoadConfig_Defaults(t *testing.T) {
 }
 
 func TestLoadConfig_MissingRequired(t *testing.T) {
-	t.Setenv("CODEXK8S_CONTROL_PLANE_GRPC_TARGET", "codex-k8s-control-plane:9090")
-	t.Setenv("CODEXK8S_PUBLIC_BASE_URL", "https://platform.codex-k8s.dev")
-	t.Setenv("CODEXK8S_GITHUB_OAUTH_CLIENT_ID", "client-id")
-	t.Setenv("CODEXK8S_GITHUB_OAUTH_CLIENT_SECRET", "client-secret")
-	t.Setenv("CODEXK8S_JWT_SIGNING_KEY", "jwt-key")
-	// CODEXK8S_GITHUB_WEBHOOK_SECRET intentionally unset
+	t.Setenv("KODEX_CONTROL_PLANE_GRPC_TARGET", "kodex-control-plane:9090")
+	t.Setenv("KODEX_PUBLIC_BASE_URL", "https://platform.kodex.works")
+	t.Setenv("KODEX_GITHUB_OAUTH_CLIENT_ID", "client-id")
+	t.Setenv("KODEX_GITHUB_OAUTH_CLIENT_SECRET", "client-secret")
+	t.Setenv("KODEX_JWT_SIGNING_KEY", "jwt-key")
+	// KODEX_GITHUB_WEBHOOK_SECRET intentionally unset
 
 	_, err := LoadConfig()
 	if err == nil {

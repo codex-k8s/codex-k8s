@@ -47,7 +47,7 @@ func TestDeriveDiscussionIssueStateTracksCommentsAfterAgentReply(t *testing.T) {
 	comments := []discussionIssueCommentResponse{
 		{ID: 10, Body: "first", User: discussionIssueCommentUser{Login: "owner", Type: "User"}},
 		{ID: 20, Body: "reply", User: discussionIssueCommentUser{Login: "codex-bot", Type: "Bot"}},
-		{ID: 30, Body: "status <!-- codex-k8s:run-status abc -->", User: discussionIssueCommentUser{Login: "codex-bot", Type: "Bot"}},
+		{ID: 30, Body: "status <!-- kodex:run-status abc -->", User: discussionIssueCommentUser{Login: "codex-bot", Type: "Bot"}},
 		{ID: 40, Body: "follow-up", User: discussionIssueCommentUser{Login: "owner", Type: "User"}},
 		{ID: 50, Body: "another", User: discussionIssueCommentUser{Login: "qa-user", Type: "User"}},
 	}

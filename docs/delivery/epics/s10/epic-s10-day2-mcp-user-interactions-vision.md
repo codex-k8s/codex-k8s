@@ -118,7 +118,7 @@ approvals:
 | risk | `RSK-378-02` | User interaction flow может быть ошибочно спроектирован как подмножество approval flow | Сохранить separation as non-negotiable guardrail уже на PRD stage | open |
 | risk | `RSK-378-03` | Слишком свободный response model приведёт к ad-hoc payloads и неоднозначной интерпретации callback data | Зафиксировать typed response semantics и explicit edge cases на `run:prd` | open |
 | risk | `RSK-378-04` | Notification path станет “информационным шумом” без actionable next step | Держать clarity rate и fallback rate как product gates для дальнейшего scope | open |
-| assumption | `ASM-378-01` | Existing built-in MCP server `codex_k8s` достаточно расширяем, чтобы принять новые user-facing tools без отдельного runtime server block | Проверить ownership и lifecycle на `run:arch` | accepted |
+| assumption | `ASM-378-01` | Existing built-in MCP server `kodex` достаточно расширяем, чтобы принять новые user-facing tools без отдельного runtime server block | Проверить ownership и lifecycle на `run:arch` | accepted |
 | assumption | `ASM-378-02` | Пользовательская ценность достигается быстрее через typed buttons/free-text path, чем через GitHub comment-only flow | Подтвердить user stories и expected evidence на `run:prd` | accepted |
 | assumption | `ASM-378-03` | Channel-neutral contract удастся сохранить без потери usability на первом канале интеграции | Подтвердить adapter constraints и contract boundaries на `run:arch`/`run:design` | accepted |
 
@@ -126,7 +126,7 @@ approvals:
 - [x] Mission и north star зафиксированы для трёх ключевых persona/outcome-потоков.
 - [x] Метрики успеха и guardrails сформулированы как измеримые product/operational сигналы.
 - [x] MVP scope, deferred scope и отдельный adapter follow-up stream явно разделены.
-- [x] Неподвижные ограничения инициативы сохранены: built-in server `codex_k8s`, separation from approval flow, wait-state discipline, channel-neutral typed semantics.
+- [x] Неподвижные ограничения инициативы сохранены: built-in server `kodex`, separation from approval flow, wait-state discipline, channel-neutral typed semantics.
 - [x] Создана отдельная issue следующего этапа `run:prd` (`#383`) без trigger-лейбла.
 
 ## Acceptance criteria (Issue #378)
@@ -142,7 +142,7 @@ approvals:
 - Trigger-лейбл `run:prd` на issue `#383` ставит Owner.
 - Обязательное условие для `#383`: в конце PRD stage создать issue для stage `run:arch` без trigger-лейбла и с continuity-инструкцией сохранить channel-neutral semantics, wait-state discipline и separation from approval flow.
 - На `run:prd` нельзя потерять следующие product decisions:
-  - расширяется существующий built-in server `codex_k8s`, а не создаётся новый runtime server block;
+  - расширяется существующий built-in server `kodex`, а не создаётся новый runtime server block;
   - core MVP baseline ограничен `user.notify` и `user.decision.request`;
   - `user.notify` остаётся non-blocking, а wait-state разрешён только для response-required path;
   - interaction lifecycle не смешивается с approval/control lifecycle;

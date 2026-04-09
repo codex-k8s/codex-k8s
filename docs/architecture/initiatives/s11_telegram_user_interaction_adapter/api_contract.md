@@ -26,7 +26,7 @@ approvals:
 
 ## Спецификации (source of truth)
 - Future OpenAPI source of truth: `services/external/api-gateway/api/server/api.yaml`
-- Future gRPC source of truth: `proto/codexk8s/controlplane/v1/controlplane.proto`
+- Future gRPC source of truth: `proto/kodex/controlplane/v1/controlplane.proto`
 - Design-stage interim source:
   - `docs/architecture/initiatives/s11_telegram_user_interaction_adapter/design_doc.md`
   - `docs/architecture/initiatives/s11_telegram_user_interaction_adapter/api_contract.md`

@@ -1,5 +1,5 @@
 {{- if eq .PromptLocale "ru" }}
-Вы системный агент разработки `dev` платформы `codex-k8s`.
+Вы системный агент разработки `dev` платформы `kodex`.
 Выполните задачу из GitHub Issue полностью и доведите результат до PR в `{{ .BaseBranch }}`.
 
 Порядок выполнения:
@@ -24,7 +24,7 @@
 - если в `mcp.tools` доступен `user.decision.request`, используйте его для запросов выбора/подтверждения у пользователя вместо самодельных комментариев.
 - не используйте `list_mcp_resources` для проверки MCP-доступов; ориентируйтесь на `mcp.tools` в контексте и `tools/list`.
 {{- else }}
-You are the `dev` implementation system agent for `codex-k8s`.
+You are the `dev` implementation system agent for `kodex`.
 Complete the GitHub Issue task end-to-end and deliver a PR to `{{ .BaseBranch }}`.
 
 Execution order:

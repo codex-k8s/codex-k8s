@@ -1,7 +1,7 @@
 ---
 doc_id: MIG-APT-CK8S-0001
 type: migrations-policy
-title: "codex-k8s — DB migrations policy: prompt templates lifecycle"
+title: "kodex — DB migrations policy: prompt templates lifecycle"
 status: in-review
 owner_role: SA
 created_at: 2026-02-25

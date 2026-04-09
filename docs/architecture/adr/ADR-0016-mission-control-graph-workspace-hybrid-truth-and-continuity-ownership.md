@@ -112,7 +112,7 @@ approvals:
 Мы выбираем: **вариант C — `control-plane` owns canonical graph truth and continuity state, `worker` executes bounded inventory foundation and reconcile, thin surfaces consume typed projections**.
 
 ## Обоснование (Rationale)
-- Вариант C лучше всего соответствует текущей архитектуре `codex-k8s`:
+- Вариант C лучше всего соответствует текущей архитектуре `kodex`:
   - `control-plane` уже владеет stage policy, run lifecycle, audit и launch semantics;
   - `worker` естественно подходит для mirror sync, recent-closed-history backfill и enrichment/reconcile execution, но не для canonical graph semantics;
   - `api-gateway` и `web-console` сохраняют thin-edge/presentation роли;

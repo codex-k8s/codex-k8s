@@ -26,17 +26,17 @@ func TestMissingRequiredKeys(t *testing.T) {
 
 func TestSplitRepositoryFullName(t *testing.T) {
 	t.Run("ok", func(t *testing.T) {
-		owner, name, err := splitRepositoryFullName(" codex-k8s / codex-k8s ")
+		owner, name, err := splitRepositoryFullName(" kodex / kodex ")
 		if err != nil {
 			t.Fatalf("splitRepositoryFullName returned error: %v", err)
 		}
-		if owner != "codex-k8s" || name != "codex-k8s" {
+		if owner != "kodex" || name != "kodex" {
 			t.Fatalf("unexpected split result: owner=%q name=%q", owner, name)
 		}
 	})
 
 	t.Run("invalid", func(t *testing.T) {
-		_, _, err := splitRepositoryFullName("codex-k8s")
+		_, _, err := splitRepositoryFullName("kodex")
 		if err == nil {
 			t.Fatal("expected error for invalid repository format")
 		}
@@ -45,26 +45,26 @@ func TestSplitRepositoryFullName(t *testing.T) {
 
 func TestResolveWebhookURL(t *testing.T) {
 	explicit := resolveWebhookURL(map[string]string{
-		"CODEXK8S_GITHUB_WEBHOOK_URL": "https://example.org/hook",
-		"CODEXK8S_PRODUCTION_DOMAIN":  "platform.codex-k8s.dev",
+		"KODEX_GITHUB_WEBHOOK_URL": "https://example.org/hook",
+		"KODEX_PRODUCTION_DOMAIN":  "platform.kodex.works",
 	})
 	if explicit != "https://example.org/hook" {
 		t.Fatalf("expected explicit url, got %q", explicit)
 	}
 
 	derived := resolveWebhookURL(map[string]string{
-		"CODEXK8S_PRODUCTION_DOMAIN": "platform.codex-k8s.dev",
+		"KODEX_PRODUCTION_DOMAIN": "platform.kodex.works",
 	})
-	if derived != "https://platform.codex-k8s.dev/api/v1/webhooks/github" {
+	if derived != "https://platform.kodex.works/api/v1/webhooks/github" {
 		t.Fatalf("unexpected derived url: %q", derived)
 	}
 }
 
 func TestHasWebhookURL(t *testing.T) {
 	hooks := []*gh.Hook{
-		{Config: &gh.HookConfig{URL: gh.Ptr("https://platform.codex-k8s.dev/api/v1/webhooks/github")}},
+		{Config: &gh.HookConfig{URL: gh.Ptr("https://platform.kodex.works/api/v1/webhooks/github")}},
 	}
-	if !hasWebhookURL(hooks, "https://platform.codex-k8s.dev/api/v1/webhooks/github") {
+	if !hasWebhookURL(hooks, "https://platform.kodex.works/api/v1/webhooks/github") {
 		t.Fatal("expected webhook url to be found")
 	}
 	if hasWebhookURL(hooks, "https://example.org/missing") {

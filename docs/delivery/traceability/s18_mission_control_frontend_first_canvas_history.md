@@ -6,7 +6,7 @@ status: in-review
 owner_role: KM
 created_at: 2026-03-26
 updated_at: 2026-04-01
-related_issues: [470, 480, 522, 523, 524, 525, 561, 562, 563, 565, 567, 571, 573, 579]
+related_issues: [470, 480, 522, 523, 524, 525, 561, 562, 563, 565, 567, 571, 573, 579, 581]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -105,3 +105,17 @@ approvals:
 - Через `gh issue create` создана follow-up issue `#579` для stage `run:plan`.
 - Выполнены markdown-only проверки: traceability sync, `git diff --check`, локальная проверка `gh issue view 573 --json number,title,body,url`, `gh issue view 579 --json number,title,body,url`, фактическое создание issue `#579` через `gh issue create`; kubectl/logs/БД-запросы не выполнялись, потому что stage ограничен documentation-only scope и не требовал runtime-debug.
 - Root FR/NFR matrix в `docs/delivery/requirements_traceability.md` не менялась по существу: design stage фиксирует UI/state/contract package и historical delta, не добавляя новые канонические требования в `docs/product/requirements_machine_driven.md`.
+
+## Актуализация по Issue #579 (`run:plan`, 2026-04-01)
+- Подготовлен plan package:
+  - `docs/delivery/epics/s18/epic-s18-day6-mission-control-frontend-first-canvas-plan.md`;
+  - обновлены `docs/delivery/sprints/s18/sprint_s18_mission_control_frontend_first_canvas_fake_data.md`, `docs/delivery/epics/s18/epic_s18.md`, `docs/delivery/delivery_plan.md`, `docs/delivery/issue_map.md`, `docs/delivery/epics/README.md`, `docs/delivery/sprints/README.md`.
+- Зафиксированы:
+  - execution package Sprint S18 для перехода в `run:dev` без разрыва continuity и без reopening Day1-Day5 baseline;
+  - одна owner-managed implementation issue `#581`, внутри которой зафиксированы waves `route shell + prototype source -> canvas/drawer composition -> workflow preview/prompt-source evidence -> acceptance/demo evidence`;
+  - quality gates `QG-S18-D6-01..QG-S18-D6-08`, DoR/DoD, blockers, risks и owner decisions для frontend-only prototype;
+  - deferred boundary сохранена явно: backend rebuild `#563`, live provider sync, DB prompt editor, release-safety cockpit и waves `#524/#525` не входят в execution package;
+  - continuity handover переведён на issue `#581` для stage `run:dev`.
+- Через `gh issue create` создана follow-up issue `#581` для stage `run:dev`.
+- Выполнены markdown-only проверки: traceability sync, `git diff --check`, локальная проверка `gh issue view 579 --json number,title,body,url`, `gh issue view 581 --json number,title,body,url`, `gh issue create --help`, `gh pr create --help`, `gh pr edit --help`; kubectl/logs/БД-запросы не выполнялись, потому что stage ограничен documentation-only scope и не требовал runtime-debug.
+- Root FR/NFR matrix в `docs/delivery/requirements_traceability.md` не менялась по существу: plan stage фиксирует execution package, handover и historical delta, не добавляя новые канонические требования в `docs/product/requirements_machine_driven.md`.

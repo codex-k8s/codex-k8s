@@ -19,13 +19,13 @@ approvals:
 # Epic S10 Day 1: Intake для встроенных MCP-взаимодействий с пользователем (Issue #360)
 
 ## TL;DR
-- В текущем baseline у платформы уже есть built-in MCP server `codex_k8s`, approval/control tools и callback path, но нет отдельного product/domain contour для user-facing interaction tools.
+- В текущем baseline у платформы уже есть built-in MCP server `kodex`, approval/control tools и callback path, но нет отдельного product/domain contour для user-facing interaction tools.
 - Issue `#360` формализует новую инициативу: встроенные MCP-взаимодействия с пользователем должны стать отдельной platform capability, а не расширением approval flow.
 - Intake-решение: MVP строится вокруг `user.notify` и `user.decision.request`, interaction-domain остаётся channel-neutral и typed, а Telegram выносится в отдельный последовательный stream; continuity issue `#378` подготовлена для `run:vision`.
 
 ## Контекст
 - В platform baseline уже существуют `run_status_report`, label tools, `owner.feedback.request` и callback endpoints `POST /api/v1/mcp/approver/callback` / `POST /api/v1/mcp/executor/callback`, но они обслуживают approval/control path, а не обычное взаимодействие агента с пользователем.
-- По обсуждению в Issue `#360` подтверждено, что новый scope должен расширять существующий built-in server `codex_k8s`; отдельный MCP server entry в runtime `config.toml` не нужен.
+- По обсуждению в Issue `#360` подтверждено, что новый scope должен расширять существующий built-in server `kodex`; отдельный MCP server entry в runtime `config.toml` не нужен.
 - Исследовательский baseline и продуктовые правила требуют:
   - обязательный Owner review на каждом stage transition;
   - typed и auditable контракты;
@@ -76,7 +76,7 @@ approvals:
 - Любой redesign approval flow под видом user interaction scope.
 
 ## Constraints
-- Инициатива расширяет существующий built-in server `codex_k8s`, а не добавляет новый серверный контур.
+- Инициатива расширяет существующий built-in server `kodex`, а не добавляет новый серверный контур.
 - Approval flow и user interaction flow остаются отдельными доменами с разными моделями состояния и ожидания.
 - Контракты должны оставаться typed, adapter-friendly и пригодными для contract-first дальнейшей проработки.
 - Dispatch, retries, idempotency, audit и callback correlation должны жить в platform domain, а не в agent pod.
@@ -119,14 +119,14 @@ approvals:
 - Риск: scope расползётся в Telegram-first инициативу и потеряет channel-neutral baseline.
 - Риск: без явной interaction model следующие stage'ы зашьют ad-hoc callback payloads и неоднозначные wait-state semantics.
 - Риск: повторное использование approval flow затянет в core scope ненужные approve/deny assumptions и неверные audit expectations.
-- Допущение: existing built-in server `codex_k8s` достаточно расширяем, чтобы принять новые user-facing tools без отдельного runtime server block.
+- Допущение: existing built-in server `kodex` достаточно расширяем, чтобы принять новые user-facing tools без отдельного runtime server block.
 - Допущение: platform core может безопасно держать interaction correlation/retry/audit semantics отдельно от channel-specific UX.
 
 ## Stage Handover Instructions
 - Следующий этап: `run:vision`.
 - Созданная issue следующего этапа: `#378`.
 - На stage `run:vision` обязательно сохранить и не размыть следующие решения intake:
-  - расширяется существующий built-in server `codex_k8s`;
+  - расширяется существующий built-in server `kodex`;
   - approval flow и user interaction flow остаются раздельными;
   - MVP baseline ограничен `user.notify` и `user.decision.request`;
   - wait-state создаётся только для response-required сценариев;

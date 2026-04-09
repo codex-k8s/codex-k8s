@@ -9,25 +9,25 @@ import (
 	"strings"
 	"time"
 
-	"github.com/codex-k8s/codex-k8s/libs/go/manifesttpl"
+	"github.com/codex-k8s/kodex/libs/go/manifesttpl"
 )
 
 const (
-	repoSyncGitTokenSecretName = "codex-k8s-git-token"
+	repoSyncGitTokenSecretName = "kodex-git-token"
 
-	repoSyncJobTemplatePath  = "deploy/base/codex-k8s/repo-sync-job.yaml.tpl"
-	repoCachePVCTemplatePath = "deploy/base/codex-k8s/repo-cache-pvc.yaml.tpl"
+	repoSyncJobTemplatePath  = "deploy/base/kodex/repo-sync-job.yaml.tpl"
+	repoCachePVCTemplatePath = "deploy/base/kodex/repo-cache-pvc.yaml.tpl"
 
-	defaultRepoCachePVCName = "codex-k8s-repo-cache"
+	defaultRepoCachePVCName = "kodex-repo-cache"
 	defaultRepoSyncTimeout  = 10 * time.Minute
 )
 
 var (
-	// Keep this template in sync with deploy/base/codex-k8s/repo-sync-job.yaml.tpl
+	// Keep this template in sync with deploy/base/kodex/repo-sync-job.yaml.tpl
 	//go:embed assets/repo-sync-job.yaml.tpl
 	embeddedRepoSyncJobTemplate []byte
 
-	// Keep this template in sync with deploy/base/codex-k8s/repo-cache-pvc.yaml.tpl
+	// Keep this template in sync with deploy/base/kodex/repo-cache-pvc.yaml.tpl
 	//go:embed assets/repo-cache-pvc.yaml.tpl
 	embeddedRepoCachePVCTemplate []byte
 )
@@ -44,7 +44,7 @@ func (s *Service) resolveRunRepositoryRoot(ctx context.Context, params PreparePa
 
 	repositoryFullName := strings.TrimSpace(params.RepositoryFullName)
 	if repositoryFullName == "" {
-		repositoryFullName = strings.TrimSpace(valueOr(vars, "CODEXK8S_GITHUB_REPO", ""))
+		repositoryFullName = strings.TrimSpace(valueOr(vars, "KODEX_GITHUB_REPO", ""))
 	}
 	if shouldUseDirectRepositoryRoot(configuredRoot, repositoryFullName) {
 		return configuredRoot, nil
@@ -61,8 +61,8 @@ func (s *Service) resolveRunRepositoryRoot(ctx context.Context, params PreparePa
 
 	buildRef := resolveRuntimeBuildRef(
 		params.BuildRef,
-		valueOr(vars, "CODEXK8S_BUILD_REF", ""),
-		valueOr(vars, "CODEXK8S_AGENT_BASE_BRANCH", ""),
+		valueOr(vars, "KODEX_BUILD_REF", ""),
+		valueOr(vars, "KODEX_AGENT_BASE_BRANCH", ""),
 	)
 
 	syncNamespace := resolveSourceRepoSyncNamespace(params.Namespace, vars)
@@ -114,10 +114,10 @@ func shouldUseDirectRepositoryRoot(configuredRoot string, repositoryFullName str
 }
 
 func resolveSourceRepoSyncNamespace(targetNamespace string, vars map[string]string) string {
-	if platformNamespace := strings.TrimSpace(valueOr(vars, "CODEXK8S_PLATFORM_NAMESPACE", "")); platformNamespace != "" {
+	if platformNamespace := strings.TrimSpace(valueOr(vars, "KODEX_PLATFORM_NAMESPACE", "")); platformNamespace != "" {
 		return platformNamespace
 	}
-	if productionNamespace := strings.TrimSpace(valueOr(vars, "CODEXK8S_PRODUCTION_NAMESPACE", "")); productionNamespace != "" {
+	if productionNamespace := strings.TrimSpace(valueOr(vars, "KODEX_PRODUCTION_NAMESPACE", "")); productionNamespace != "" {
 		return productionNamespace
 	}
 	return strings.TrimSpace(targetNamespace)
@@ -174,17 +174,17 @@ func shouldSyncRepoSnapshotToRuntimeNamespace(configuredRoot string, targetEnv s
 func (s *Service) ensureRuntimeNamespaceRepoSnapshot(ctx context.Context, params PrepareParams, targetEnv string, targetNamespace string, repositoryRoot string, vars map[string]string, runID string) error {
 	repositoryFullName := strings.TrimSpace(params.RepositoryFullName)
 	if repositoryFullName == "" {
-		repositoryFullName = strings.TrimSpace(valueOr(vars, "CODEXK8S_GITHUB_REPO", ""))
+		repositoryFullName = strings.TrimSpace(valueOr(vars, "KODEX_GITHUB_REPO", ""))
 	}
-	hotReload := strings.TrimSpace(valueOr(vars, "CODEXK8S_HOT_RELOAD", ""))
+	hotReload := strings.TrimSpace(valueOr(vars, "KODEX_HOT_RELOAD", ""))
 	if !shouldSyncRepoSnapshotToRuntimeNamespace(s.cfg.RepositoryRoot, targetEnv, targetNamespace, repositoryFullName, hotReload) {
 		return nil
 	}
 
 	buildRef := resolveRuntimeBuildRef(
 		params.BuildRef,
-		valueOr(vars, "CODEXK8S_BUILD_REF", ""),
-		valueOr(vars, "CODEXK8S_AGENT_BASE_BRANCH", ""),
+		valueOr(vars, "KODEX_BUILD_REF", ""),
+		valueOr(vars, "KODEX_AGENT_BASE_BRANCH", ""),
 	)
 	runtimeRepositoryRoot := strings.TrimSpace(s.repositoryRootForRuntimeEnv(repositoryRoot))
 	if runtimeRepositoryRoot == "" {
@@ -209,8 +209,8 @@ func (s *Service) ensureRepoCachePVC(ctx context.Context, targetNamespace string
 	}
 
 	renderVars := cloneStringMap(vars)
-	renderVars["CODEXK8S_PRODUCTION_NAMESPACE"] = namespace
-	renderVars["CODEXK8S_PLATFORM_NAMESPACE"] = namespace
+	renderVars["KODEX_PRODUCTION_NAMESPACE"] = namespace
+	renderVars["KODEX_PLATFORM_NAMESPACE"] = namespace
 
 	rendered, err := manifesttpl.Render(repoCachePVCTemplatePath, embeddedRepoCachePVCTemplate, renderVars)
 	if err != nil {
@@ -241,10 +241,10 @@ func (s *Service) ensureRepoSnapshot(ctx context.Context, targetNamespace string
 
 	token := strings.TrimSpace(s.cfg.GitHubPAT)
 	if token == "" {
-		token = strings.TrimSpace(valueOr(vars, "CODEXK8S_GITHUB_PAT", ""))
+		token = strings.TrimSpace(valueOr(vars, "KODEX_GITHUB_PAT", ""))
 	}
 	if token == "" {
-		return fmt.Errorf("CODEXK8S_GITHUB_PAT is required for repo sync")
+		return fmt.Errorf("KODEX_GITHUB_PAT is required for repo sync")
 	}
 
 	if err := s.k8s.UpsertSecret(ctx, namespace, repoSyncGitTokenSecretName, map[string][]byte{
@@ -262,20 +262,20 @@ func (s *Service) ensureRepoSnapshot(ctx context.Context, targetNamespace string
 		runToken = generated
 	}
 
-	jobName := "codex-k8s-repo-sync-" + sanitizeNameToken(repositoryFullName, 20) + "-" + runToken
+	jobName := "kodex-repo-sync-" + sanitizeNameToken(repositoryFullName, 20) + "-" + runToken
 	if len(jobName) > 63 {
 		jobName = strings.TrimRight(jobName[:63], "-")
 	}
 
 	jobVars := cloneStringMap(vars)
-	jobVars["CODEXK8S_PLATFORM_NAMESPACE"] = namespace
-	jobVars["CODEXK8S_PRODUCTION_NAMESPACE"] = namespace
-	jobVars["CODEXK8S_REPO_SYNC_JOB_NAME"] = jobName
-	jobVars["CODEXK8S_REPO_SYNC_DEST_DIR"] = repoRoot
-	jobVars["CODEXK8S_REPO_CACHE_PVC_NAME"] = defaultRepoCachePVCName
-	jobVars["CODEXK8S_REPOSITORY_ROOT"] = strings.TrimSpace(s.cfg.RepositoryRoot)
-	jobVars["CODEXK8S_GITHUB_REPO"] = repositoryFullName
-	jobVars["CODEXK8S_BUILD_REF"] = buildRef
+	jobVars["KODEX_PLATFORM_NAMESPACE"] = namespace
+	jobVars["KODEX_PRODUCTION_NAMESPACE"] = namespace
+	jobVars["KODEX_REPO_SYNC_JOB_NAME"] = jobName
+	jobVars["KODEX_REPO_SYNC_DEST_DIR"] = repoRoot
+	jobVars["KODEX_REPO_CACHE_PVC_NAME"] = defaultRepoCachePVCName
+	jobVars["KODEX_REPOSITORY_ROOT"] = strings.TrimSpace(s.cfg.RepositoryRoot)
+	jobVars["KODEX_GITHUB_REPO"] = repositoryFullName
+	jobVars["KODEX_BUILD_REF"] = buildRef
 
 	rendered, err := manifesttpl.Render(repoSyncJobTemplatePath, embeddedRepoSyncJobTemplate, jobVars)
 	if err != nil {

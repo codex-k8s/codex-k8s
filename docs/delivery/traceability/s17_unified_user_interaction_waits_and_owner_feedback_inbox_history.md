@@ -46,7 +46,7 @@ approvals:
   - unified owner feedback loop как platform capability, где owner отвечает в Telegram или staff-console, а агент продолжает ту же задачу без GitHub-comment detour и без channel drift;
   - mission, north star, persona outcomes, KPI/guardrails и wave boundaries для owner/product lead path, same-session runtime path и staff/operator fallback path;
   - locked baseline Day1: same live pod / same `codex` session как primary happy-path, snapshot-resume только как recovery fallback, long human-wait target `>=24h`, delivery-before-wait lifecycle, Telegram pending inbox, staff-console fallback, deterministic text/voice binding и `run:self-improve` exclusion;
-  - owner revise-замечание дополнительно зафиксировано в vision baseline: для built-in `codex_k8s` MCP wait path effective timeout/TTL должен быть максимальным и не ниже owner wait window, чтобы happy-path был реальным live wait на tool response, а не resume с подложенным tool result;
+  - owner revise-замечание дополнительно зафиксировано в vision baseline: для built-in `kodex` MCP wait path effective timeout/TTL должен быть максимальным и не ниже owner wait window, чтобы happy-path был реальным live wait на tool response, а не resume с подложенным tool result;
   - additional channels, reminders/escalations, attachments, multi-party routing, richer conversation UX и detached resume-run как равноправный happy-path выведены в later-wave scope.
 - Через `gh issue create` создана follow-up issue `#557` для stage `run:prd` с continuity-требованием сохранить цепочку `prd -> arch -> design -> plan -> dev`.
 - Выполнены markdown-only проверки: traceability sync, `git diff --check`, локальная проверка `gh issue view 554 --json number,title,body,url`, `gh issue create --help`, `gh pr create --help`, `gh pr edit --help`; kubectl/logs/БД-запросы не выполнялись, потому что stage ограничен documentation-only scope и не требовал runtime-debug.
@@ -60,7 +60,7 @@ approvals:
 - Зафиксированы:
   - unified owner feedback loop как product contract для owner inbox, same-session continuation, delivery-before-wait lifecycle и dual-channel semantics;
   - user stories, FR/AC/NFR, scenario matrix и expected evidence для owner/product lead path, live runtime path и staff/operator fallback;
-  - blocking baseline: same live pod / same `codex` session как primary happy-path, max timeout/TTL built-in `codex_k8s` MCP wait path не ниже owner wait window, snapshot-resume только как recovery fallback, long human-wait target `>=24h`, lifecycle `created -> delivery pending -> delivery accepted -> waiting -> response -> continuation`, Telegram pending inbox, staff-console fallback, deterministic text/voice binding и `run:self-improve` exclusion;
+  - blocking baseline: same live pod / same `codex` session как primary happy-path, max timeout/TTL built-in `kodex` MCP wait path не ниже owner wait window, snapshot-resume только как recovery fallback, long human-wait target `>=24h`, lifecycle `created -> delivery pending -> delivery accepted -> waiting -> response -> continuation`, Telegram pending inbox, staff-console fallback, deterministic text/voice binding и `run:self-improve` exclusion;
   - explicit later-wave boundary: дополнительные каналы, reminders/escalations, attachments, multi-party routing, richer conversation UX и detached resume-run как равноправный happy-path остаются deferred scope;
   - expected product evidence для same-session continuity, recovery classification, overdue/manual-fallback transparency и GitHub-comment fallback как degraded path.
 - Через `gh issue create` создана follow-up issue `#559` для stage `run:arch` с continuity-требованием сохранить цепочку `arch -> design -> plan -> dev`.
@@ -81,7 +81,7 @@ approvals:
   - `control-plane` как единственный owner feedback request truth, accepted-response winner, wait/deadline policy и continuation classification;
   - `worker` как owner dispatch/retry/reconcile и runtime lease keepalive для long-lived waits, при этом `agent-runner` остаётся owner only for live same-session execution and recovery snapshot capture;
   - `api-gateway`, `staff web-console` и `telegram-interaction-adapter` как thin surfaces вокруг одного persisted backend contract без права переопределять lifecycle semantics;
-  - primary happy-path = same live pod / same `codex` session; effective max timeout/TTL built-in `codex_k8s` MCP wait path не ниже owner wait window; snapshot-resume допускается только как recovery fallback;
+  - primary happy-path = same live pod / same `codex` session; effective max timeout/TTL built-in `kodex` MCP wait path не ниже owner wait window; snapshot-resume допускается только как recovery fallback;
   - canonical visibility model для `overdue`, `expired`, `manual-fallback` и `recovery-resume`, чтобы degraded paths не оставались hidden operator-only detail.
 - Через `gh issue create` создана follow-up issue `#568` для stage `run:design` с continuity-требованием сохранить цепочку `design -> plan -> dev`.
 - Выполнены markdown-only проверки: traceability sync, `git diff --check`, локальная проверка `gh issue view 559 --json number,title,body,url`, `gh issue view 568 --json number,title,body,url`, `gh issue create --help`, `gh pr create --help`, `gh pr edit --help`; kubectl/logs/БД-запросы не выполнялись, потому что stage ограничен documentation-only scope и не требовал runtime-debug.

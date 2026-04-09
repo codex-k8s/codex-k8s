@@ -3,7 +3,7 @@ package runqueue
 import (
 	"context"
 
-	querytypes "github.com/codex-k8s/codex-k8s/services/jobs/worker/internal/domain/types/query"
+	querytypes "github.com/codex-k8s/kodex/services/jobs/worker/internal/domain/types/query"
 )
 
 type (

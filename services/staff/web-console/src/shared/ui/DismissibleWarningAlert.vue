@@ -26,7 +26,7 @@ const props = defineProps<{
 
 const { t } = useI18n({ useScope: "global" });
 
-const cookieKey = computed(() => `codexk8s_alert_hide_${props.alertId}`);
+const cookieKey = computed(() => `kodex_alert_hide_${props.alertId}`);
 const visible = ref(getCookie(cookieKey.value) !== "1");
 const dontShowAgain = ref(false);
 

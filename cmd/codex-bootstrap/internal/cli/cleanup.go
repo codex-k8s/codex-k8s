@@ -15,8 +15,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/codex-k8s/codex-k8s/cmd/codex-bootstrap/internal/envfile"
-	"github.com/codex-k8s/codex-k8s/libs/go/k8s/clientcfg"
+	"github.com/codex-k8s/kodex/cmd/codex-bootstrap/internal/envfile"
+	"github.com/codex-k8s/kodex/libs/go/k8s/clientcfg"
 	gh "github.com/google/go-github/v82/github"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -75,10 +75,10 @@ func runCleanup(args []string, stdout io.Writer, stderr io.Writer) int {
 
 	targetNamespace := strings.TrimSpace(*namespace)
 	if targetNamespace == "" {
-		targetNamespace = strings.TrimSpace(values["CODEXK8S_PRODUCTION_NAMESPACE"])
+		targetNamespace = strings.TrimSpace(values["KODEX_PRODUCTION_NAMESPACE"])
 	}
 	if targetNamespace == "" {
-		targetNamespace = "codex-k8s-prod"
+		targetNamespace = "kodex-prod"
 	}
 
 	writef(stdout, "cleanup env-file=%s\n", absEnv)
@@ -102,15 +102,15 @@ func runCleanup(args []string, stdout io.Writer, stderr io.Writer) int {
 }
 
 func cleanupGitHub(values map[string]string, timeout time.Duration, workers int) error {
-	platformRepo, err := parseGitHubRepository(values["CODEXK8S_GITHUB_REPO"])
+	platformRepo, err := parseGitHubRepository(values["KODEX_GITHUB_REPO"])
 	if err != nil {
-		return fmt.Errorf("CODEXK8S_GITHUB_REPO: %w", err)
+		return fmt.Errorf("KODEX_GITHUB_REPO: %w", err)
 	}
 	firstProject := platformRepo
-	if raw := strings.TrimSpace(values["CODEXK8S_FIRST_PROJECT_GITHUB_REPO"]); raw != "" {
+	if raw := strings.TrimSpace(values["KODEX_FIRST_PROJECT_GITHUB_REPO"]); raw != "" {
 		firstProject, err = parseGitHubRepository(raw)
 		if err != nil {
-			return fmt.Errorf("CODEXK8S_FIRST_PROJECT_GITHUB_REPO: %w", err)
+			return fmt.Errorf("KODEX_FIRST_PROJECT_GITHUB_REPO: %w", err)
 		}
 	}
 	repos := []githubRepositoryRef{platformRepo}
@@ -118,9 +118,9 @@ func cleanupGitHub(values map[string]string, timeout time.Duration, workers int)
 		repos = append(repos, firstProject)
 	}
 
-	token := strings.TrimSpace(values["CODEXK8S_GITHUB_PAT"])
+	token := strings.TrimSpace(values["KODEX_GITHUB_PAT"])
 	if token == "" {
-		return fmt.Errorf("CODEXK8S_GITHUB_PAT is required")
+		return fmt.Errorf("KODEX_GITHUB_PAT is required")
 	}
 	client := gh.NewClient(&http.Client{Timeout: timeout}).WithAuthToken(token)
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
@@ -215,8 +215,8 @@ func cleanupKubernetes(kubeconfigPath string, namespace string) error {
 		Version:  "v1",
 		Resource: "clusterissuers",
 	}
-	if err := dynamicClient.Resource(issuerGVR).Delete(ctx, "codex-k8s-letsencrypt", metav1.DeleteOptions{}); err != nil && !apierrors.IsNotFound(err) {
-		return fmt.Errorf("delete clusterissuer codex-k8s-letsencrypt: %w", err)
+	if err := dynamicClient.Resource(issuerGVR).Delete(ctx, "kodex-letsencrypt", metav1.DeleteOptions{}); err != nil && !apierrors.IsNotFound(err) {
+		return fmt.Errorf("delete clusterissuer kodex-letsencrypt: %w", err)
 	}
 
 	waitCtx, waitCancel := context.WithTimeout(ctx, 5*time.Minute)
@@ -320,17 +320,17 @@ func runRemoteKubernetesCleanup(values map[string]string, timeout time.Duration)
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 
-	remoteEnvPath := strings.TrimSpace(values["CODEXK8S_REMOTE_BOOTSTRAP_ENV_FILE"])
+	remoteEnvPath := strings.TrimSpace(values["KODEX_REMOTE_BOOTSTRAP_ENV_FILE"])
 	if remoteEnvPath == "" {
-		remoteEnvPath = "/root/codex-k8s-bootstrap/bootstrap.env"
+		remoteEnvPath = "/root/kodex-bootstrap/bootstrap.env"
 	}
-	remoteKubeconfig := strings.TrimSpace(values["CODEXK8S_REMOTE_KUBECONFIG"])
+	remoteKubeconfig := strings.TrimSpace(values["KODEX_REMOTE_KUBECONFIG"])
 	if remoteKubeconfig == "" {
 		remoteKubeconfig = "/etc/rancher/k3s/k3s.yaml"
 	}
 	command := "set -euo pipefail; " +
-		"if [ -d /opt/codex-k8s ]; then " +
-		"cd /opt/codex-k8s; " +
+		"if [ -d /opt/kodex ]; then " +
+		"cd /opt/kodex; " +
 		"go run ./cmd/codex-bootstrap cleanup --env-file " + shellQuote(remoteEnvPath) +
 		" --kubeconfig " + shellQuote(remoteKubeconfig) +
 		" --yes --skip-github; " +

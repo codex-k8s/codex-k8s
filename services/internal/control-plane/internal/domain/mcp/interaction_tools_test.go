@@ -7,11 +7,11 @@ import (
 	"testing"
 	"time"
 
-	agentrunrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/agentrun"
-	agentsessionrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/agentsession"
-	entitytypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/entity"
-	enumtypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/enum"
-	valuetypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/value"
+	agentrunrepo "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/repository/agentrun"
+	agentsessionrepo "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/repository/agentsession"
+	entitytypes "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/types/entity"
+	enumtypes "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/types/enum"
+	valuetypes "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/types/value"
 )
 
 func TestSetRunWaitContextFailsWhenRunWasNotUpdated(t *testing.T) {
@@ -247,8 +247,8 @@ func TestFinalizeInteractionResumeSchedulesPendingRun(t *testing.T) {
 	service := &Service{
 		cfg: Config{
 			TokenSigningKey: "test-signing-key",
-			TokenIssuer:     "codex-k8s/test",
-			PublicBaseURL:   "https://platform.codex-k8s.dev",
+			TokenIssuer:     "kodex/test",
+			PublicBaseURL:   "https://platform.kodex.works",
 		},
 		runs:     runs,
 		sessions: sessions,
@@ -325,7 +325,7 @@ func TestFinalizeInteractionResumeReschedulesAfterWaitWasAlreadyCleared(t *testi
 	service := &Service{
 		cfg: Config{
 			TokenSigningKey: "test-signing-key",
-			TokenIssuer:     "codex-k8s/test",
+			TokenIssuer:     "kodex/test",
 		},
 		runs:     runs,
 		sessions: sessions,
@@ -371,7 +371,7 @@ func TestFinalizeInteractionResumeSkipsTerminalSourceRun(t *testing.T) {
 	service := &Service{
 		cfg: Config{
 			TokenSigningKey: "test-signing-key",
-			TokenIssuer:     "codex-k8s/test",
+			TokenIssuer:     "kodex/test",
 		},
 		runs:     runs,
 		sessions: sessions,
@@ -417,7 +417,7 @@ func TestFinalizeInteractionResumeSkipsTerminalSourceRunWhenWaitAlreadyCleared(t
 	service := &Service{
 		cfg: Config{
 			TokenSigningKey: "test-signing-key",
-			TokenIssuer:     "codex-k8s/test",
+			TokenIssuer:     "kodex/test",
 		},
 		runs:     runs,
 		sessions: sessions,
@@ -453,8 +453,8 @@ func TestBuildInteractionDeliveryEnvelopeIncludesCallbackContractFields(t *testi
 	service := &Service{
 		cfg: Config{
 			TokenSigningKey: "test-signing-key",
-			TokenIssuer:     "codex-k8s/test",
-			PublicBaseURL:   "https://platform.codex-k8s.dev",
+			TokenIssuer:     "kodex/test",
+			PublicBaseURL:   "https://platform.kodex.works",
 		},
 		interactions: interactions,
 		now: func() time.Time {
@@ -504,7 +504,7 @@ func TestBuildInteractionDeliveryEnvelopeIncludesCallbackContractFields(t *testi
 	if envelope.CallbackEndpoint == nil {
 		t.Fatal("expected callback endpoint to be populated")
 	}
-	if got, want := envelope.CallbackEndpoint.URL, "https://platform.codex-k8s.dev"+interactionCallbackPath; got != want {
+	if got, want := envelope.CallbackEndpoint.URL, "https://platform.kodex.works"+interactionCallbackPath; got != want {
 		t.Fatalf("callback url = %q, want %q", got, want)
 	}
 	if strings.TrimSpace(envelope.CallbackEndpoint.BearerToken) == "" {
@@ -547,9 +547,9 @@ func TestBuildInteractionDeliveryEnvelopePrefersInternalCallbackBaseURL(t *testi
 	service := &Service{
 		cfg: Config{
 			TokenSigningKey:            "test-signing-key",
-			TokenIssuer:                "codex-k8s/test",
-			PublicBaseURL:              "https://platform.codex-k8s.dev",
-			InteractionCallbackBaseURL: "http://codex-k8s",
+			TokenIssuer:                "kodex/test",
+			PublicBaseURL:              "https://platform.kodex.works",
+			InteractionCallbackBaseURL: "http://kodex",
 		},
 		interactions: &interactionTestRepository{},
 		now: func() time.Time {
@@ -586,7 +586,7 @@ func TestBuildInteractionDeliveryEnvelopePrefersInternalCallbackBaseURL(t *testi
 	if envelope.CallbackEndpoint == nil {
 		t.Fatal("expected callback endpoint to be populated")
 	}
-	if got, want := envelope.CallbackEndpoint.URL, "http://codex-k8s"+interactionCallbackPath; got != want {
+	if got, want := envelope.CallbackEndpoint.URL, "http://kodex"+interactionCallbackPath; got != want {
 		t.Fatalf("callback url = %q, want %q", got, want)
 	}
 }
@@ -596,7 +596,7 @@ func TestBuildInteractionDeliveryEnvelopeIncludesContinuationContractFields(t *t
 
 	service := &Service{
 		cfg: Config{
-			PublicBaseURL: "https://platform.codex-k8s.dev",
+			PublicBaseURL: "https://platform.kodex.works",
 		},
 		now: time.Now,
 	}

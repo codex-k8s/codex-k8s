@@ -6,9 +6,9 @@ import (
 	"log/slog"
 	"strings"
 
-	"github.com/codex-k8s/codex-k8s/libs/go/crypto/tokencrypt"
-	platformtokenrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/platformtoken"
-	repocfgrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/repocfg"
+	"github.com/codex-k8s/kodex/libs/go/crypto/tokencrypt"
+	platformtokenrepo "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/repository/platformtoken"
+	repocfgrepo "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/repository/repocfg"
 )
 
 type syncGitHubTokensParams struct {

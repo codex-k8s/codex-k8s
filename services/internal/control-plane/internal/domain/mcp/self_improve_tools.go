@@ -8,9 +8,9 @@ import (
 	"regexp"
 	"strings"
 
-	webhookdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/webhook"
-	agentrunrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/agentrun"
-	querytypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/query"
+	webhookdomain "github.com/codex-k8s/kodex/libs/go/domain/webhook"
+	agentrunrepo "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/repository/agentrun"
+	querytypes "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/types/query"
 )
 
 var selfImprovePathSegmentSanitizer = regexp.MustCompile(`[^a-zA-Z0-9._-]+`)

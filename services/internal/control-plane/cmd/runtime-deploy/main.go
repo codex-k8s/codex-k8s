@@ -12,9 +12,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/codex-k8s/codex-k8s/libs/go/registry"
-	kubernetesclient "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/clients/kubernetes"
-	runtimedeploydomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/runtimedeploy"
+	"github.com/codex-k8s/kodex/libs/go/registry"
+	kubernetesclient "github.com/codex-k8s/kodex/services/internal/control-plane/internal/clients/kubernetes"
+	runtimedeploydomain "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/runtimedeploy"
 )
 
 const (
@@ -28,7 +28,7 @@ const (
 	defaultRegistryHTTPTimeout          = 15 * time.Second
 	defaultIngressManifestURL           = "https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/cloud/deploy.yaml"
 	defaultCertManagerManifestURL       = "https://github.com/cert-manager/cert-manager/releases/download/v1.15.3/cert-manager.yaml"
-	defaultPrerequisitesFieldManager    = "codex-k8s-bootstrap"
+	defaultPrerequisitesFieldManager    = "kodex-bootstrap"
 )
 
 func main() {
@@ -39,7 +39,7 @@ func run(args []string, stdout *os.File, stderr *os.File) int {
 	fs := flag.NewFlagSet("runtime-deploy", flag.ContinueOnError)
 	fs.SetOutput(stderr)
 
-	envPath := fs.String("env-file", defaultRuntimeDeployEnvPath, "Path to env-file with CODEXK8S_* variables")
+	envPath := fs.String("env-file", defaultRuntimeDeployEnvPath, "Path to env-file with KODEX_* variables")
 	kubeconfigPath := fs.String("kubeconfig", "", "Optional kubeconfig path")
 	timeout := fs.Duration("timeout", defaultRuntimeDeployTimeout, "Overall deploy timeout")
 	prerequisitesOnly := fs.Bool("prerequisites-only", false, "Install/upgrade Kubernetes prerequisites (ingress-nginx, cert-manager) and exit")
@@ -62,7 +62,7 @@ func run(args []string, stdout *os.File, stderr *os.File) int {
 	rolloutTimeout := fs.Duration("rollout-timeout", defaultRuntimeDeployRolloutTimeout, "Workload rollout timeout")
 	kanikoTimeout := fs.Duration("kaniko-timeout", defaultRuntimeDeployKanikoTimeout, "Kaniko job timeout")
 	waitPoll := fs.Duration("wait-poll-interval", defaultRuntimeDeployWaitPollTimeout, "Task wait polling interval")
-	fieldManager := fs.String("field-manager", "codex-k8s-control-plane", "Kubernetes server-side apply field manager")
+	fieldManager := fs.String("field-manager", "kodex-control-plane", "Kubernetes server-side apply field manager")
 	registryHost := fs.String("registry-host", "", "Internal registry host:port override")
 	registryScheme := fs.String("registry-scheme", "", "Internal registry scheme override")
 	registryTimeout := fs.Duration("registry-http-timeout", defaultRegistryHTTPTimeout, "Registry API timeout")
@@ -91,18 +91,18 @@ func run(args []string, stdout *os.File, stderr *os.File) int {
 		return 1
 	}
 	applyRuntimeDeployEnvDefaults(values)
-	if strings.TrimSpace(values["CODEXK8S_INGRESS_READY_TIMEOUT"]) != "" && *ingressReadyTimeout == defaultRuntimeDeployIngressTimeout {
-		parsedDuration, parseErr := time.ParseDuration(strings.TrimSpace(values["CODEXK8S_INGRESS_READY_TIMEOUT"]))
+	if strings.TrimSpace(values["KODEX_INGRESS_READY_TIMEOUT"]) != "" && *ingressReadyTimeout == defaultRuntimeDeployIngressTimeout {
+		parsedDuration, parseErr := time.ParseDuration(strings.TrimSpace(values["KODEX_INGRESS_READY_TIMEOUT"]))
 		if parseErr != nil {
-			writeRuntimeDeployError(stderr, "runtime-deploy failed: parse CODEXK8S_INGRESS_READY_TIMEOUT: %v", parseErr)
+			writeRuntimeDeployError(stderr, "runtime-deploy failed: parse KODEX_INGRESS_READY_TIMEOUT: %v", parseErr)
 			return 2
 		}
 		*ingressReadyTimeout = parsedDuration
 	}
-	if strings.TrimSpace(values["CODEXK8S_CERT_MANAGER_READY_TIMEOUT"]) != "" && *certManagerReadyTimeout == defaultRuntimeDeployCertMgrTimeout {
-		parsedDuration, parseErr := time.ParseDuration(strings.TrimSpace(values["CODEXK8S_CERT_MANAGER_READY_TIMEOUT"]))
+	if strings.TrimSpace(values["KODEX_CERT_MANAGER_READY_TIMEOUT"]) != "" && *certManagerReadyTimeout == defaultRuntimeDeployCertMgrTimeout {
+		parsedDuration, parseErr := time.ParseDuration(strings.TrimSpace(values["KODEX_CERT_MANAGER_READY_TIMEOUT"]))
 		if parseErr != nil {
-			writeRuntimeDeployError(stderr, "runtime-deploy failed: parse CODEXK8S_CERT_MANAGER_READY_TIMEOUT: %v", parseErr)
+			writeRuntimeDeployError(stderr, "runtime-deploy failed: parse KODEX_CERT_MANAGER_READY_TIMEOUT: %v", parseErr)
 			return 2
 		}
 		*certManagerReadyTimeout = parsedDuration
@@ -119,10 +119,10 @@ func run(args []string, stdout *os.File, stderr *os.File) int {
 
 	targetNamespace := strings.TrimSpace(*namespace)
 	if targetNamespace == "" {
-		targetNamespace = strings.TrimSpace(values["CODEXK8S_PRODUCTION_NAMESPACE"])
+		targetNamespace = strings.TrimSpace(values["KODEX_PRODUCTION_NAMESPACE"])
 	}
 	if targetNamespace == "" {
-		targetNamespace = "codex-k8s-prod"
+		targetNamespace = "kodex-prod"
 	}
 
 	k8sClient, err := kubernetesclient.NewClient(strings.TrimSpace(*kubeconfigPath))
@@ -133,7 +133,7 @@ func run(args []string, stdout *os.File, stderr *os.File) int {
 	if *prerequisitesOnly {
 		targetIngressManifestURL := strings.TrimSpace(*ingressManifestURL)
 		if targetIngressManifestURL == "" {
-			targetIngressManifestURL = strings.TrimSpace(values["CODEXK8S_INGRESS_MANIFEST_URL"])
+			targetIngressManifestURL = strings.TrimSpace(values["KODEX_INGRESS_MANIFEST_URL"])
 		}
 		if targetIngressManifestURL == "" {
 			targetIngressManifestURL = defaultIngressManifestURL
@@ -141,7 +141,7 @@ func run(args []string, stdout *os.File, stderr *os.File) int {
 
 		targetCertManagerManifestURL := strings.TrimSpace(*certManagerManifestURL)
 		if targetCertManagerManifestURL == "" {
-			targetCertManagerManifestURL = strings.TrimSpace(values["CODEXK8S_CERT_MANAGER_MANIFEST_URL"])
+			targetCertManagerManifestURL = strings.TrimSpace(values["KODEX_CERT_MANAGER_MANIFEST_URL"])
 		}
 		if targetCertManagerManifestURL == "" {
 			targetCertManagerManifestURL = defaultCertManagerManifestURL
@@ -149,7 +149,7 @@ func run(args []string, stdout *os.File, stderr *os.File) int {
 
 		hostNetworkRaw := strings.TrimSpace(*ingressHostNetwork)
 		if hostNetworkRaw == "" {
-			hostNetworkRaw = strings.TrimSpace(values["CODEXK8S_INGRESS_HOST_NETWORK"])
+			hostNetworkRaw = strings.TrimSpace(values["KODEX_INGRESS_HOST_NETWORK"])
 		}
 		hostNetworkEnabled, parseErr := parseBoolDefault(hostNetworkRaw, true)
 		if parseErr != nil {
@@ -179,7 +179,7 @@ func run(args []string, stdout *os.File, stderr *os.File) int {
 
 	targetRepository := strings.TrimSpace(*repositoryFullName)
 	if targetRepository == "" {
-		targetRepository = strings.TrimSpace(values["CODEXK8S_GITHUB_REPO"])
+		targetRepository = strings.TrimSpace(values["KODEX_GITHUB_REPO"])
 	}
 	if targetRepository == "" {
 		writeRuntimeDeployError(stderr, "runtime-deploy failed: repository-full-name is required")
@@ -192,7 +192,7 @@ func run(args []string, stdout *os.File, stderr *os.File) int {
 	}
 	targetBuildRef := strings.TrimSpace(*buildRef)
 	if targetBuildRef == "" {
-		targetBuildRef = strings.TrimSpace(values["CODEXK8S_BUILD_REF"])
+		targetBuildRef = strings.TrimSpace(values["KODEX_BUILD_REF"])
 	}
 	if targetBuildRef == "" {
 		targetBuildRef = "main"
@@ -200,14 +200,14 @@ func run(args []string, stdout *os.File, stderr *os.File) int {
 
 	targetRegistryHost := strings.TrimSpace(*registryHost)
 	if targetRegistryHost == "" {
-		targetRegistryHost = strings.TrimSpace(values["CODEXK8S_INTERNAL_REGISTRY_HOST"])
+		targetRegistryHost = strings.TrimSpace(values["KODEX_INTERNAL_REGISTRY_HOST"])
 	}
 	if targetRegistryHost == "" {
-		targetRegistryHost = "codex-k8s-registry:5000"
+		targetRegistryHost = "kodex-registry:5000"
 	}
 	targetRegistryScheme := strings.TrimSpace(*registryScheme)
 	if targetRegistryScheme == "" {
-		targetRegistryScheme = strings.TrimSpace(values["CODEXK8S_INTERNAL_REGISTRY_SCHEME"])
+		targetRegistryScheme = strings.TrimSpace(values["KODEX_INTERNAL_REGISTRY_SCHEME"])
 	}
 	if targetRegistryScheme == "" {
 		targetRegistryScheme = "http"
@@ -227,7 +227,7 @@ func run(args []string, stdout *os.File, stderr *os.File) int {
 		KanikoTimeout:           *kanikoTimeout,
 		WaitPollInterval:        *waitPoll,
 		KanikoFieldManager:      strings.TrimSpace(*fieldManager),
-		GitHubPAT:               strings.TrimSpace(values["CODEXK8S_GITHUB_PAT"]),
+		GitHubPAT:               strings.TrimSpace(values["KODEX_GITHUB_PAT"]),
 		RegistryCleanupKeepTags: *registryCleanupKeepTags,
 		KanikoJobLogTailLines:   *kanikoLogTailLines,
 	}, runtimedeploydomain.Dependencies{
@@ -291,7 +291,7 @@ func installKubernetesPrerequisites(ctx context.Context, opts runtimePrerequisit
 
 	productionNamespace := strings.TrimSpace(opts.Namespace)
 	if productionNamespace == "" {
-		productionNamespace = "codex-k8s-prod"
+		productionNamespace = "kodex-prod"
 	}
 
 	baseNamespacesManifest := fmt.Sprintf(`

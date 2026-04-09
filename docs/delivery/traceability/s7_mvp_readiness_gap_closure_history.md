@@ -243,7 +243,7 @@ approvals:
 ## Актуализация по Issue #252 (`run:dev`, 2026-03-10)
 - Для FR-012/FR-038/FR-040 и NFR-010/NFR-018 реализован stream `S7-E10`:
   contract-first расширены `services/external/api-gateway/api/server/api.yaml` и
-  `proto/codexk8s/controlplane/v1/controlplane.proto`, добавлены typed HTTP/gRPC actions
+  `proto/kodex/controlplane/v1/controlplane.proto`, добавлены typed HTTP/gRPC actions
   `cancel/stop` и синхронно обновлены backend/frontend codegen артефакты.
 - В control-plane расширена persisted-модель `runtime_deploy_tasks`:
   добавлены control/audit поля `cancel_requested_*`, `stop_requested_*`,
@@ -275,7 +275,7 @@ approvals:
   доведён до фактического рабочего состояния в code path.
 - В label/runtime source-of-truth добавлены отсутствовавшие revise-элементы:
   typed trigger kinds `doc_audit_revise`, `qa_revise`, `release_revise`, `postdeploy_revise`, `ops_revise`, `self_improve_revise` в `libs/go/domain/webhook`,
-  env labels `CODEXK8S_RUN_*_REVISE_LABEL` в `services/internal/control-plane/internal/app/config.go`,
+  env labels `KODEX_RUN_*_REVISE_LABEL` в `services/internal/control-plane/internal/app/config.go`,
   runtime defaults в `services/internal/control-plane/internal/domain/runtimedeploy/service_defaults.go`,
   а также revise-поля в `TriggerLabels` / next-step label catalog path.
 - В control-plane закрыт resolver/runtime gap:
@@ -309,10 +309,10 @@ approvals:
   `docs/templates/regression_checklist.md`.
   Теперь они требуют DNS evidence bundle:
   namespace, service FQDN, точную команду, HTTP status, excerpt ответа и `kubectl`-диагностику при fail.
-- Full-env verification выполнен в namespace `codex-k8s-dev-1`:
+- Full-env verification выполнен в namespace `kodex-dev-1`:
   `kubectl config view --minify -o jsonpath='{..namespace}'`,
   `kubectl get svc -o wide`,
-  `getent hosts codex-k8s.codex-k8s-dev-1.svc.cluster.local`,
+  `getent hosts kodex.kodex-dev-1.svc.cluster.local`,
   `curl -sS ... /healthz` (`200`),
   `curl -sS ... /api/v1/auth/me` (`401`),
   `curl -sS -X POST ... /api/v1/webhooks/github` (`400`).
@@ -325,10 +325,10 @@ approvals:
 - Проверки по scope:
   `kubectl config view --minify -o jsonpath='{..namespace}'`,
   `kubectl get svc -o wide`,
-  `getent hosts codex-k8s.codex-k8s-dev-1.svc.cluster.local`,
-  `curl -sS -o /tmp/codex-health.out -D /tmp/codex-health.headers -w '%{http_code}\n' http://codex-k8s.codex-k8s-dev-1.svc.cluster.local/healthz`,
-  `curl -sS -o /tmp/codex-authme.out -D /tmp/codex-authme.headers -w '%{http_code}\n' http://codex-k8s.codex-k8s-dev-1.svc.cluster.local/api/v1/auth/me`,
-  `curl -sS -o /tmp/codex-webhook.out -D /tmp/codex-webhook.headers -w '%{http_code}\n' -X POST http://codex-k8s.codex-k8s-dev-1.svc.cluster.local/api/v1/webhooks/github`.
+  `getent hosts kodex.kodex-dev-1.svc.cluster.local`,
+  `curl -sS -o /tmp/codex-health.out -D /tmp/codex-health.headers -w '%{http_code}\n' http://kodex.kodex-dev-1.svc.cluster.local/healthz`,
+  `curl -sS -o /tmp/codex-authme.out -D /tmp/codex-authme.headers -w '%{http_code}\n' http://kodex.kodex-dev-1.svc.cluster.local/api/v1/auth/me`,
+  `curl -sS -o /tmp/codex-webhook.out -D /tmp/codex-webhook.headers -w '%{http_code}\n' -X POST http://kodex.kodex-dev-1.svc.cluster.local/api/v1/webhooks/github`.
 
 ## Актуализация по Issue #258 (`run:dev`, 2026-03-11)
 - Для FR-026/FR-028/FR-033 и NFR-010/NFR-018 реализован stream `S7-E16`:
@@ -366,7 +366,7 @@ approvals:
 - Добавлены migration/runtime артефакты:
   `services/internal/control-plane/cmd/cli/migrations/20260311143000_day28_agent_session_snapshot_versioning.sql`,
   `libs/go/domain/agent/session_snapshot_checksum.go`,
-  обновлённые `proto/codexk8s/controlplane/v1/controlplane.proto` и generated Go contracts.
+  обновлённые `proto/kodex/controlplane/v1/controlplane.proto` и generated Go contracts.
 - Актуализированы traceability документы Sprint S7:
   `docs/delivery/issue_map.md`,
   `docs/delivery/delivery_plan.md`,

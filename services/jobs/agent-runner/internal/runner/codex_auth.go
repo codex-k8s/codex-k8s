@@ -14,8 +14,8 @@ import (
 	"sync"
 	"time"
 
-	floweventdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/flowevent"
-	cpclient "github.com/codex-k8s/codex-k8s/services/jobs/agent-runner/internal/controlplane"
+	floweventdomain "github.com/codex-k8s/kodex/libs/go/domain/flowevent"
+	cpclient "github.com/codex-k8s/kodex/services/jobs/agent-runner/internal/controlplane"
 )
 
 type codexAuthMode string
@@ -100,7 +100,7 @@ func (s *Service) ensureCodexAuthenticated(ctx context.Context, state codexState
 	case codexAuthModeAPIKey:
 		apiKey := strings.TrimSpace(s.cfg.OpenAIAPIKey)
 		if apiKey == "" {
-			return fmt.Errorf("CODEXK8S_OPENAI_API_KEY is required for Codex API-key auth")
+			return fmt.Errorf("KODEX_OPENAI_API_KEY is required for Codex API-key auth")
 		}
 		_ = runCommandQuiet(ctx, "", "codex", "logout")
 		if err := runCommandWithInput(ctx, []byte(apiKey), io.Discard, io.Discard, "codex", "login", "--with-api-key"); err != nil {

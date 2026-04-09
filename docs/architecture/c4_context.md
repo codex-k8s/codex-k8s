@@ -1,7 +1,7 @@
 ---
 doc_id: ARC-C4C-CK8S-0001
 type: c4-context
-title: "codex-k8s — C4 Context"
+title: "kodex — C4 Context"
 status: active
 owner_role: SA
 created_at: 2026-02-06
@@ -16,22 +16,22 @@ approvals:
   approved_at: 2026-02-19
 ---
 
-# C4 Context: codex-k8s
+# C4 Context: kodex
 
 ## TL;DR
-- Система в контуре: `codex-k8s` control-plane.
+- Система в контуре: `kodex` control-plane.
 - Пользователи: Owner/Admin, Project Maintainer, системные и custom-агенты.
 - Внешние зависимости: GitHub API/Webhooks, Kubernetes API, OpenAI API, HTTP approver/executor интеграции (Telegram как первый адаптер).
 
 ## Диаграмма (Mermaid C4Context)
 ```mermaid
 C4Context
-title codex-k8s - System Context
+title kodex - System Context
 
 Person(owner, "Owner/Admin", "Управляет платформой, правами, проектами")
 Person(maintainer, "Project Maintainer", "Работает с проектами и агентными запусками")
 Person(agent, "System/Custom Agent", "Выполняет stage задачи и ревизии")
-System(system, "codex-k8s", "Webhook-driven control-plane для AI процессов в Kubernetes")
+System(system, "kodex", "Webhook-driven control-plane для AI процессов в Kubernetes")
 
 System_Ext(github, "GitHub", "Repo API, OAuth, webhooks")
 System_Ext(k8s, "Kubernetes cluster", "Runtime для platform/services/agents")
@@ -51,7 +51,7 @@ Rel(system, approverexec, "Requests approvals/feedback", "HTTPS callback")
 ## Пояснения
 
 - Основные взаимодействия: webhook ingest -> domain orchestration -> k8s/repo actions -> audit/state in Postgres.
-- Границы ответственности: `codex-k8s` управляет процессами и состоянием, но не заменяет GitHub и Kubernetes как системы-источники соответствующих фактов.
+- Границы ответственности: `kodex` управляет процессами и состоянием, но не заменяет GitHub и Kubernetes как системы-источники соответствующих фактов.
 - Stage orchestration в продуктовой модели определяется label taxonomy (`run:*`, `state:*`, `need:*`) и policy апрувов.
 
 ## Внешние зависимости

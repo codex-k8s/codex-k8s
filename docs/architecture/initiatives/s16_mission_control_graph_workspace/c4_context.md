@@ -29,7 +29,7 @@ Person(owner, "Owner / product lead", "Ведёт несколько иници�
 Person(operator, "Delivery operator / engineer", "Диагностирует continuity, run context и coverage/freshness")
 Person(discussion, "Discussion-driven user", "Стартует с discussion или напрямую со stage issue")
 
-System(system, "codex-k8s Mission Control graph workspace slice", "Primary multi-root graph workspace and continuity control plane")
+System(system, "kodex Mission Control graph workspace slice", "Primary multi-root graph workspace and continuity control plane")
 
 System_Ext(github, "GitHub", "Issues, pull requests, comments, reviews, labels, webhooks")
 System_Ext(k8s, "Kubernetes", "Runtime substrate for agent and background execution")
@@ -44,7 +44,7 @@ Rel(system, k8s, "Runs agent and reconciliation workloads", "Kubernetes API")
 ## Пояснения
 - GitHub остаётся источником provider facts и human review/merge semantics, но не становится canonical owner graph relations и continuity completeness.
 - Kubernetes обеспечивает runtime для `agent-runner` и `worker`, но не хранит graph truth.
-- `web-console` остаётся внутренним container-level visibility surface `codex-k8s`, поэтому не моделируется как внешняя система на уровне C4Context.
+- `web-console` остаётся внутренним container-level visibility surface `kodex`, поэтому не моделируется как внешняя система на уровне C4Context.
 
 ## Внешние зависимости
 - GitHub: issue/pr/comment/review state, labels, provider-native collaboration и webhook echoes.

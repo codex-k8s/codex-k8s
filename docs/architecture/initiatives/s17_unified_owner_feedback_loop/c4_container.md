@@ -31,7 +31,7 @@ Person(agent, "Agent pod", "Выполняет задачу и ждёт owner re
 System_Ext(tgadapter, "Telegram interaction adapter", "External Telegram delivery, webhook and reply normalization")
 System_Ext(github, "GitHub", "Issue/PR context and service messages")
 
-System_Boundary(b0, "codex-k8s") {
+System_Boundary(b0, "kodex") {
   Container(runner, "Agent Runner / agent pod", "Codex CLI job", "Keeps live same-session wait, heartbeats session and restores snapshot only for recovery")
   Container(gw, "API Gateway", "Go HTTP", "Thin-edge ingress for staff fallback actions and normalized adapter callbacks")
   Container(cp, "Control Plane", "Go", "Owns feedback request aggregate, lifecycle, deadlines, binding and continuation policy")

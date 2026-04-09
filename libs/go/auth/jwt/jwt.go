@@ -8,7 +8,7 @@ import (
 	jwtv5 "github.com/golang-jwt/jwt/v5"
 )
 
-// Claims defines codex-k8s staff JWT claims.
+// Claims defines kodex staff JWT claims.
 type Claims struct {
 	Email       string `json:"email"`
 	GitHubLogin string `json:"github_login,omitempty"`

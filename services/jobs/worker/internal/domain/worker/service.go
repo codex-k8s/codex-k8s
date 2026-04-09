@@ -6,15 +6,15 @@ import (
 	"strings"
 	"time"
 
-	webhookdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/webhook"
-	floweventrepo "github.com/codex-k8s/codex-k8s/services/jobs/worker/internal/domain/repository/flowevent"
-	learningfeedbackrepo "github.com/codex-k8s/codex-k8s/services/jobs/worker/internal/domain/repository/learningfeedback"
-	runqueuerepo "github.com/codex-k8s/codex-k8s/services/jobs/worker/internal/domain/repository/runqueue"
+	webhookdomain "github.com/codex-k8s/kodex/libs/go/domain/webhook"
+	floweventrepo "github.com/codex-k8s/kodex/services/jobs/worker/internal/domain/repository/flowevent"
+	learningfeedbackrepo "github.com/codex-k8s/kodex/services/jobs/worker/internal/domain/repository/learningfeedback"
+	runqueuerepo "github.com/codex-k8s/kodex/services/jobs/worker/internal/domain/repository/runqueue"
 )
 
 const defaultWorkerID = "worker"
 const defaultStateInReviewLabel = webhookdomain.DefaultStateInReviewLabel
-const defaultProductionNamespace = "codex-k8s-prod"
+const defaultProductionNamespace = "kodex-prod"
 
 // Config defines worker run-loop behavior.
 type Config struct {
@@ -301,7 +301,7 @@ func NewService(cfg Config, deps Dependencies) *Service {
 	}
 	cfg.ControlPlaneGRPCTarget = strings.TrimSpace(cfg.ControlPlaneGRPCTarget)
 	if cfg.ControlPlaneGRPCTarget == "" {
-		cfg.ControlPlaneGRPCTarget = "codex-k8s-control-plane:9090"
+		cfg.ControlPlaneGRPCTarget = "kodex-control-plane:9090"
 	}
 	cfg.ControlPlaneMCPBaseURL = resolveControlPlaneMCPBaseURL(cfg.ControlPlaneMCPBaseURL, cfg.ControlPlaneGRPCTarget)
 	cfg.OpenAIAPIKey = strings.TrimSpace(cfg.OpenAIAPIKey)
@@ -313,7 +313,7 @@ func NewService(cfg Config, deps Dependencies) *Service {
 	}
 	cfg.GitBotMail = strings.TrimSpace(cfg.GitBotMail)
 	if cfg.GitBotMail == "" {
-		cfg.GitBotMail = "codex-bot@codex-k8s.local"
+		cfg.GitBotMail = "codex-bot@kodex.local"
 	}
 	cfg.AgentDefaultModel = strings.TrimSpace(cfg.AgentDefaultModel)
 	if cfg.AgentDefaultModel == "" {
@@ -355,7 +355,7 @@ func NewService(cfg Config, deps Dependencies) *Service {
 	}
 	cfg.AIRepairServiceAccount = strings.TrimSpace(cfg.AIRepairServiceAccount)
 	if cfg.AIRepairServiceAccount == "" {
-		cfg.AIRepairServiceAccount = "codex-k8s-control-plane"
+		cfg.AIRepairServiceAccount = "kodex-control-plane"
 	}
 	labelCatalog := runAgentLabelCatalogFromConfig(cfg)
 	cfg.NamespaceTTLByRole = normalizeNamespaceTTLByRole(cfg.NamespaceTTLByRole)

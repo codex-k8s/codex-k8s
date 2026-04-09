@@ -13,9 +13,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/codex-k8s/codex-k8s/cmd/codex-bootstrap/internal/envfile"
-	"github.com/codex-k8s/codex-k8s/libs/go/k8s/clientcfg"
-	"github.com/codex-k8s/codex-k8s/libs/go/servicescfg"
+	"github.com/codex-k8s/kodex/cmd/codex-bootstrap/internal/envfile"
+	"github.com/codex-k8s/kodex/libs/go/k8s/clientcfg"
+	"github.com/codex-k8s/kodex/libs/go/servicescfg"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -25,19 +25,19 @@ import (
 const defaultSyncSecretsTimeout = 3 * time.Minute
 
 const (
-	defaultTelegramInteractionAdapterBaseURL = "http://codex-k8s-telegram-interaction-adapter:8080"
+	defaultTelegramInteractionAdapterBaseURL = "http://kodex-telegram-interaction-adapter:8080"
 	defaultTelegramInteractionAdapterTimeout = "10s"
 	telegramInteractionAdapterSecretBytes    = 32
 )
 
 var syncSecretsRequiredKeys = []string{
-	"CODEXK8S_GITHUB_REPO",
-	"CODEXK8S_GIT_BOT_TOKEN",
-	"CODEXK8S_BOOTSTRAP_OWNER_EMAIL",
-	"CODEXK8S_GITHUB_OAUTH_CLIENT_ID",
-	"CODEXK8S_GITHUB_OAUTH_CLIENT_SECRET",
-	"CODEXK8S_PRODUCTION_DOMAIN",
-	"CODEXK8S_AI_DOMAIN",
+	"KODEX_GITHUB_REPO",
+	"KODEX_GIT_BOT_TOKEN",
+	"KODEX_BOOTSTRAP_OWNER_EMAIL",
+	"KODEX_GITHUB_OAUTH_CLIENT_ID",
+	"KODEX_GITHUB_OAUTH_CLIENT_SECRET",
+	"KODEX_PRODUCTION_DOMAIN",
+	"KODEX_AI_DOMAIN",
 }
 
 func runSyncSecrets(args []string, stdout io.Writer, stderr io.Writer) int {
@@ -90,10 +90,10 @@ func runSyncSecrets(args []string, stdout io.Writer, stderr io.Writer) int {
 
 	targetNamespace := strings.TrimSpace(*namespace)
 	if targetNamespace == "" {
-		targetNamespace = strings.TrimSpace(values["CODEXK8S_PRODUCTION_NAMESPACE"])
+		targetNamespace = strings.TrimSpace(values["KODEX_PRODUCTION_NAMESPACE"])
 	}
 	if targetNamespace == "" {
-		targetNamespace = "codex-k8s-prod"
+		targetNamespace = "kodex-prod"
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), *timeout)
@@ -110,29 +110,29 @@ func runSyncSecrets(args []string, stdout io.Writer, stderr io.Writer) int {
 		return 1
 	}
 
-	existingPostgres, err := getSecretData(ctx, clientset, targetNamespace, "codex-k8s-postgres")
+	existingPostgres, err := getSecretData(ctx, clientset, targetNamespace, "kodex-postgres")
 	if err != nil {
-		writef(stderr, "sync-secrets failed: load codex-k8s-postgres: %v\n", err)
+		writef(stderr, "sync-secrets failed: load kodex-postgres: %v\n", err)
 		return 1
 	}
-	existingRuntime, err := getSecretData(ctx, clientset, targetNamespace, "codex-k8s-runtime")
+	existingRuntime, err := getSecretData(ctx, clientset, targetNamespace, "kodex-runtime")
 	if err != nil {
-		writef(stderr, "sync-secrets failed: load codex-k8s-runtime: %v\n", err)
+		writef(stderr, "sync-secrets failed: load kodex-runtime: %v\n", err)
 		return 1
 	}
-	existingOAuth, err := getSecretData(ctx, clientset, targetNamespace, "codex-k8s-oauth2-proxy")
+	existingOAuth, err := getSecretData(ctx, clientset, targetNamespace, "kodex-oauth2-proxy")
 	if err != nil {
-		writef(stderr, "sync-secrets failed: load codex-k8s-oauth2-proxy: %v\n", err)
+		writef(stderr, "sync-secrets failed: load kodex-oauth2-proxy: %v\n", err)
 		return 1
 	}
-	existingRuntimeAI, err := getSecretData(ctx, clientset, targetNamespace, "codex-k8s-runtime-ai")
+	existingRuntimeAI, err := getSecretData(ctx, clientset, targetNamespace, "kodex-runtime-ai")
 	if err != nil {
-		writef(stderr, "sync-secrets failed: load codex-k8s-runtime-ai: %v\n", err)
+		writef(stderr, "sync-secrets failed: load kodex-runtime-ai: %v\n", err)
 		return 1
 	}
-	existingOAuthAI, err := getSecretData(ctx, clientset, targetNamespace, "codex-k8s-oauth2-proxy-ai")
+	existingOAuthAI, err := getSecretData(ctx, clientset, targetNamespace, "kodex-oauth2-proxy-ai")
 	if err != nil {
-		writef(stderr, "sync-secrets failed: load codex-k8s-oauth2-proxy-ai: %v\n", err)
+		writef(stderr, "sync-secrets failed: load kodex-oauth2-proxy-ai: %v\n", err)
 		return 1
 	}
 
@@ -161,29 +161,29 @@ func runSyncSecrets(args []string, stdout io.Writer, stderr io.Writer) int {
 		return 0
 	}
 
-	if err := upsertSecretData(ctx, clientset, targetNamespace, "codex-k8s-postgres", postgresSecret); err != nil {
-		writef(stderr, "sync-secrets failed: upsert codex-k8s-postgres: %v\n", err)
+	if err := upsertSecretData(ctx, clientset, targetNamespace, "kodex-postgres", postgresSecret); err != nil {
+		writef(stderr, "sync-secrets failed: upsert kodex-postgres: %v\n", err)
 		return 1
 	}
-	if err := upsertSecretData(ctx, clientset, targetNamespace, "codex-k8s-runtime", runtimeSecret); err != nil {
-		writef(stderr, "sync-secrets failed: upsert codex-k8s-runtime: %v\n", err)
+	if err := upsertSecretData(ctx, clientset, targetNamespace, "kodex-runtime", runtimeSecret); err != nil {
+		writef(stderr, "sync-secrets failed: upsert kodex-runtime: %v\n", err)
 		return 1
 	}
 	if len(oauthSecret) > 0 {
-		if err := upsertSecretData(ctx, clientset, targetNamespace, "codex-k8s-oauth2-proxy", oauthSecret); err != nil {
-			writef(stderr, "sync-secrets failed: upsert codex-k8s-oauth2-proxy: %v\n", err)
+		if err := upsertSecretData(ctx, clientset, targetNamespace, "kodex-oauth2-proxy", oauthSecret); err != nil {
+			writef(stderr, "sync-secrets failed: upsert kodex-oauth2-proxy: %v\n", err)
 			return 1
 		}
 	}
 	if len(aiRuntimeSecret) > 0 {
-		if err := upsertSecretData(ctx, clientset, targetNamespace, "codex-k8s-runtime-ai", aiRuntimeSecret); err != nil {
-			writef(stderr, "sync-secrets failed: upsert codex-k8s-runtime-ai: %v\n", err)
+		if err := upsertSecretData(ctx, clientset, targetNamespace, "kodex-runtime-ai", aiRuntimeSecret); err != nil {
+			writef(stderr, "sync-secrets failed: upsert kodex-runtime-ai: %v\n", err)
 			return 1
 		}
 	}
 	if len(aiOAuthSecret) > 0 {
-		if err := upsertSecretData(ctx, clientset, targetNamespace, "codex-k8s-oauth2-proxy-ai", aiOAuthSecret); err != nil {
-			writef(stderr, "sync-secrets failed: upsert codex-k8s-oauth2-proxy-ai: %v\n", err)
+		if err := upsertSecretData(ctx, clientset, targetNamespace, "kodex-oauth2-proxy-ai", aiOAuthSecret); err != nil {
+			writef(stderr, "sync-secrets failed: upsert kodex-oauth2-proxy-ai: %v\n", err)
 			return 1
 		}
 	}
@@ -199,112 +199,112 @@ func runSyncSecrets(args []string, stdout io.Writer, stderr io.Writer) int {
 }
 
 func applySyncSecretsDefaults(values map[string]string) {
-	setEnvDefault(values, "CODEXK8S_POSTGRES_DB", "codex_k8s")
-	setEnvDefault(values, "CODEXK8S_POSTGRES_USER", "codex_k8s")
-	setEnvDefault(values, "CODEXK8S_LEARNING_MODE_DEFAULT", "true")
-	setEnvDefault(values, "CODEXK8S_JWT_TTL", "15m")
-	setEnvDefault(values, "CODEXK8S_MCP_TOKEN_TTL", "24h")
-	setEnvDefault(values, "CODEXK8S_RUN_HEAVY_FIELDS_RETENTION_DAYS", "7")
-	setEnvDefault(values, "CODEXK8S_RUN_AGENT_LOGS_RETENTION_DAYS", strings.TrimSpace(values["CODEXK8S_RUN_HEAVY_FIELDS_RETENTION_DAYS"]))
-	setEnvDefault(values, "CODEXK8S_GIT_BOT_USERNAME", "codex-bot")
-	setEnvDefault(values, "CODEXK8S_GIT_BOT_MAIL", "codex-bot@codex-k8s.local")
-	setEnvDefault(values, "CODEXK8S_PROJECT_DB_ADMIN_HOST", "postgres")
-	setEnvDefault(values, "CODEXK8S_PROJECT_DB_ADMIN_PORT", "5432")
-	setEnvDefault(values, "CODEXK8S_PROJECT_DB_ADMIN_SSLMODE", "disable")
-	setEnvDefault(values, "CODEXK8S_PROJECT_DB_ADMIN_DATABASE", "postgres")
-	setEnvDefault(values, "CODEXK8S_PROJECT_DB_LIFECYCLE_ALLOWED_ENVS", "dev,production,prod")
-	setEnvDefault(values, "CODEXK8S_GITHUB_WEBHOOK_URL", resolveWebhookURL(values))
-	setEnvDefault(values, "CODEXK8S_GITHUB_WEBHOOK_EVENTS", defaultGitHubWebhookEvents)
-	setEnvDefault(values, "CODEXK8S_INTERNAL_REGISTRY_STORAGE_SIZE", "20Gi")
-	setEnvDefault(values, "CODEXK8S_TELEGRAM_INTERACTION_ADAPTER_TIMEOUT", defaultTelegramInteractionAdapterTimeout)
+	setEnvDefault(values, "KODEX_POSTGRES_DB", "kodex")
+	setEnvDefault(values, "KODEX_POSTGRES_USER", "kodex")
+	setEnvDefault(values, "KODEX_LEARNING_MODE_DEFAULT", "true")
+	setEnvDefault(values, "KODEX_JWT_TTL", "15m")
+	setEnvDefault(values, "KODEX_MCP_TOKEN_TTL", "24h")
+	setEnvDefault(values, "KODEX_RUN_HEAVY_FIELDS_RETENTION_DAYS", "7")
+	setEnvDefault(values, "KODEX_RUN_AGENT_LOGS_RETENTION_DAYS", strings.TrimSpace(values["KODEX_RUN_HEAVY_FIELDS_RETENTION_DAYS"]))
+	setEnvDefault(values, "KODEX_GIT_BOT_USERNAME", "codex-bot")
+	setEnvDefault(values, "KODEX_GIT_BOT_MAIL", "codex-bot@kodex.local")
+	setEnvDefault(values, "KODEX_PROJECT_DB_ADMIN_HOST", "postgres")
+	setEnvDefault(values, "KODEX_PROJECT_DB_ADMIN_PORT", "5432")
+	setEnvDefault(values, "KODEX_PROJECT_DB_ADMIN_SSLMODE", "disable")
+	setEnvDefault(values, "KODEX_PROJECT_DB_ADMIN_DATABASE", "postgres")
+	setEnvDefault(values, "KODEX_PROJECT_DB_LIFECYCLE_ALLOWED_ENVS", "dev,production,prod")
+	setEnvDefault(values, "KODEX_GITHUB_WEBHOOK_URL", resolveWebhookURL(values))
+	setEnvDefault(values, "KODEX_GITHUB_WEBHOOK_EVENTS", defaultGitHubWebhookEvents)
+	setEnvDefault(values, "KODEX_INTERNAL_REGISTRY_STORAGE_SIZE", "20Gi")
+	setEnvDefault(values, "KODEX_TELEGRAM_INTERACTION_ADAPTER_TIMEOUT", defaultTelegramInteractionAdapterTimeout)
 }
 
 func hydrateValuesFromExistingSecrets(values map[string]string, existingPostgres map[string][]byte, existingRuntime map[string][]byte, existingOAuth map[string][]byte) error {
 	transferFromSecret(values, existingPostgres, []string{
-		"CODEXK8S_POSTGRES_DB",
-		"CODEXK8S_POSTGRES_USER",
-		"CODEXK8S_POSTGRES_PASSWORD",
+		"KODEX_POSTGRES_DB",
+		"KODEX_POSTGRES_USER",
+		"KODEX_POSTGRES_PASSWORD",
 	})
 	transferFromSecret(values, existingRuntime, []string{
-		"CODEXK8S_GITHUB_PAT",
-		"CODEXK8S_GITHUB_REPO",
-		"CODEXK8S_FIRST_PROJECT_GITHUB_REPO",
-		"CODEXK8S_OPENAI_API_KEY",
-		"CODEXK8S_PROJECT_DB_ADMIN_HOST",
-		"CODEXK8S_PROJECT_DB_ADMIN_PORT",
-		"CODEXK8S_PROJECT_DB_ADMIN_USER",
-		"CODEXK8S_PROJECT_DB_ADMIN_PASSWORD",
-		"CODEXK8S_PROJECT_DB_ADMIN_SSLMODE",
-		"CODEXK8S_PROJECT_DB_ADMIN_DATABASE",
-		"CODEXK8S_PROJECT_DB_LIFECYCLE_ALLOWED_ENVS",
-		"CODEXK8S_GIT_BOT_TOKEN",
-		"CODEXK8S_GIT_BOT_USERNAME",
-		"CODEXK8S_GIT_BOT_MAIL",
-		"CODEXK8S_TELEGRAM_BOT_TOKEN",
-		"CODEXK8S_TELEGRAM_CHAT_ID",
-		"CODEXK8S_TELEGRAM_INTERACTION_ADAPTER_BASE_URL",
-		"CODEXK8S_TELEGRAM_INTERACTION_ADAPTER_BEARER_TOKEN",
-		"CODEXK8S_TELEGRAM_INTERACTION_ADAPTER_WEBHOOK_SECRET",
-		"CODEXK8S_TELEGRAM_INTERACTION_ADAPTER_TIMEOUT",
-		"CODEXK8S_TELEGRAM_INTERACTION_ADAPTER_RECIPIENT_BINDINGS_JSON",
-		"CODEXK8S_CONTEXT7_API_KEY",
-		"CODEXK8S_APP_SECRET_KEY",
-		"CODEXK8S_TOKEN_ENCRYPTION_KEY",
-		"CODEXK8S_MCP_TOKEN_SIGNING_KEY",
-		"CODEXK8S_MCP_TOKEN_TTL",
-		"CODEXK8S_RUN_HEAVY_FIELDS_RETENTION_DAYS",
-		"CODEXK8S_RUN_AGENT_LOGS_RETENTION_DAYS",
-		"CODEXK8S_LEARNING_MODE_DEFAULT",
-		"CODEXK8S_GITHUB_WEBHOOK_SECRET",
-		"CODEXK8S_GITHUB_WEBHOOK_URL",
-		"CODEXK8S_GITHUB_WEBHOOK_EVENTS",
-		"CODEXK8S_PRODUCTION_DOMAIN",
-		"CODEXK8S_AI_DOMAIN",
-		"CODEXK8S_PUBLIC_BASE_URL",
-		"CODEXK8S_INTERACTION_CALLBACK_BASE_URL",
-		"CODEXK8S_BOOTSTRAP_OWNER_EMAIL",
-		"CODEXK8S_BOOTSTRAP_ALLOWED_EMAILS",
-		"CODEXK8S_BOOTSTRAP_PLATFORM_ADMIN_EMAILS",
-		"CODEXK8S_GITHUB_OAUTH_CLIENT_ID",
-		"CODEXK8S_GITHUB_OAUTH_CLIENT_SECRET",
-		"CODEXK8S_JWT_SIGNING_KEY",
-		"CODEXK8S_JWT_TTL",
-		"CODEXK8S_INTERNAL_REGISTRY_SERVICE",
-		"CODEXK8S_INTERNAL_REGISTRY_PORT",
-		"CODEXK8S_INTERNAL_REGISTRY_HOST",
-		"CODEXK8S_INTERNAL_REGISTRY_STORAGE_SIZE",
-		"CODEXK8S_VITE_DEV_UPSTREAM",
+		"KODEX_GITHUB_PAT",
+		"KODEX_GITHUB_REPO",
+		"KODEX_FIRST_PROJECT_GITHUB_REPO",
+		"KODEX_OPENAI_API_KEY",
+		"KODEX_PROJECT_DB_ADMIN_HOST",
+		"KODEX_PROJECT_DB_ADMIN_PORT",
+		"KODEX_PROJECT_DB_ADMIN_USER",
+		"KODEX_PROJECT_DB_ADMIN_PASSWORD",
+		"KODEX_PROJECT_DB_ADMIN_SSLMODE",
+		"KODEX_PROJECT_DB_ADMIN_DATABASE",
+		"KODEX_PROJECT_DB_LIFECYCLE_ALLOWED_ENVS",
+		"KODEX_GIT_BOT_TOKEN",
+		"KODEX_GIT_BOT_USERNAME",
+		"KODEX_GIT_BOT_MAIL",
+		"KODEX_TELEGRAM_BOT_TOKEN",
+		"KODEX_TELEGRAM_CHAT_ID",
+		"KODEX_TELEGRAM_INTERACTION_ADAPTER_BASE_URL",
+		"KODEX_TELEGRAM_INTERACTION_ADAPTER_BEARER_TOKEN",
+		"KODEX_TELEGRAM_INTERACTION_ADAPTER_WEBHOOK_SECRET",
+		"KODEX_TELEGRAM_INTERACTION_ADAPTER_TIMEOUT",
+		"KODEX_TELEGRAM_INTERACTION_ADAPTER_RECIPIENT_BINDINGS_JSON",
+		"KODEX_CONTEXT7_API_KEY",
+		"KODEX_APP_SECRET_KEY",
+		"KODEX_TOKEN_ENCRYPTION_KEY",
+		"KODEX_MCP_TOKEN_SIGNING_KEY",
+		"KODEX_MCP_TOKEN_TTL",
+		"KODEX_RUN_HEAVY_FIELDS_RETENTION_DAYS",
+		"KODEX_RUN_AGENT_LOGS_RETENTION_DAYS",
+		"KODEX_LEARNING_MODE_DEFAULT",
+		"KODEX_GITHUB_WEBHOOK_SECRET",
+		"KODEX_GITHUB_WEBHOOK_URL",
+		"KODEX_GITHUB_WEBHOOK_EVENTS",
+		"KODEX_PRODUCTION_DOMAIN",
+		"KODEX_AI_DOMAIN",
+		"KODEX_PUBLIC_BASE_URL",
+		"KODEX_INTERACTION_CALLBACK_BASE_URL",
+		"KODEX_BOOTSTRAP_OWNER_EMAIL",
+		"KODEX_BOOTSTRAP_ALLOWED_EMAILS",
+		"KODEX_BOOTSTRAP_PLATFORM_ADMIN_EMAILS",
+		"KODEX_GITHUB_OAUTH_CLIENT_ID",
+		"KODEX_GITHUB_OAUTH_CLIENT_SECRET",
+		"KODEX_JWT_SIGNING_KEY",
+		"KODEX_JWT_TTL",
+		"KODEX_INTERNAL_REGISTRY_SERVICE",
+		"KODEX_INTERNAL_REGISTRY_PORT",
+		"KODEX_INTERNAL_REGISTRY_HOST",
+		"KODEX_INTERNAL_REGISTRY_STORAGE_SIZE",
+		"KODEX_VITE_DEV_UPSTREAM",
 	})
 	transferFromSecret(values, existingOAuth, []string{
 		"OAUTH2_PROXY_COOKIE_SECRET",
 	})
 
 	var err error
-	values["CODEXK8S_POSTGRES_PASSWORD"], err = valueOrRandomHex(values, "CODEXK8S_POSTGRES_PASSWORD", 24)
+	values["KODEX_POSTGRES_PASSWORD"], err = valueOrRandomHex(values, "KODEX_POSTGRES_PASSWORD", 24)
 	if err != nil {
 		return err
 	}
-	values["CODEXK8S_APP_SECRET_KEY"], err = valueOrRandomHex(values, "CODEXK8S_APP_SECRET_KEY", 32)
+	values["KODEX_APP_SECRET_KEY"], err = valueOrRandomHex(values, "KODEX_APP_SECRET_KEY", 32)
 	if err != nil {
 		return err
 	}
-	values["CODEXK8S_TOKEN_ENCRYPTION_KEY"], err = valueOrRandomHex(values, "CODEXK8S_TOKEN_ENCRYPTION_KEY", 32)
+	values["KODEX_TOKEN_ENCRYPTION_KEY"], err = valueOrRandomHex(values, "KODEX_TOKEN_ENCRYPTION_KEY", 32)
 	if err != nil {
 		return err
 	}
-	values["CODEXK8S_GITHUB_WEBHOOK_SECRET"], err = valueOrRandomHex(values, "CODEXK8S_GITHUB_WEBHOOK_SECRET", 32)
+	values["KODEX_GITHUB_WEBHOOK_SECRET"], err = valueOrRandomHex(values, "KODEX_GITHUB_WEBHOOK_SECRET", 32)
 	if err != nil {
 		return err
 	}
-	values["CODEXK8S_JWT_SIGNING_KEY"], err = valueOrRandomHex(values, "CODEXK8S_JWT_SIGNING_KEY", 32)
+	values["KODEX_JWT_SIGNING_KEY"], err = valueOrRandomHex(values, "KODEX_JWT_SIGNING_KEY", 32)
 	if err != nil {
 		return err
 	}
-	values["CODEXK8S_TELEGRAM_INTERACTION_ADAPTER_BEARER_TOKEN"], err = valueOrRandomHex(values, "CODEXK8S_TELEGRAM_INTERACTION_ADAPTER_BEARER_TOKEN", telegramInteractionAdapterSecretBytes)
+	values["KODEX_TELEGRAM_INTERACTION_ADAPTER_BEARER_TOKEN"], err = valueOrRandomHex(values, "KODEX_TELEGRAM_INTERACTION_ADAPTER_BEARER_TOKEN", telegramInteractionAdapterSecretBytes)
 	if err != nil {
 		return err
 	}
-	values["CODEXK8S_TELEGRAM_INTERACTION_ADAPTER_WEBHOOK_SECRET"], err = valueOrRandomHex(values, "CODEXK8S_TELEGRAM_INTERACTION_ADAPTER_WEBHOOK_SECRET", telegramInteractionAdapterSecretBytes)
+	values["KODEX_TELEGRAM_INTERACTION_ADAPTER_WEBHOOK_SECRET"], err = valueOrRandomHex(values, "KODEX_TELEGRAM_INTERACTION_ADAPTER_WEBHOOK_SECRET", telegramInteractionAdapterSecretBytes)
 	if err != nil {
 		return err
 	}
@@ -313,23 +313,23 @@ func hydrateValuesFromExistingSecrets(values map[string]string, existingPostgres
 		return err
 	}
 
-	if strings.TrimSpace(values["CODEXK8S_MCP_TOKEN_SIGNING_KEY"]) == "" {
-		values["CODEXK8S_MCP_TOKEN_SIGNING_KEY"] = strings.TrimSpace(values["CODEXK8S_TOKEN_ENCRYPTION_KEY"])
+	if strings.TrimSpace(values["KODEX_MCP_TOKEN_SIGNING_KEY"]) == "" {
+		values["KODEX_MCP_TOKEN_SIGNING_KEY"] = strings.TrimSpace(values["KODEX_TOKEN_ENCRYPTION_KEY"])
 	}
-	if strings.TrimSpace(values["CODEXK8S_FIRST_PROJECT_GITHUB_REPO"]) == "" {
-		values["CODEXK8S_FIRST_PROJECT_GITHUB_REPO"] = strings.TrimSpace(values["CODEXK8S_GITHUB_REPO"])
+	if strings.TrimSpace(values["KODEX_FIRST_PROJECT_GITHUB_REPO"]) == "" {
+		values["KODEX_FIRST_PROJECT_GITHUB_REPO"] = strings.TrimSpace(values["KODEX_GITHUB_REPO"])
 	}
-	if strings.TrimSpace(values["CODEXK8S_PUBLIC_BASE_URL"]) == "" {
-		domain := strings.TrimSpace(values["CODEXK8S_PRODUCTION_DOMAIN"])
+	if strings.TrimSpace(values["KODEX_PUBLIC_BASE_URL"]) == "" {
+		domain := strings.TrimSpace(values["KODEX_PRODUCTION_DOMAIN"])
 		if domain != "" {
-			values["CODEXK8S_PUBLIC_BASE_URL"] = "https://" + domain
+			values["KODEX_PUBLIC_BASE_URL"] = "https://" + domain
 		}
 	}
-	if strings.TrimSpace(values["CODEXK8S_PROJECT_DB_ADMIN_USER"]) == "" {
-		values["CODEXK8S_PROJECT_DB_ADMIN_USER"] = strings.TrimSpace(values["CODEXK8S_POSTGRES_USER"])
+	if strings.TrimSpace(values["KODEX_PROJECT_DB_ADMIN_USER"]) == "" {
+		values["KODEX_PROJECT_DB_ADMIN_USER"] = strings.TrimSpace(values["KODEX_POSTGRES_USER"])
 	}
-	if strings.TrimSpace(values["CODEXK8S_PROJECT_DB_ADMIN_PASSWORD"]) == "" {
-		values["CODEXK8S_PROJECT_DB_ADMIN_PASSWORD"] = strings.TrimSpace(values["CODEXK8S_POSTGRES_PASSWORD"])
+	if strings.TrimSpace(values["KODEX_PROJECT_DB_ADMIN_PASSWORD"]) == "" {
+		values["KODEX_PROJECT_DB_ADMIN_PASSWORD"] = strings.TrimSpace(values["KODEX_POSTGRES_PASSWORD"])
 	}
 	applyTelegramInteractionDefaults(values)
 	return nil
@@ -337,82 +337,82 @@ func hydrateValuesFromExistingSecrets(values map[string]string, existingPostgres
 
 func buildPostgresSecretValues(values map[string]string) map[string]string {
 	return compactStringMap(map[string]string{
-		"CODEXK8S_POSTGRES_DB":       strings.TrimSpace(values["CODEXK8S_POSTGRES_DB"]),
-		"CODEXK8S_POSTGRES_USER":     strings.TrimSpace(values["CODEXK8S_POSTGRES_USER"]),
-		"CODEXK8S_POSTGRES_PASSWORD": strings.TrimSpace(values["CODEXK8S_POSTGRES_PASSWORD"]),
+		"KODEX_POSTGRES_DB":       strings.TrimSpace(values["KODEX_POSTGRES_DB"]),
+		"KODEX_POSTGRES_USER":     strings.TrimSpace(values["KODEX_POSTGRES_USER"]),
+		"KODEX_POSTGRES_PASSWORD": strings.TrimSpace(values["KODEX_POSTGRES_PASSWORD"]),
 	})
 }
 
 func buildRuntimeSecretValues(values map[string]string) map[string]string {
 	return compactStringMap(map[string]string{
-		"CODEXK8S_INTERNAL_REGISTRY_SERVICE":                            strings.TrimSpace(values["CODEXK8S_INTERNAL_REGISTRY_SERVICE"]),
-		"CODEXK8S_INTERNAL_REGISTRY_PORT":                               strings.TrimSpace(values["CODEXK8S_INTERNAL_REGISTRY_PORT"]),
-		"CODEXK8S_INTERNAL_REGISTRY_HOST":                               strings.TrimSpace(values["CODEXK8S_INTERNAL_REGISTRY_HOST"]),
-		"CODEXK8S_INTERNAL_REGISTRY_STORAGE_SIZE":                       strings.TrimSpace(values["CODEXK8S_INTERNAL_REGISTRY_STORAGE_SIZE"]),
-		"CODEXK8S_K8S_API_CIDR":                                         strings.TrimSpace(values["CODEXK8S_K8S_API_CIDR"]),
-		"CODEXK8S_K8S_API_PORT":                                         strings.TrimSpace(values["CODEXK8S_K8S_API_PORT"]),
-		"CODEXK8S_GITHUB_PAT":                                           strings.TrimSpace(values["CODEXK8S_GITHUB_PAT"]),
-		"CODEXK8S_GITHUB_REPO":                                          strings.TrimSpace(values["CODEXK8S_GITHUB_REPO"]),
-		"CODEXK8S_FIRST_PROJECT_GITHUB_REPO":                            strings.TrimSpace(values["CODEXK8S_FIRST_PROJECT_GITHUB_REPO"]),
-		"CODEXK8S_OPENAI_API_KEY":                                       strings.TrimSpace(values["CODEXK8S_OPENAI_API_KEY"]),
-		"CODEXK8S_PROJECT_DB_ADMIN_HOST":                                strings.TrimSpace(values["CODEXK8S_PROJECT_DB_ADMIN_HOST"]),
-		"CODEXK8S_PROJECT_DB_ADMIN_PORT":                                strings.TrimSpace(values["CODEXK8S_PROJECT_DB_ADMIN_PORT"]),
-		"CODEXK8S_PROJECT_DB_ADMIN_USER":                                strings.TrimSpace(values["CODEXK8S_PROJECT_DB_ADMIN_USER"]),
-		"CODEXK8S_PROJECT_DB_ADMIN_PASSWORD":                            strings.TrimSpace(values["CODEXK8S_PROJECT_DB_ADMIN_PASSWORD"]),
-		"CODEXK8S_PROJECT_DB_ADMIN_SSLMODE":                             strings.TrimSpace(values["CODEXK8S_PROJECT_DB_ADMIN_SSLMODE"]),
-		"CODEXK8S_PROJECT_DB_ADMIN_DATABASE":                            strings.TrimSpace(values["CODEXK8S_PROJECT_DB_ADMIN_DATABASE"]),
-		"CODEXK8S_PROJECT_DB_LIFECYCLE_ALLOWED_ENVS":                    strings.TrimSpace(values["CODEXK8S_PROJECT_DB_LIFECYCLE_ALLOWED_ENVS"]),
-		"CODEXK8S_GIT_BOT_TOKEN":                                        strings.TrimSpace(values["CODEXK8S_GIT_BOT_TOKEN"]),
-		"CODEXK8S_GIT_BOT_USERNAME":                                     strings.TrimSpace(values["CODEXK8S_GIT_BOT_USERNAME"]),
-		"CODEXK8S_GIT_BOT_MAIL":                                         strings.TrimSpace(values["CODEXK8S_GIT_BOT_MAIL"]),
-		"CODEXK8S_TELEGRAM_BOT_TOKEN":                                   strings.TrimSpace(values["CODEXK8S_TELEGRAM_BOT_TOKEN"]),
-		"CODEXK8S_TELEGRAM_CHAT_ID":                                     strings.TrimSpace(values["CODEXK8S_TELEGRAM_CHAT_ID"]),
-		"CODEXK8S_TELEGRAM_INTERACTION_ADAPTER_BASE_URL":                strings.TrimSpace(values["CODEXK8S_TELEGRAM_INTERACTION_ADAPTER_BASE_URL"]),
-		"CODEXK8S_TELEGRAM_INTERACTION_ADAPTER_BEARER_TOKEN":            strings.TrimSpace(values["CODEXK8S_TELEGRAM_INTERACTION_ADAPTER_BEARER_TOKEN"]),
-		"CODEXK8S_TELEGRAM_INTERACTION_ADAPTER_WEBHOOK_SECRET":          strings.TrimSpace(values["CODEXK8S_TELEGRAM_INTERACTION_ADAPTER_WEBHOOK_SECRET"]),
-		"CODEXK8S_TELEGRAM_INTERACTION_ADAPTER_TIMEOUT":                 strings.TrimSpace(values["CODEXK8S_TELEGRAM_INTERACTION_ADAPTER_TIMEOUT"]),
-		"CODEXK8S_TELEGRAM_INTERACTION_ADAPTER_RECIPIENT_BINDINGS_JSON": strings.TrimSpace(values["CODEXK8S_TELEGRAM_INTERACTION_ADAPTER_RECIPIENT_BINDINGS_JSON"]),
-		"CODEXK8S_CONTEXT7_API_KEY":                                     strings.TrimSpace(values["CODEXK8S_CONTEXT7_API_KEY"]),
-		"CODEXK8S_APP_SECRET_KEY":                                       strings.TrimSpace(values["CODEXK8S_APP_SECRET_KEY"]),
-		"CODEXK8S_TOKEN_ENCRYPTION_KEY":                                 strings.TrimSpace(values["CODEXK8S_TOKEN_ENCRYPTION_KEY"]),
-		"CODEXK8S_MCP_TOKEN_SIGNING_KEY":                                strings.TrimSpace(values["CODEXK8S_MCP_TOKEN_SIGNING_KEY"]),
-		"CODEXK8S_MCP_TOKEN_TTL":                                        strings.TrimSpace(values["CODEXK8S_MCP_TOKEN_TTL"]),
-		"CODEXK8S_RUN_HEAVY_FIELDS_RETENTION_DAYS":                      strings.TrimSpace(values["CODEXK8S_RUN_HEAVY_FIELDS_RETENTION_DAYS"]),
-		"CODEXK8S_RUN_AGENT_LOGS_RETENTION_DAYS":                        strings.TrimSpace(values["CODEXK8S_RUN_AGENT_LOGS_RETENTION_DAYS"]),
-		"CODEXK8S_LEARNING_MODE_DEFAULT":                                strings.TrimSpace(values["CODEXK8S_LEARNING_MODE_DEFAULT"]),
-		"CODEXK8S_GITHUB_WEBHOOK_SECRET":                                strings.TrimSpace(values["CODEXK8S_GITHUB_WEBHOOK_SECRET"]),
-		"CODEXK8S_GITHUB_WEBHOOK_URL":                                   strings.TrimSpace(values["CODEXK8S_GITHUB_WEBHOOK_URL"]),
-		"CODEXK8S_GITHUB_WEBHOOK_EVENTS":                                strings.TrimSpace(values["CODEXK8S_GITHUB_WEBHOOK_EVENTS"]),
-		"CODEXK8S_PRODUCTION_DOMAIN":                                    strings.TrimSpace(values["CODEXK8S_PRODUCTION_DOMAIN"]),
-		"CODEXK8S_AI_DOMAIN":                                            strings.TrimSpace(values["CODEXK8S_AI_DOMAIN"]),
-		"CODEXK8S_PUBLIC_BASE_URL":                                      strings.TrimSpace(values["CODEXK8S_PUBLIC_BASE_URL"]),
-		"CODEXK8S_INTERACTION_CALLBACK_BASE_URL":                        strings.TrimSpace(values["CODEXK8S_INTERACTION_CALLBACK_BASE_URL"]),
-		"CODEXK8S_BOOTSTRAP_OWNER_EMAIL":                                strings.TrimSpace(values["CODEXK8S_BOOTSTRAP_OWNER_EMAIL"]),
-		"CODEXK8S_BOOTSTRAP_ALLOWED_EMAILS":                             strings.TrimSpace(values["CODEXK8S_BOOTSTRAP_ALLOWED_EMAILS"]),
-		"CODEXK8S_BOOTSTRAP_PLATFORM_ADMIN_EMAILS":                      strings.TrimSpace(values["CODEXK8S_BOOTSTRAP_PLATFORM_ADMIN_EMAILS"]),
-		"CODEXK8S_GITHUB_OAUTH_CLIENT_ID":                               strings.TrimSpace(values["CODEXK8S_GITHUB_OAUTH_CLIENT_ID"]),
-		"CODEXK8S_GITHUB_OAUTH_CLIENT_SECRET":                           strings.TrimSpace(values["CODEXK8S_GITHUB_OAUTH_CLIENT_SECRET"]),
-		"CODEXK8S_JWT_SIGNING_KEY":                                      strings.TrimSpace(values["CODEXK8S_JWT_SIGNING_KEY"]),
-		"CODEXK8S_JWT_TTL":                                              strings.TrimSpace(values["CODEXK8S_JWT_TTL"]),
-		"CODEXK8S_VITE_DEV_UPSTREAM":                                    strings.TrimSpace(values["CODEXK8S_VITE_DEV_UPSTREAM"]),
+		"KODEX_INTERNAL_REGISTRY_SERVICE":                            strings.TrimSpace(values["KODEX_INTERNAL_REGISTRY_SERVICE"]),
+		"KODEX_INTERNAL_REGISTRY_PORT":                               strings.TrimSpace(values["KODEX_INTERNAL_REGISTRY_PORT"]),
+		"KODEX_INTERNAL_REGISTRY_HOST":                               strings.TrimSpace(values["KODEX_INTERNAL_REGISTRY_HOST"]),
+		"KODEX_INTERNAL_REGISTRY_STORAGE_SIZE":                       strings.TrimSpace(values["KODEX_INTERNAL_REGISTRY_STORAGE_SIZE"]),
+		"KODEX_K8S_API_CIDR":                                         strings.TrimSpace(values["KODEX_K8S_API_CIDR"]),
+		"KODEX_K8S_API_PORT":                                         strings.TrimSpace(values["KODEX_K8S_API_PORT"]),
+		"KODEX_GITHUB_PAT":                                           strings.TrimSpace(values["KODEX_GITHUB_PAT"]),
+		"KODEX_GITHUB_REPO":                                          strings.TrimSpace(values["KODEX_GITHUB_REPO"]),
+		"KODEX_FIRST_PROJECT_GITHUB_REPO":                            strings.TrimSpace(values["KODEX_FIRST_PROJECT_GITHUB_REPO"]),
+		"KODEX_OPENAI_API_KEY":                                       strings.TrimSpace(values["KODEX_OPENAI_API_KEY"]),
+		"KODEX_PROJECT_DB_ADMIN_HOST":                                strings.TrimSpace(values["KODEX_PROJECT_DB_ADMIN_HOST"]),
+		"KODEX_PROJECT_DB_ADMIN_PORT":                                strings.TrimSpace(values["KODEX_PROJECT_DB_ADMIN_PORT"]),
+		"KODEX_PROJECT_DB_ADMIN_USER":                                strings.TrimSpace(values["KODEX_PROJECT_DB_ADMIN_USER"]),
+		"KODEX_PROJECT_DB_ADMIN_PASSWORD":                            strings.TrimSpace(values["KODEX_PROJECT_DB_ADMIN_PASSWORD"]),
+		"KODEX_PROJECT_DB_ADMIN_SSLMODE":                             strings.TrimSpace(values["KODEX_PROJECT_DB_ADMIN_SSLMODE"]),
+		"KODEX_PROJECT_DB_ADMIN_DATABASE":                            strings.TrimSpace(values["KODEX_PROJECT_DB_ADMIN_DATABASE"]),
+		"KODEX_PROJECT_DB_LIFECYCLE_ALLOWED_ENVS":                    strings.TrimSpace(values["KODEX_PROJECT_DB_LIFECYCLE_ALLOWED_ENVS"]),
+		"KODEX_GIT_BOT_TOKEN":                                        strings.TrimSpace(values["KODEX_GIT_BOT_TOKEN"]),
+		"KODEX_GIT_BOT_USERNAME":                                     strings.TrimSpace(values["KODEX_GIT_BOT_USERNAME"]),
+		"KODEX_GIT_BOT_MAIL":                                         strings.TrimSpace(values["KODEX_GIT_BOT_MAIL"]),
+		"KODEX_TELEGRAM_BOT_TOKEN":                                   strings.TrimSpace(values["KODEX_TELEGRAM_BOT_TOKEN"]),
+		"KODEX_TELEGRAM_CHAT_ID":                                     strings.TrimSpace(values["KODEX_TELEGRAM_CHAT_ID"]),
+		"KODEX_TELEGRAM_INTERACTION_ADAPTER_BASE_URL":                strings.TrimSpace(values["KODEX_TELEGRAM_INTERACTION_ADAPTER_BASE_URL"]),
+		"KODEX_TELEGRAM_INTERACTION_ADAPTER_BEARER_TOKEN":            strings.TrimSpace(values["KODEX_TELEGRAM_INTERACTION_ADAPTER_BEARER_TOKEN"]),
+		"KODEX_TELEGRAM_INTERACTION_ADAPTER_WEBHOOK_SECRET":          strings.TrimSpace(values["KODEX_TELEGRAM_INTERACTION_ADAPTER_WEBHOOK_SECRET"]),
+		"KODEX_TELEGRAM_INTERACTION_ADAPTER_TIMEOUT":                 strings.TrimSpace(values["KODEX_TELEGRAM_INTERACTION_ADAPTER_TIMEOUT"]),
+		"KODEX_TELEGRAM_INTERACTION_ADAPTER_RECIPIENT_BINDINGS_JSON": strings.TrimSpace(values["KODEX_TELEGRAM_INTERACTION_ADAPTER_RECIPIENT_BINDINGS_JSON"]),
+		"KODEX_CONTEXT7_API_KEY":                                     strings.TrimSpace(values["KODEX_CONTEXT7_API_KEY"]),
+		"KODEX_APP_SECRET_KEY":                                       strings.TrimSpace(values["KODEX_APP_SECRET_KEY"]),
+		"KODEX_TOKEN_ENCRYPTION_KEY":                                 strings.TrimSpace(values["KODEX_TOKEN_ENCRYPTION_KEY"]),
+		"KODEX_MCP_TOKEN_SIGNING_KEY":                                strings.TrimSpace(values["KODEX_MCP_TOKEN_SIGNING_KEY"]),
+		"KODEX_MCP_TOKEN_TTL":                                        strings.TrimSpace(values["KODEX_MCP_TOKEN_TTL"]),
+		"KODEX_RUN_HEAVY_FIELDS_RETENTION_DAYS":                      strings.TrimSpace(values["KODEX_RUN_HEAVY_FIELDS_RETENTION_DAYS"]),
+		"KODEX_RUN_AGENT_LOGS_RETENTION_DAYS":                        strings.TrimSpace(values["KODEX_RUN_AGENT_LOGS_RETENTION_DAYS"]),
+		"KODEX_LEARNING_MODE_DEFAULT":                                strings.TrimSpace(values["KODEX_LEARNING_MODE_DEFAULT"]),
+		"KODEX_GITHUB_WEBHOOK_SECRET":                                strings.TrimSpace(values["KODEX_GITHUB_WEBHOOK_SECRET"]),
+		"KODEX_GITHUB_WEBHOOK_URL":                                   strings.TrimSpace(values["KODEX_GITHUB_WEBHOOK_URL"]),
+		"KODEX_GITHUB_WEBHOOK_EVENTS":                                strings.TrimSpace(values["KODEX_GITHUB_WEBHOOK_EVENTS"]),
+		"KODEX_PRODUCTION_DOMAIN":                                    strings.TrimSpace(values["KODEX_PRODUCTION_DOMAIN"]),
+		"KODEX_AI_DOMAIN":                                            strings.TrimSpace(values["KODEX_AI_DOMAIN"]),
+		"KODEX_PUBLIC_BASE_URL":                                      strings.TrimSpace(values["KODEX_PUBLIC_BASE_URL"]),
+		"KODEX_INTERACTION_CALLBACK_BASE_URL":                        strings.TrimSpace(values["KODEX_INTERACTION_CALLBACK_BASE_URL"]),
+		"KODEX_BOOTSTRAP_OWNER_EMAIL":                                strings.TrimSpace(values["KODEX_BOOTSTRAP_OWNER_EMAIL"]),
+		"KODEX_BOOTSTRAP_ALLOWED_EMAILS":                             strings.TrimSpace(values["KODEX_BOOTSTRAP_ALLOWED_EMAILS"]),
+		"KODEX_BOOTSTRAP_PLATFORM_ADMIN_EMAILS":                      strings.TrimSpace(values["KODEX_BOOTSTRAP_PLATFORM_ADMIN_EMAILS"]),
+		"KODEX_GITHUB_OAUTH_CLIENT_ID":                               strings.TrimSpace(values["KODEX_GITHUB_OAUTH_CLIENT_ID"]),
+		"KODEX_GITHUB_OAUTH_CLIENT_SECRET":                           strings.TrimSpace(values["KODEX_GITHUB_OAUTH_CLIENT_SECRET"]),
+		"KODEX_JWT_SIGNING_KEY":                                      strings.TrimSpace(values["KODEX_JWT_SIGNING_KEY"]),
+		"KODEX_JWT_TTL":                                              strings.TrimSpace(values["KODEX_JWT_TTL"]),
+		"KODEX_VITE_DEV_UPSTREAM":                                    strings.TrimSpace(values["KODEX_VITE_DEV_UPSTREAM"]),
 	})
 }
 
 func applyTelegramInteractionDefaults(values map[string]string) {
-	if strings.TrimSpace(values["CODEXK8S_TELEGRAM_INTERACTION_ADAPTER_BASE_URL"]) == "" {
-		if strings.TrimSpace(values["CODEXK8S_TELEGRAM_BOT_TOKEN"]) != "" || strings.TrimSpace(values["CODEXK8S_TELEGRAM_INTERACTION_ADAPTER_RECIPIENT_BINDINGS_JSON"]) != "" {
-			values["CODEXK8S_TELEGRAM_INTERACTION_ADAPTER_BASE_URL"] = defaultTelegramInteractionAdapterBaseURL
+	if strings.TrimSpace(values["KODEX_TELEGRAM_INTERACTION_ADAPTER_BASE_URL"]) == "" {
+		if strings.TrimSpace(values["KODEX_TELEGRAM_BOT_TOKEN"]) != "" || strings.TrimSpace(values["KODEX_TELEGRAM_INTERACTION_ADAPTER_RECIPIENT_BINDINGS_JSON"]) != "" {
+			values["KODEX_TELEGRAM_INTERACTION_ADAPTER_BASE_URL"] = defaultTelegramInteractionAdapterBaseURL
 		}
 	}
-	if strings.TrimSpace(values["CODEXK8S_TELEGRAM_INTERACTION_ADAPTER_TIMEOUT"]) == "" {
-		values["CODEXK8S_TELEGRAM_INTERACTION_ADAPTER_TIMEOUT"] = defaultTelegramInteractionAdapterTimeout
+	if strings.TrimSpace(values["KODEX_TELEGRAM_INTERACTION_ADAPTER_TIMEOUT"]) == "" {
+		values["KODEX_TELEGRAM_INTERACTION_ADAPTER_TIMEOUT"] = defaultTelegramInteractionAdapterTimeout
 	}
 }
 
 func buildOAuthSecretValues(values map[string]string) map[string]string {
 	return compactStringMap(map[string]string{
-		"OAUTH2_PROXY_CLIENT_ID":     strings.TrimSpace(values["CODEXK8S_GITHUB_OAUTH_CLIENT_ID"]),
-		"OAUTH2_PROXY_CLIENT_SECRET": strings.TrimSpace(values["CODEXK8S_GITHUB_OAUTH_CLIENT_SECRET"]),
+		"OAUTH2_PROXY_CLIENT_ID":     strings.TrimSpace(values["KODEX_GITHUB_OAUTH_CLIENT_ID"]),
+		"OAUTH2_PROXY_CLIENT_SECRET": strings.TrimSpace(values["KODEX_GITHUB_OAUTH_CLIENT_SECRET"]),
 		"OAUTH2_PROXY_COOKIE_SECRET": strings.TrimSpace(values["OAUTH2_PROXY_COOKIE_SECRET"]),
 	})
 }

@@ -1,7 +1,7 @@
 ---
 doc_id: RDM-CK8S-0001
 type: roadmap
-title: "codex-k8s — Roadmap"
+title: "kodex — Roadmap"
 status: active
 owner_role: PM
 created_at: 2026-02-06
@@ -14,7 +14,7 @@ approvals:
   approved_at: 2026-02-19
 ---
 
-# Roadmap: codex-k8s
+# Roadmap: kodex
 
 ## TL;DR
 - Q1: foundation + core backend + bootstrap production.

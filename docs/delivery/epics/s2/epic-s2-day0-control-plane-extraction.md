@@ -77,9 +77,9 @@ approvals:
 
 ## Evidence
 - Proto контракт:
-  - `proto/codexk8s/controlplane/v1/controlplane.proto`
-  - `proto/gen/go/codexk8s/controlplane/v1/controlplane.pb.go`
-  - `proto/gen/go/codexk8s/controlplane/v1/controlplane_grpc.pb.go`
+  - `proto/kodex/controlplane/v1/controlplane.proto`
+  - `proto/gen/go/kodex/controlplane/v1/controlplane.pb.go`
+  - `proto/gen/go/kodex/controlplane/v1/controlplane_grpc.pb.go`
 - Control-plane (DB owner + домен + gRPC):
   - `services/internal/control-plane/cmd/control-plane/main.go`
   - `services/internal/control-plane/internal/app/app.go`
@@ -97,15 +97,15 @@ approvals:
 - Миграции держателя схемы:
   - `services/internal/control-plane/cmd/cli/migrations/*.sql`
   - `services/internal/control-plane/internal/domain/runtimedeploy/service_prerequisites.go`
-    создаёт `configmap/codex-k8s-migrations` из этого пути
-  - `deploy/base/codex-k8s/migrate-job.yaml.tpl` применяет миграции через `goose -dir /migrations up`
+    создаёт `configmap/kodex-migrations` из этого пути
+  - `deploy/base/kodex/migrate-job.yaml.tpl` применяет миграции через `goose -dir /migrations up`
 - Сборка/деплой:
   - отдельные Dockerfile по сервисам:
     - `services/external/api-gateway/Dockerfile`
     - `services/internal/control-plane/Dockerfile`
     - `services/jobs/worker/Dockerfile`
-  - `deploy/base/codex-k8s/app.yaml.tpl` и `deploy/base/codex-k8s/migrate-job.yaml.tpl` используют отдельные образа
-    (`CODEXK8S_API_GATEWAY_IMAGE`, `CODEXK8S_CONTROL_PLANE_IMAGE`, `CODEXK8S_WORKER_IMAGE`)
+  - `deploy/base/kodex/app.yaml.tpl` и `deploy/base/kodex/migrate-job.yaml.tpl` используют отдельные образа
+    (`KODEX_API_GATEWAY_IMAGE`, `KODEX_CONTROL_PLANE_IMAGE`, `KODEX_WORKER_IMAGE`)
 - NetworkPolicy baseline:
   - `deploy/base/network-policies/platform-baseline.yaml.tpl` разрешает egress `api-gateway` -> `control-plane` (gRPC 9090, HTTP 8081)
 - Каталог внешних зависимостей:
@@ -119,7 +119,7 @@ approvals:
 ## План релиза (верхний уровень)
 - Контур dev/production до dogfooding: см. `.local/agents-temp-dev-rules.md`.
 - После merge: push в `codex/dev` должен приводить к автоматическому deploy на production.
-- Smoke: webhook ingest + staff UI базовые сценарии (проверка логов `codex-k8s` и `codex-k8s-control-plane`).
+- Smoke: webhook ingest + staff UI базовые сценарии (проверка логов `kodex` и `kodex-control-plane`).
 
 ## Апрув
 - request_id: owner-2026-02-11-s2-day0

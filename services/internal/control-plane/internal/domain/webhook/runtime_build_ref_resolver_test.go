@@ -6,10 +6,10 @@ import (
 	"errors"
 	"testing"
 
-	agentdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/agent"
-	webhookdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/webhook"
-	agentrunrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/agentrun"
-	runstatusdomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/runstatus"
+	agentdomain "github.com/codex-k8s/kodex/libs/go/domain/agent"
+	webhookdomain "github.com/codex-k8s/kodex/libs/go/domain/webhook"
+	agentrunrepo "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/repository/agentrun"
+	runstatusdomain "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/runstatus"
 )
 
 func TestExtractPullRequestHeadBuildRefFromNormalizedRunPayload(t *testing.T) {
@@ -53,7 +53,7 @@ func TestResolveRuntimeBuildRefForIssueTrigger_UsesRunHistoryPullRequestRefResol
 			{
 				RunID:              "run-100",
 				ProjectID:          "project-1",
-				RepositoryFullName: "codex-k8s/codex-k8s",
+				RepositoryFullName: "codex-k8s/kodex",
 				IssueNumber:        205,
 				PullRequestNumber:  100,
 			},
@@ -64,13 +64,13 @@ func TestResolveRuntimeBuildRefForIssueTrigger_UsesRunHistoryPullRequestRefResol
 		githubToken: "token",
 		githubMgmt: &inMemoryPushMainVersionBumpClient{
 			refToSHA: map[string]string{
-				"codex-k8s/codex-k8s@feature/pr-100": "0123456789abcdef0123456789abcdef01234567",
+				"codex-k8s/kodex@feature/pr-100": "0123456789abcdef0123456789abcdef01234567",
 			},
 		},
 	}
 
 	envelope := githubWebhookEnvelope{
-		Repository: githubRepositoryRecord{FullName: "codex-k8s/codex-k8s"},
+		Repository: githubRepositoryRecord{FullName: "codex-k8s/kodex"},
 		Issue:      githubIssueRecord{Number: 205},
 	}
 	got := svc.resolveRuntimeBuildRefForIssueTrigger(context.Background(), "project-1", envelope, "main", agentdomain.RuntimeModeFullEnv)
@@ -93,7 +93,7 @@ func TestResolveIssueTriggerRuntimeProfile_QAUsesCandidateNamespaceAndCurrentPRH
 			{
 				RunID:              "run-100",
 				ProjectID:          "project-1",
-				RepositoryFullName: "codex-k8s/codex-k8s",
+				RepositoryFullName: "codex-k8s/kodex",
 				IssueNumber:        205,
 				PullRequestNumber:  100,
 			},
@@ -104,7 +104,7 @@ func TestResolveIssueTriggerRuntimeProfile_QAUsesCandidateNamespaceAndCurrentPRH
 		githubToken: "token",
 		githubMgmt: &inMemoryPushMainVersionBumpClient{
 			prHeads: map[string]GitHubPullRequestHeadDetails{
-				"codex-k8s/codex-k8s#100": {
+				"codex-k8s/kodex#100": {
 					State:   "open",
 					HeadRef: "feature/pr-100",
 					HeadSHA: "0123456789abcdef0123456789abcdef01234567",
@@ -119,7 +119,7 @@ func TestResolveIssueTriggerRuntimeProfile_QAUsesCandidateNamespaceAndCurrentPRH
 	}
 
 	envelope := githubWebhookEnvelope{
-		Repository: githubRepositoryRecord{FullName: "codex-k8s/codex-k8s"},
+		Repository: githubRepositoryRecord{FullName: "codex-k8s/kodex"},
 		Issue:      githubIssueRecord{Number: 205},
 	}
 	profile := svc.resolveIssueTriggerRuntimeProfile(
@@ -149,7 +149,7 @@ func TestResolveIssueTriggerRuntimeProfile_CodeOnlyKeepsDefaultRef(t *testing.T)
 
 	svc := &Service{}
 	envelope := githubWebhookEnvelope{
-		Repository: githubRepositoryRecord{FullName: "codex-k8s/codex-k8s"},
+		Repository: githubRepositoryRecord{FullName: "codex-k8s/kodex"},
 		Issue:      githubIssueRecord{Number: 205},
 	}
 	profile := svc.resolveIssueTriggerRuntimeProfile(
@@ -170,7 +170,7 @@ func TestResolveRuntimeBuildRefForIssueTrigger_CodeOnlyKeepsDefault(t *testing.T
 
 	svc := &Service{}
 	envelope := githubWebhookEnvelope{
-		Repository: githubRepositoryRecord{FullName: "codex-k8s/codex-k8s"},
+		Repository: githubRepositoryRecord{FullName: "codex-k8s/kodex"},
 		Issue:      githubIssueRecord{Number: 205},
 	}
 	got, want := svc.resolveRuntimeBuildRefForIssueTrigger(context.Background(), "project-1", envelope, "main", agentdomain.RuntimeModeCodeOnly), "main"
@@ -186,13 +186,13 @@ func TestResolveRuntimeBuildRefForIssueTrigger_ResolvesDefaultRefToSHA(t *testin
 		githubToken: "token",
 		githubMgmt: &inMemoryPushMainVersionBumpClient{
 			refToSHA: map[string]string{
-				"codex-k8s/codex-k8s@main": "89abcdef0123456789abcdef0123456789abcdef",
+				"codex-k8s/kodex@main": "89abcdef0123456789abcdef0123456789abcdef",
 			},
 		},
 	}
 
 	envelope := githubWebhookEnvelope{
-		Repository: githubRepositoryRecord{FullName: "codex-k8s/codex-k8s"},
+		Repository: githubRepositoryRecord{FullName: "codex-k8s/kodex"},
 		Issue:      githubIssueRecord{Number: 240},
 	}
 
@@ -209,7 +209,7 @@ func TestResolveIssueTriggerRuntimeProfile_ReleaseWithoutCandidateReturnsWarning
 		agentRuns: &inMemoryRunRepo{},
 	}
 	envelope := githubWebhookEnvelope{
-		Repository: githubRepositoryRecord{FullName: "codex-k8s/codex-k8s"},
+		Repository: githubRepositoryRecord{FullName: "codex-k8s/kodex"},
 		Issue:      githubIssueRecord{Number: 240},
 	}
 	profile := svc.resolveIssueTriggerRuntimeProfile(
@@ -242,7 +242,7 @@ func TestResolveIssueTriggerRuntimeProfile_QAWithPullRequestLookupErrorReturnsWa
 			{
 				RunID:              "run-lookup-error",
 				ProjectID:          "project-1",
-				RepositoryFullName: "codex-k8s/codex-k8s",
+				RepositoryFullName: "codex-k8s/kodex",
 				IssueNumber:        205,
 				PullRequestNumber:  100,
 			},
@@ -262,7 +262,7 @@ func TestResolveIssueTriggerRuntimeProfile_QAWithPullRequestLookupErrorReturnsWa
 	}
 
 	envelope := githubWebhookEnvelope{
-		Repository: githubRepositoryRecord{FullName: "codex-k8s/codex-k8s"},
+		Repository: githubRepositoryRecord{FullName: "codex-k8s/kodex"},
 		Issue:      githubIssueRecord{Number: 205},
 	}
 	profile := svc.resolveIssueTriggerRuntimeProfile(
@@ -288,16 +288,16 @@ func TestResolveIssueTriggerRuntimeProfile_PostdeployUsesProductionReadOnly(t *t
 	t.Parallel()
 
 	svc := &Service{
-		platformNamespace: "codex-k8s-prod",
+		platformNamespace: "kodex-prod",
 		githubToken:       "token",
 		githubMgmt: &inMemoryPushMainVersionBumpClient{
 			refToSHA: map[string]string{
-				"codex-k8s/codex-k8s@main": "89abcdef0123456789abcdef0123456789abcdef",
+				"codex-k8s/kodex@main": "89abcdef0123456789abcdef0123456789abcdef",
 			},
 		},
 	}
 	envelope := githubWebhookEnvelope{
-		Repository: githubRepositoryRecord{FullName: "codex-k8s/codex-k8s"},
+		Repository: githubRepositoryRecord{FullName: "codex-k8s/kodex"},
 		Issue:      githubIssueRecord{Number: 241},
 	}
 	profile := svc.resolveIssueTriggerRuntimeProfile(
@@ -311,7 +311,7 @@ func TestResolveIssueTriggerRuntimeProfile_PostdeployUsesProductionReadOnly(t *t
 	if got, want := profile.TargetEnv, "production"; got != want {
 		t.Fatalf("target env = %q, want %q", got, want)
 	}
-	if got, want := profile.Namespace, "codex-k8s-prod"; got != want {
+	if got, want := profile.Namespace, "kodex-prod"; got != want {
 		t.Fatalf("namespace = %q, want %q", got, want)
 	}
 	if got, want := profile.BuildRef, "89abcdef0123456789abcdef0123456789abcdef"; got != want {

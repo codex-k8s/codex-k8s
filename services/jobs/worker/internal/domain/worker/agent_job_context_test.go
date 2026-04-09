@@ -96,7 +96,7 @@ func TestResolveRunAgentContext_FallbackFromGPT53SparkWithoutAuth(t *testing.T) 
 	t.Parallel()
 
 	runPayload := json.RawMessage(`{
-		"repository":{"full_name":"codex-k8s/codex-k8s"},
+		"repository":{"full_name":"codex-k8s/kodex"},
 		"issue":{"number":13},
 		"agent":{"key":"dev","name":"AI Developer"},
 		"trigger":{"kind":"dev","label":"run:dev"},
@@ -136,7 +136,7 @@ func TestResolveRunAgentContext_UsesPullRequestHintsForRevise(t *testing.T) {
 	t.Parallel()
 
 	runPayload := json.RawMessage(`{
-		"repository":{"full_name":"codex-k8s/codex-k8s"},
+		"repository":{"full_name":"codex-k8s/kodex"},
 		"agent":{"key":"dev","name":"AI Developer"},
 		"trigger":{"kind":"dev_revise","label":"run:dev:revise"},
 		"raw_payload":{
@@ -175,7 +175,7 @@ func TestResolveRunAgentContext_UsesRepoSeedAndDefaultLocale(t *testing.T) {
 	t.Parallel()
 
 	runPayload := json.RawMessage(`{
-		"repository":{"full_name":"codex-k8s/codex-k8s"},
+		"repository":{"full_name":"codex-k8s/kodex"},
 		"issue":{"number":42},
 		"agent":{"key":"dev","name":"AI Developer"},
 		"trigger":{"kind":"dev","label":"run:dev"},
@@ -204,7 +204,7 @@ func TestResolveRunAgentContext_DiscussionModeUsesDiscussionTemplate(t *testing.
 
 	runPayload := json.RawMessage(`{
 		"discussion_mode":true,
-		"repository":{"full_name":"codex-k8s/codex-k8s"},
+		"repository":{"full_name":"codex-k8s/kodex"},
 		"issue":{"number":42},
 		"agent":{"key":"dev","name":"AI Developer"},
 		"trigger":{"kind":"dev","label":"mode:discussion"},
@@ -239,7 +239,7 @@ func TestResolveRunAgentContext_ReviewTemplateKinds(t *testing.T) {
 		{
 			name: "stage revise uses revise template",
 			runPayload: json.RawMessage(`{
-				"repository":{"full_name":"codex-k8s/codex-k8s"},
+				"repository":{"full_name":"codex-k8s/kodex"},
 				"issue":{"number":201},
 				"agent":{"key":"dev","name":"AI Developer"},
 				"trigger":{"kind":"vision_revise","label":"run:vision:revise"},
@@ -250,7 +250,7 @@ func TestResolveRunAgentContext_ReviewTemplateKinds(t *testing.T) {
 		{
 			name: "self improve uses work template",
 			runPayload: json.RawMessage(`{
-				"repository":{"full_name":"codex-k8s/codex-k8s"},
+				"repository":{"full_name":"codex-k8s/kodex"},
 				"issue":{"number":202},
 				"agent":{"key":"km","name":"AI Knowledge Manager"},
 				"trigger":{"kind":"self_improve","label":"run:self-improve"},
@@ -292,7 +292,7 @@ func TestResolveRunAgentContext_ConfigLabelsPullRequestOverrideIssue(t *testing.
 	t.Parallel()
 
 	runPayload := json.RawMessage(`{
-		"repository":{"full_name":"codex-k8s/codex-k8s"},
+		"repository":{"full_name":"codex-k8s/kodex"},
 		"agent":{"key":"dev","name":"AI Developer"},
 		"trigger":{"kind":"dev_revise","label":"run:dev:revise"},
 		"raw_payload":{
@@ -341,7 +341,7 @@ func TestResolveRunAgentContext_ConflictingPullRequestLabelsFail(t *testing.T) {
 	t.Parallel()
 
 	runPayload := json.RawMessage(`{
-		"repository":{"full_name":"codex-k8s/codex-k8s"},
+		"repository":{"full_name":"codex-k8s/kodex"},
 		"agent":{"key":"dev","name":"AI Developer"},
 		"trigger":{"kind":"dev_revise","label":"run:dev:revise"},
 		"raw_payload":{
@@ -377,7 +377,7 @@ func TestResolveRunAgentContext_ReviewDrivenReviseIssueLabelsOverridePullRequest
 	t.Parallel()
 
 	runPayload := json.RawMessage(`{
-		"repository":{"full_name":"codex-k8s/codex-k8s"},
+		"repository":{"full_name":"codex-k8s/kodex"},
 		"agent":{"key":"dev","name":"AI Developer"},
 		"trigger":{"source":"pull_request_review","kind":"dev_revise","label":"run:dev:revise"},
 		"raw_payload":{
@@ -426,7 +426,7 @@ func TestResolveRunAgentContext_ReviewDrivenReviseUsesLastRunProfileHints(t *tes
 	t.Parallel()
 
 	runPayload := json.RawMessage(`{
-		"repository":{"full_name":"codex-k8s/codex-k8s"},
+		"repository":{"full_name":"codex-k8s/kodex"},
 		"agent":{"key":"dev","name":"AI Developer"},
 		"trigger":{"source":"pull_request_review","kind":"dev_revise","label":"run:dev:revise"},
 		"profile_hints":{
@@ -475,7 +475,7 @@ func TestResolveRunAgentContext_ReasoningExtraHighLabel(t *testing.T) {
 	t.Parallel()
 
 	runPayload := json.RawMessage(`{
-		"repository":{"full_name":"codex-k8s/codex-k8s"},
+		"repository":{"full_name":"codex-k8s/kodex"},
 		"agent":{"key":"dev","name":"AI Developer"},
 		"trigger":{"kind":"dev","label":"run:dev"},
 		"raw_payload":{
@@ -507,7 +507,7 @@ func TestResolveRunAgentContext_CustomReasoningLabelFromCatalog(t *testing.T) {
 	t.Parallel()
 
 	runPayload := json.RawMessage(`{
-		"repository":{"full_name":"codex-k8s/codex-k8s"},
+		"repository":{"full_name":"codex-k8s/kodex"},
 		"agent":{"key":"dev","name":"AI Developer"},
 		"trigger":{"kind":"dev","label":"run:dev"},
 		"raw_payload":{

@@ -31,7 +31,7 @@ approvals:
   - если agent pod или adapters будут владеть callback lifecycle, платформа потеряет reproducible audit/correlation и safe retries.
 - Ограничения:
   - `run:arch` остаётся markdown-only;
-  - built-in server `codex_k8s` нельзя заменять новым runtime server block;
+  - built-in server `kodex` нельзя заменять новым runtime server block;
   - `api-gateway` и adapters обязаны остаться thin transport layers без business-state ownership.
 - Связанные требования:
   - PRD `docs/delivery/epics/s10/prd-s10-day3-mcp-user-interactions.md`;

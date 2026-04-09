@@ -8,10 +8,10 @@ import (
 
 	"github.com/labstack/echo/v5"
 
-	"github.com/codex-k8s/codex-k8s/libs/go/errs"
-	controlplanev1 "github.com/codex-k8s/codex-k8s/proto/gen/go/codexk8s/controlplane/v1"
-	"github.com/codex-k8s/codex-k8s/services/external/api-gateway/internal/transport/http/casters"
-	"github.com/codex-k8s/codex-k8s/services/external/api-gateway/internal/transport/http/models"
+	"github.com/codex-k8s/kodex/libs/go/errs"
+	controlplanev1 "github.com/codex-k8s/kodex/proto/gen/go/kodex/controlplane/v1"
+	"github.com/codex-k8s/kodex/services/external/api-gateway/internal/transport/http/casters"
+	"github.com/codex-k8s/kodex/services/external/api-gateway/internal/transport/http/models"
 )
 
 func (h *staffHandler) ListRunWaits(c *echo.Context) error {

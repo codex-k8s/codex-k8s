@@ -6,7 +6,7 @@ import (
 	"errors"
 	"fmt"
 
-	domainrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/agent"
+	domainrepo "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/repository/agent"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"

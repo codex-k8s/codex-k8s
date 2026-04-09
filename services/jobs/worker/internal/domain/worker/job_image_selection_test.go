@@ -35,12 +35,12 @@ func TestResolveRunJobImage_PrimaryUncheckedWithoutChecker(t *testing.T) {
 
 	svc := &Service{
 		image: JobImageSelectionPolicy{
-			Primary: "127.0.0.1:5000/codex-k8s/agent-runner:ai-1.0.0",
+			Primary: "127.0.0.1:5000/kodex/agent-runner:ai-1.0.0",
 		},
 	}
 
 	got := svc.resolveRunJobImage(context.Background())
-	if got.SelectedImage != "127.0.0.1:5000/codex-k8s/agent-runner:ai-1.0.0" {
+	if got.SelectedImage != "127.0.0.1:5000/kodex/agent-runner:ai-1.0.0" {
 		t.Fatalf("unexpected selected image: %q", got.SelectedImage)
 	}
 	if got.SelectedSource != jobImageSourcePrimaryUnchecked {
@@ -54,8 +54,8 @@ func TestResolveRunJobImage_PrimaryUncheckedWithoutChecker(t *testing.T) {
 func TestResolveRunJobImage_FallbackWhenPrimaryMissing(t *testing.T) {
 	t.Parallel()
 
-	primary := "127.0.0.1:5000/codex-k8s/agent-runner:ai-1.0.1"
-	fallback := "127.0.0.1:5000/codex-k8s/agent-runner:ai-1.0.0"
+	primary := "127.0.0.1:5000/kodex/agent-runner:ai-1.0.1"
+	fallback := "127.0.0.1:5000/kodex/agent-runner:ai-1.0.0"
 	svc := &Service{
 		image: JobImageSelectionPolicy{
 			Primary:  primary,
@@ -84,7 +84,7 @@ func TestResolveRunJobImage_FallbackWhenPrimaryMissing(t *testing.T) {
 func TestResolveRunJobImage_PrimaryCheckError(t *testing.T) {
 	t.Parallel()
 
-	primary := "127.0.0.1:5000/codex-k8s/agent-runner:ai-1.0.2"
+	primary := "127.0.0.1:5000/kodex/agent-runner:ai-1.0.2"
 	svc := &Service{
 		image: JobImageSelectionPolicy{
 			Primary: primary,
@@ -111,8 +111,8 @@ func TestResolveRunJobImage_PrimaryCheckError(t *testing.T) {
 func TestResolveRunJobImage_AutoFallbackFromRegistryHistory(t *testing.T) {
 	t.Parallel()
 
-	primary := "127.0.0.1:5000/codex-k8s/agent-runner:ai-1.0.3"
-	autoFallback := "127.0.0.1:5000/codex-k8s/agent-runner:ai-1.0.2"
+	primary := "127.0.0.1:5000/kodex/agent-runner:ai-1.0.3"
+	autoFallback := "127.0.0.1:5000/kodex/agent-runner:ai-1.0.2"
 	svc := &Service{
 		image: JobImageSelectionPolicy{
 			Primary: primary,

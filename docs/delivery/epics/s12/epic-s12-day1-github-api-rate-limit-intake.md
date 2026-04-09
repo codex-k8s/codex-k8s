@@ -25,8 +25,8 @@ approvals:
 
 ## Контекст
 - Текущий As-Is baseline уже разделяет два operational contour:
-  - platform management path использует `CODEXK8S_GITHUB_PAT`;
-  - agent runtime path использует `CODEXK8S_GIT_BOT_TOKEN` через `gh`/`git`.
+  - platform management path использует `KODEX_GITHUB_PAT`;
+  - agent runtime path использует `KODEX_GIT_BOT_TOKEN` через `gh`/`git`.
 - При исчерпании GitHub API limit сейчас отсутствует единая пользовательская семантика:
   - часть операций выглядит как обычный `failed`;
   - часть может уходить в локальные retries без прозрачного controlled wait;

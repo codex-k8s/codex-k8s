@@ -5,7 +5,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/codex-k8s/codex-k8s/libs/go/servicescfg"
+	"github.com/codex-k8s/kodex/libs/go/servicescfg"
 )
 
 var (
@@ -79,9 +79,9 @@ func applyEnvironmentDomainTemplate(templateVars map[string]string, stack *servi
 	if host == "" {
 		return
 	}
-	templateVars["CODEXK8S_PUBLIC_DOMAIN"] = host
-	if strings.EqualFold(targetEnv, "ai") || strings.TrimSpace(templateVars["CODEXK8S_PUBLIC_BASE_URL"]) == "" {
-		templateVars["CODEXK8S_PUBLIC_BASE_URL"] = "https://" + host
+	templateVars["KODEX_PUBLIC_DOMAIN"] = host
+	if strings.EqualFold(targetEnv, "ai") || strings.TrimSpace(templateVars["KODEX_PUBLIC_BASE_URL"]) == "" {
+		templateVars["KODEX_PUBLIC_BASE_URL"] = "https://" + host
 	}
 }
 

@@ -79,7 +79,7 @@ approvals:
 
 ## Актуализация по Issue #199 (`run:dev`, 2026-02-25)
 - Для FR-009/FR-015/FR-030/FR-033/FR-038 и NFR-010/NFR-015/NFR-018 реализован execution-пакет:
-  - contract-first расширение `services/external/api-gateway/api/server/api.yaml` и `proto/codexk8s/controlplane/v1/controlplane.proto`;
+  - contract-first расширение `services/external/api-gateway/api/server/api.yaml` и `proto/kodex/controlplane/v1/controlplane.proto`;
   - доменные use-cases/control-plane transport для `agents/templates/audit`;
   - миграция `prompt_templates` + `agents.settings/settings_version`;
   - frontend `Agents` переведён с scaffold на typed API flow (list/details/settings/diff/preview/history).

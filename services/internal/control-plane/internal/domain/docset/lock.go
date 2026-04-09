@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	valuetypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/value"
+	valuetypes "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/types/value"
 )
 
 func NewLock(docsetID string, ref string, locale string, selectedGroups []string, files []valuetypes.DocsetLockFile) valuetypes.DocsetLock {

@@ -6,15 +6,15 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/codex-k8s/codex-k8s/libs/go/crypto/tokencrypt"
-	floweventdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/flowevent"
-	mcpdomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/mcp"
-	nextstepdomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/nextstep"
-	agentrunrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/agentrun"
-	platformtokenrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/platformtoken"
-	staffrunrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/staffrun"
-	entitytypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/entity"
-	querytypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/query"
+	"github.com/codex-k8s/kodex/libs/go/crypto/tokencrypt"
+	floweventdomain "github.com/codex-k8s/kodex/libs/go/domain/flowevent"
+	mcpdomain "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/mcp"
+	nextstepdomain "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/nextstep"
+	agentrunrepo "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/repository/agentrun"
+	platformtokenrepo "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/repository/platformtoken"
+	staffrunrepo "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/repository/staffrun"
+	entitytypes "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/types/entity"
+	querytypes "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/types/query"
 )
 
 func TestUpsertRunStatusComment_MergesTrackedCommentStateBeforeFallbackEdit(t *testing.T) {
@@ -31,11 +31,11 @@ func TestUpsertRunStatusComment_MergesTrackedCommentStateBeforeFallbackEdit(t *t
 	}
 
 	runPayload, err := json.Marshal(querytypes.RunPayload{
-		Repository: querytypes.RunPayloadRepository{FullName: "codex-k8s/codex-k8s"},
-		Issue:      &querytypes.RunPayloadIssue{Number: 258, HTMLURL: "https://github.com/codex-k8s/codex-k8s/issues/258"},
+		Repository: querytypes.RunPayloadRepository{FullName: "codex-k8s/kodex"},
+		Issue:      &querytypes.RunPayloadIssue{Number: 258, HTMLURL: "https://github.com/codex-k8s/kodex/issues/258"},
 		PullRequest: &querytypes.RunPayloadPullRequest{
 			Number:  307,
-			HTMLURL: "https://github.com/codex-k8s/codex-k8s/pull/307",
+			HTMLURL: "https://github.com/codex-k8s/kodex/pull/307",
 		},
 		Trigger: &querytypes.RunPayloadTrigger{
 			Source: triggerSourcePullRequestReview,
@@ -59,8 +59,8 @@ func TestUpsertRunStatusComment_MergesTrackedCommentStateBeforeFallbackEdit(t *t
 		RunID:              "run-1",
 		Phase:              PhaseFinished,
 		RunStatus:          runStatusSucceeded,
-		RepositoryFullName: "codex-k8s/codex-k8s",
-		PullRequestURL:     "https://github.com/codex-k8s/codex-k8s/pull/307",
+		RepositoryFullName: "codex-k8s/kodex",
+		PullRequestURL:     "https://github.com/codex-k8s/kodex/pull/307",
 		TriggerKind:        triggerKindDev,
 		TriggerLabel:       "run:dev:revise",
 		PromptLocale:       localeRU,
@@ -74,14 +74,14 @@ func TestUpsertRunStatusComment_MergesTrackedCommentStateBeforeFallbackEdit(t *t
 			return mcpdomain.GitHubIssueComment{
 				ID:   401,
 				Body: existingCommentBody,
-				URL:  "https://github.com/codex-k8s/codex-k8s/pull/307#issuecomment-401",
+				URL:  "https://github.com/codex-k8s/kodex/pull/307#issuecomment-401",
 			}, nil
 		},
 		editIssueCommentFunc: func(_ context.Context, params mcpdomain.GitHubEditIssueCommentParams) (mcpdomain.GitHubIssueComment, error) {
 			return mcpdomain.GitHubIssueComment{
 				ID:   params.CommentID,
 				Body: params.Body,
-				URL:  "https://github.com/codex-k8s/codex-k8s/pull/307#issuecomment-401",
+				URL:  "https://github.com/codex-k8s/kodex/pull/307#issuecomment-401",
 			}, nil
 		},
 		createIssueCommentFunc: func(context.Context, mcpdomain.GitHubCreateIssueCommentParams) (mcpdomain.GitHubIssueComment, error) {
@@ -91,7 +91,7 @@ func TestUpsertRunStatusComment_MergesTrackedCommentStateBeforeFallbackEdit(t *t
 	}
 
 	service, err := NewService(Config{
-		PublicBaseURL: "https://platform.codex-k8s.dev",
+		PublicBaseURL: "https://platform.kodex.works",
 		DefaultLocale: localeRU,
 	}, Dependencies{
 		Runs: &runstatusTestRunsRepository{
@@ -165,8 +165,8 @@ func TestUpsertRunStatusComment_DiscussionRunUsesDiscussionMarkerAndSkipsDevNext
 
 	runPayload, err := json.Marshal(querytypes.RunPayload{
 		DiscussionMode: true,
-		Repository:     querytypes.RunPayloadRepository{FullName: "codex-k8s/codex-k8s"},
-		Issue:          &querytypes.RunPayloadIssue{Number: 298, HTMLURL: "https://github.com/codex-k8s/codex-k8s/issues/298"},
+		Repository:     querytypes.RunPayloadRepository{FullName: "codex-k8s/kodex"},
+		Issue:          &querytypes.RunPayloadIssue{Number: 298, HTMLURL: "https://github.com/codex-k8s/kodex/issues/298"},
 		Trigger: &querytypes.RunPayloadTrigger{
 			Source: triggerSourceIssueLabel,
 			Label:  "mode:discussion",
@@ -185,13 +185,13 @@ func TestUpsertRunStatusComment_DiscussionRunUsesDiscussionMarkerAndSkipsDevNext
 			return mcpdomain.GitHubIssueComment{
 				ID:   501,
 				Body: params.Body,
-				URL:  "https://github.com/codex-k8s/codex-k8s/issues/298#issuecomment-501",
+				URL:  "https://github.com/codex-k8s/kodex/issues/298#issuecomment-501",
 			}, nil
 		},
 	}
 
 	service, err := NewService(Config{
-		PublicBaseURL:  "https://platform.codex-k8s.dev",
+		PublicBaseURL:  "https://platform.kodex.works",
 		DefaultLocale:  localeRU,
 		NextStepLabels: nextstepdomain.DefaultLabels(),
 	}, Dependencies{

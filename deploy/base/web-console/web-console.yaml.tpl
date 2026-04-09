@@ -1,14 +1,14 @@
-{{- $host := envOr "CODEXK8S_PUBLIC_DOMAIN" (envOr "CODEXK8S_PRODUCTION_DOMAIN" "") -}}
+{{- $host := envOr "KODEX_PUBLIC_DOMAIN" (envOr "KODEX_PRODUCTION_DOMAIN" "") -}}
 apiVersion: v1
 kind: Service
 metadata:
-  name: codex-k8s-web-console
-  namespace: {{ envOr "CODEXK8S_PRODUCTION_NAMESPACE" "" }}
+  name: kodex-web-console
+  namespace: {{ envOr "KODEX_PRODUCTION_NAMESPACE" "" }}
   labels:
-    app.kubernetes.io/name: codex-k8s-web-console
+    app.kubernetes.io/name: kodex-web-console
 spec:
   selector:
-    app.kubernetes.io/name: codex-k8s-web-console
+    app.kubernetes.io/name: kodex-web-console
   ports:
     - name: http
       port: 5173
@@ -17,26 +17,26 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: codex-k8s-web-console
-  namespace: {{ envOr "CODEXK8S_PRODUCTION_NAMESPACE" "" }}
+  name: kodex-web-console
+  namespace: {{ envOr "KODEX_PRODUCTION_NAMESPACE" "" }}
   labels:
-    app.kubernetes.io/name: codex-k8s-web-console
+    app.kubernetes.io/name: kodex-web-console
 spec:
-  replicas: {{ envOr "CODEXK8S_PLATFORM_DEPLOYMENT_REPLICAS" "" }}
+  replicas: {{ envOr "KODEX_PLATFORM_DEPLOYMENT_REPLICAS" "" }}
   selector:
     matchLabels:
-      app.kubernetes.io/name: codex-k8s-web-console
+      app.kubernetes.io/name: kodex-web-console
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: codex-k8s-web-console
+        app.kubernetes.io/name: kodex-web-console
         app.kubernetes.io/component: staff-ui
     spec:
       containers:
         - name: web-console
-          image: {{ envOr "CODEXK8S_WEB_CONSOLE_IMAGE" "" }}
+          image: {{ envOr "KODEX_WEB_CONSOLE_IMAGE" "" }}
           imagePullPolicy: Always
-{{ if eq (envOr "CODEXK8S_HOT_RELOAD" "") "true" }}
+{{ if eq (envOr "KODEX_HOT_RELOAD" "") "true" }}
           command:
             - sh
             - -ec
@@ -68,7 +68,7 @@ spec:
             # Dedicated path so we can route websocket directly to Vite service (bypassing auth proxy).
             - name: VITE_HMR_PATH
               value: "/__vite_ws"
-{{ if eq (envOr "CODEXK8S_HOT_RELOAD" "") "true" }}
+{{ if eq (envOr "KODEX_HOT_RELOAD" "") "true" }}
             # Shared repo PVC makes fs.watch exhaust file descriptors; polling keeps Vite stable in slots.
             - name: VITE_WATCH_USE_POLLING
               value: "true"
@@ -87,14 +87,14 @@ spec:
               port: http
             initialDelaySeconds: 10
             periodSeconds: 20
-{{ if eq (envOr "CODEXK8S_HOT_RELOAD" "") "true" }}
+{{ if eq (envOr "KODEX_HOT_RELOAD" "") "true" }}
           volumeMounts:
             - name: repo-cache
               mountPath: /workspace
 {{ end }}
-{{ if eq (envOr "CODEXK8S_HOT_RELOAD" "") "true" }}
+{{ if eq (envOr "KODEX_HOT_RELOAD" "") "true" }}
       volumes:
         - name: repo-cache
           persistentVolumeClaim:
-            claimName: codex-k8s-repo-cache
+            claimName: kodex-repo-cache
 {{ end }}

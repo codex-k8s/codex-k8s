@@ -62,8 +62,8 @@ approvals:
   - `full-env` применяется для всех известных stage-trigger;
   - revise-шаблон выбирается по общему правилу revise-trigger (не только `dev_revise`).
 - Каталог label-имен синхронизирован в bootstrap/deploy runtime:
-  - добавлен `CODEXK8S_RUN_SELF_IMPROVE_LABEL`,
-  - полный каталог `CODEXK8S_RUN_* / CODEXK8S_STATE_* / CODEXK8S_NEED_*` задается через platform env/config и разворачивается в GitHub labels без использования GitHub Variables.
+  - добавлен `KODEX_RUN_SELF_IMPROVE_LABEL`,
+  - полный каталог `KODEX_RUN_* / KODEX_STATE_* / KODEX_NEED_*` задается через platform env/config и разворачивается в GitHub labels без использования GitHub Variables.
 - Для control-plane/worker/agent-runner добавлены/обновлены тесты на full-stage trigger routing и conflict handling.
 
 ## Проверки

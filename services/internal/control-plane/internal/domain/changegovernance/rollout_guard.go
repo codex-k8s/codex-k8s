@@ -1,8 +1,8 @@
 package changegovernance
 
 import (
-	"github.com/codex-k8s/codex-k8s/libs/go/errs"
-	valuetypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/value"
+	"github.com/codex-k8s/kodex/libs/go/errs"
+	valuetypes "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/types/value"
 )
 
 // ResolveRolloutCapabilities validates rollout sequencing and returns effective capabilities.

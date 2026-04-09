@@ -7,25 +7,25 @@ import (
 	"strings"
 	"time"
 
-	"github.com/codex-k8s/codex-k8s/libs/go/crypto/tokencrypt"
-	agentdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/agent"
-	floweventdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/flowevent"
-	agentrunrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/agentrun"
-	agentsessionrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/agentsession"
-	floweventrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/flowevent"
-	interactionrequestrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/interactionrequest"
-	mcpactionrequestrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/mcpactionrequest"
-	platformtokenrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/platformtoken"
-	projectdatabaserepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/projectdatabase"
-	repocfgrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/repocfg"
-	entitytypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/entity"
+	"github.com/codex-k8s/kodex/libs/go/crypto/tokencrypt"
+	agentdomain "github.com/codex-k8s/kodex/libs/go/domain/agent"
+	floweventdomain "github.com/codex-k8s/kodex/libs/go/domain/flowevent"
+	agentrunrepo "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/repository/agentrun"
+	agentsessionrepo "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/repository/agentsession"
+	floweventrepo "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/repository/flowevent"
+	interactionrequestrepo "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/repository/interactionrequest"
+	mcpactionrequestrepo "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/repository/mcpactionrequest"
+	platformtokenrepo "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/repository/platformtoken"
+	projectdatabaserepo "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/repository/projectdatabase"
+	repocfgrepo "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/repository/repocfg"
+	entitytypes "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/types/entity"
 	"github.com/golang-jwt/jwt/v5"
 )
 
 const (
-	defaultTokenIssuer        = "codex-k8s/control-plane/mcp"
-	defaultServerName         = "codex-k8s-control-plane-mcp"
-	defaultInternalMCPBaseURL = "http://codex-k8s-control-plane:8081/mcp"
+	defaultTokenIssuer        = "kodex/control-plane/mcp"
+	defaultServerName         = "kodex-control-plane-mcp"
+	defaultInternalMCPBaseURL = "http://kodex-control-plane:8081/mcp"
 	minTokenTTL               = 24 * time.Hour
 	defaultTokenTTL           = minTokenTTL
 	maxTokenTTL               = 7 * 24 * time.Hour

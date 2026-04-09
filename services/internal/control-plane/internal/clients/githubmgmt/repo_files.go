@@ -11,7 +11,7 @@ import (
 
 	gh "github.com/google/go-github/v82/github"
 
-	webhookdomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/webhook"
+	webhookdomain "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/webhook"
 )
 
 func (c *Client) GetDefaultBranch(ctx context.Context, token string, owner string, repo string) (string, error) {

@@ -19,7 +19,7 @@ approvals:
 ## TL;DR
 - Sprint S17 открывает отдельную cross-cutting инициативу вокруг long-lived owner feedback loop: built-in user interactions и Telegram channel уже существуют, но всё ещё не дают deterministic contract `delivery -> wait -> response -> same-session continuation`.
 - Day1 intake (`#541`) зафиксировал problem statement, hybrid execution model, long human-wait baseline `>=24h`, delivery-before-wait lifecycle, Telegram pending inbox, staff-console fallback и persisted text/voice binding.
-- Day2 vision package (`#554`) закрепил mission, persona outcomes, KPI/guardrails, max timeout/TTL baseline для built-in `codex_k8s` MCP wait path и wave boundaries без переоткрытия Day1 baseline и создал issue `#557` для `run:prd`.
+- Day2 vision package (`#554`) закрепил mission, persona outcomes, KPI/guardrails, max timeout/TTL baseline для built-in `kodex` MCP wait path и wave boundaries без переоткрытия Day1 baseline и создал issue `#557` для `run:prd`.
 - Day3 PRD package (`#557`) зафиксировал user stories, FR/AC/NFR, scenario matrix, expected evidence, recovery/lifecycle guardrails и создал issue `#559` для `run:arch`.
 - Day4 architecture package (`#559`) зафиксировал service boundaries, ownership split, live wait lifetime policy, persisted request truth и recovery-only snapshot-resume boundary и создал issue `#568` для `run:design`.
 - Day5 design package (`#568`) зафиксировал implementation-ready API/data/runtime contracts, response binding registry, staff-console fallback surface и additive migration policy поверх Sprint S10/S11 foundation и создал issue `#575` для `run:plan`.
@@ -28,7 +28,7 @@ approvals:
 
 ## Stage roadmap
 - Day 1 (Intake): `docs/delivery/epics/s17/epic-s17-day1-unified-user-interaction-waits-and-owner-feedback-inbox-intake.md` (Issue `#541`).
-- Day 2 (Vision): `docs/delivery/epics/s17/epic-s17-day2-unified-user-interaction-waits-and-owner-feedback-inbox-vision.md` (Issue `#554`); stage зафиксировал mission, persona outcomes, KPI/guardrails, max timeout/TTL baseline для built-in `codex_k8s` MCP wait path и wave boundaries для owner feedback loop и создал issue `#557` для `run:prd`.
+- Day 2 (Vision): `docs/delivery/epics/s17/epic-s17-day2-unified-user-interaction-waits-and-owner-feedback-inbox-vision.md` (Issue `#554`); stage зафиксировал mission, persona outcomes, KPI/guardrails, max timeout/TTL baseline для built-in `kodex` MCP wait path и wave boundaries для owner feedback loop и создал issue `#557` для `run:prd`.
 - Day 3 (PRD): issue `#557`, `docs/delivery/epics/s17/epic-s17-day3-unified-user-interaction-waits-and-owner-feedback-inbox-prd.md` и `docs/delivery/epics/s17/prd-s17-day3-unified-user-interaction-waits-and-owner-feedback-inbox.md`; stage формализовал user stories, FR/AC/NFR, scenario matrix и expected evidence и создал issue `#559` для `run:arch`.
 - Day 4 (Architecture): issue `#559`, `docs/delivery/epics/s17/epic-s17-day4-unified-user-interaction-waits-and-owner-feedback-inbox-arch.md` и package `docs/architecture/initiatives/s17_unified_owner_feedback_loop/*`; stage зафиксировал execution model, ownership split, lifetime policy, persisted truth и создал issue `#568` для `run:design`.
 - Day 5 (Design): issue `#568`, `docs/delivery/epics/s17/epic-s17-day5-unified-user-interaction-waits-and-owner-feedback-inbox-design.md` и `docs/architecture/initiatives/s17_unified_owner_feedback_loop/{design_doc.md,api_contract.md,data_model.md,migrations_policy.md}`; stage выпустил implementation-ready API/data/UI/runtime contract и создал issue `#575` для `run:plan`.
@@ -40,7 +40,7 @@ approvals:
 - До `run:plan` Sprint S17 не создаёт code/runtime changes и не фиксирует premature implementation details.
 - Day1 baseline обязателен для всех следующих stage:
   - same live pod / same `codex` session как primary happy-path;
-  - built-in `codex_k8s` MCP wait path обязан использовать max timeout/TTL не ниже owner wait window;
+  - built-in `kodex` MCP wait path обязан использовать max timeout/TTL не ниже owner wait window;
   - persisted session snapshot только как recovery fallback;
   - long human-wait target не меньше 24 часов;
   - lifecycle `created -> delivery pending -> delivery accepted -> waiting -> response -> continuation`;

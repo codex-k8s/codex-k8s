@@ -1,7 +1,7 @@
 ---
 doc_id: AGM-CK8S-0001
 type: operating-model
-title: "codex-k8s — Agents Operating Model"
+title: "kodex — Agents Operating Model"
 status: active
 owner_role: PM
 created_at: 2026-02-11
@@ -23,7 +23,7 @@ approvals:
 - `Owner` не является агентом и остается финальным человеком-апрувером stage-переходов, PR и deploy-решений.
 - Режимы исполнения смешанные: часть ролей работает в `full-env`, часть в `code-only`.
 - Prompt templates в текущем MVP берутся только из repo seeds (`services/jobs/agent-runner/internal/runner/promptseeds/*.md`), без DB overrides и без staff UI редактирования.
-- Locale для prompt templates в текущем MVP задается platform default (`CODEXK8S_AGENT_DEFAULT_LOCALE`, fallback `ru`); при unsupported locale рендер нормализует значение к `en`.
+- Locale для prompt templates в текущем MVP задается platform default (`KODEX_AGENT_DEFAULT_LOCALE`, fallback `ru`); при unsupported locale рендер нормализует значение к `en`.
 - Контуры `Agents UI`, `Prompt templates UI`, кастомные runtime settings и custom-agent factory выведены из MVP и остаются post-MVP направлением.
 
 ## Source of truth
@@ -66,7 +66,7 @@ approvals:
 - Для `run:*:revise` worker сначала валидирует reusable namespace по persisted runtime fingerprint
   и immutable `build_ref`; только при совпадении fingerprint fast-path пропускает runtime deploy/build,
   иначе выполняется обычный redeploy в тот же namespace с продлением lease.
-- GitHub операции выполняются напрямую через `gh`/`git` с `CODEXK8S_GIT_BOT_TOKEN`.
+- GitHub операции выполняются напрямую через `gh`/`git` с `KODEX_GIT_BOT_TOKEN`.
 
 ### `code-only`
 - Агент работает только с репозиторием, сервисными API и документами без runtime-доступа к Kubernetes namespace задачи.
@@ -116,7 +116,7 @@ approvals:
 
 ### Locale policy
 - Worker определяет locale из platform default:
-  `CODEXK8S_AGENT_DEFAULT_LOCALE`.
+  `KODEX_AGENT_DEFAULT_LOCALE`.
 - Если значение пустое, используется `ru`.
 - При рендере prompt envelope неподдерживаемое locale нормализуется к `en`.
 - Базовый набор seed-локалей для системных ролей: `ru` и `en`.

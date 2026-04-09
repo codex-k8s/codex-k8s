@@ -90,9 +90,9 @@ approvals:
   - `services/jobs/worker/internal/app/app.go`
   - `services/jobs/worker/cmd/worker/main.go`
 - Production deploy и bootstrap синхронизированы под worker:
-  - `deploy/base/codex-k8s/app.yaml.tpl`
+  - `deploy/base/kodex/app.yaml.tpl`
   - `services/internal/control-plane/internal/domain/runtimedeploy/service_defaults.go`
-  - `deploy/base/codex-k8s/codegen-check-job.yaml.tpl`
+  - `deploy/base/kodex/codegen-check-job.yaml.tpl`
   - `cmd/codex-bootstrap/internal/cli/github_sync.go`
   - `bootstrap/host/bootstrap_remote_production.sh`
   - `bootstrap/host/config.env.example`

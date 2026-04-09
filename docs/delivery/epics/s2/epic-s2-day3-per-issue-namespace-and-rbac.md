@@ -61,7 +61,7 @@ approvals:
   - в S2 baseline поддерживался legacy manual-retention label: cleanup пропускался, namespace сохранялся для отладки и фиксировался в `flow_events` (позже удалено как избыточное поведение).
   - удаляются только managed namespace’ы, промаркированные worker’ом.
 - Для runtime metadata закреплён доменный префикс:
-  - labels/annotations в namespace/job используют `codex-k8s.dev/*`.
+  - labels/annotations в namespace/job используют `kodex.works/*`.
 - Добавлен audit lifecycle в `flow_events`:
   - `run.namespace.prepared`,
   - `run.namespace.cleaned`,
@@ -83,7 +83,7 @@ approvals:
   - `services/jobs/worker/internal/clients/kubernetes/launcher/adapter.go`
 - Runtime policy env wiring:
   - `services/jobs/worker/internal/app/config.go`
-  - `deploy/base/codex-k8s/codegen-check-job.yaml.tpl`
+  - `deploy/base/kodex/codegen-check-job.yaml.tpl`
   - `services/internal/control-plane/internal/domain/runtimedeploy/service_defaults.go`
 - Production runbook checks:
   - `docs/ops/production_runbook.md`

@@ -30,7 +30,7 @@ approvals:
   - если выделить новый dedicated service уже на Day4, появится premature DB owner и лишний service boundary до фиксации design contracts.
 - Ограничения:
   - `run:arch` остаётся markdown-only;
-  - max timeout/TTL built-in `codex_k8s` MCP wait path не ниже owner wait window;
+  - max timeout/TTL built-in `kodex` MCP wait path не ниже owner wait window;
   - snapshot-resume только recovery fallback;
   - `api-gateway` и `staff web-console` должны оставаться thin surfaces;
   - `run:self-improve` не входит в owner-facing wait contract.

@@ -8,15 +8,15 @@ import (
 	"testing"
 	"time"
 
-	agentdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/agent"
-	runqueuerepo "github.com/codex-k8s/codex-k8s/services/jobs/worker/internal/domain/repository/runqueue"
+	agentdomain "github.com/codex-k8s/kodex/libs/go/domain/agent"
+	runqueuerepo "github.com/codex-k8s/kodex/services/jobs/worker/internal/domain/repository/runqueue"
 )
 
 func TestTickExtendsNamespaceLeaseBeforeCleanupForRunningFullEnvRun(t *testing.T) {
 	t.Parallel()
 
 	payload := json.RawMessage(`{
-		"repository":{"full_name":"codex-k8s/codex-k8s"},
+		"repository":{"full_name":"codex-k8s/kodex"},
 		"trigger":{"kind":"dev"},
 		"issue":{"number":393},
 		"agent":{"key":"dev","name":"AI Developer"}

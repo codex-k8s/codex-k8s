@@ -1,17 +1,17 @@
 # Архитектура проекта
 
-Цель: предсказуемое развитие `codex-k8s` как централизованного control-plane сервиса для агентных процессов в Kubernetes.
+Цель: предсказуемое развитие `kodex` как централизованного control-plane сервиса для агентных процессов в Kubernetes.
 
 База: DDD (bounded contexts) + Clean Architecture (зависимости “снаружи внутрь”) + единый инвентарь деплоя (`services.yaml`) + единый каркас директорий.
 
-## Архитектурные ограничения codex-k8s
+## Архитектурные ограничения kodex
 
 - Оркестратор: только Kubernetes.
 - Интеграция с Kubernetes: Go SDK (`client-go`) через интерфейсы и адаптеры.
 - Интеграция с репозиториями: интерфейсы провайдеров (`github` сейчас, `gitlab` позже).
 - Процессы: webhook-driven (GitHub webhooks/внутренние события), без workflow-first модели.
 - Хранилище и синхронизация multi-pod: PostgreSQL (`JSONB` + `pgvector`).
-- MCP служебные ручки: реализуются в Go внутри `codex-k8s`.
+- MCP служебные ручки: реализуются в Go внутри `kodex`.
 
 ## Структура репозитория
 
@@ -28,8 +28,8 @@
     `stateful dependencies -> migrations -> internal domain services -> edge services -> frontend`.
     Ожидание зависимостей оформляется через `initContainers` в манифестах сервисов.
   - Для monorepo multi-service deploy используются раздельные образы/репозитории для каждого
-    deployable-сервиса (шаблон нейминга: `CODEXK8S_<SERVICE>_IMAGE`,
-    `CODEXK8S_<SERVICE>_INTERNAL_IMAGE_REPOSITORY`).
+    deployable-сервиса (шаблон нейминга: `KODEX_<SERVICE>_IMAGE`,
+    `KODEX_<SERVICE>_INTERNAL_IMAGE_REPOSITORY`).
 - `bootstrap/` — скрипты bootstrap (готовый кластер или установка k3s).
 - `docs/` — документация и решения.
 - `tools/` — утилиты и генерация.
@@ -44,7 +44,7 @@
   `deploy/base/kaniko/mirror-image-job.yaml.tpl`;
 - обновлять production deploy env/vars и манифесты:
   `services/internal/control-plane/cmd/runtime-deploy/main.go`,
-  `deploy/base/codex-k8s/codegen-check-job.yaml.tpl`,
+  `deploy/base/kodex/codegen-check-job.yaml.tpl`,
   `services.yaml`;
 - обновлять bootstrap-синхронизацию GitHub vars/secrets и секретов Kubernetes:
   `bootstrap/host/config.env.example`,

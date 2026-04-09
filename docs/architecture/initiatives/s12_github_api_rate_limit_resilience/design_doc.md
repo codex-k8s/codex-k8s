@@ -223,7 +223,7 @@ sequenceDiagram
 - Детализация transport contracts: `docs/architecture/initiatives/s12_github_api_rate_limit_resilience/api_contract.md`.
 - Source of truth for future `run:dev`:
   - OpenAPI: `services/external/api-gateway/api/server/api.yaml`
-  - gRPC: `proto/codexk8s/controlplane/v1/controlplane.proto`
+  - gRPC: `proto/kodex/controlplane/v1/controlplane.proto`
 - Day5 decision:
   - no new public endpoint;
   - existing run/wait visibility routes are extended with typed wait projection;

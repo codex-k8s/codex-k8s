@@ -1,4 +1,4 @@
-module github.com/codex-k8s/codex-k8s
+module github.com/codex-k8s/kodex
 
 go 1.25.7
 

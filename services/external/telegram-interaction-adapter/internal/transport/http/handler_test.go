@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/codex-k8s/codex-k8s/services/external/telegram-interaction-adapter/internal/service"
+	"github.com/codex-k8s/kodex/services/external/telegram-interaction-adapter/internal/service"
 )
 
 func TestPostTelegramInteractionDelivery_RejectsInvalidBearer(t *testing.T) {

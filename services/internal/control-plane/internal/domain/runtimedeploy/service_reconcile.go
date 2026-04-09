@@ -8,9 +8,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/codex-k8s/codex-k8s/libs/go/servicescfg"
-	runtimedeploytaskrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/runtimedeploytask"
-	entitytypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/entity"
+	"github.com/codex-k8s/kodex/libs/go/servicescfg"
+	runtimedeploytaskrepo "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/repository/runtimedeploytask"
+	entitytypes "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/types/entity"
 )
 
 // ReconcileNext claims one pending deploy task and applies desired state.
@@ -259,39 +259,39 @@ func (s *Service) applyDesiredState(ctx context.Context, params PrepareParams) (
 	templateVars = s.buildTemplateVars(params, targetNamespace)
 	applyStackImageVars(templateVars, loaded.Stack)
 
-	templateVars["CODEXK8S_PRODUCTION_NAMESPACE"] = targetNamespace
-	templateVars["CODEXK8S_WORKER_K8S_NAMESPACE"] = targetNamespace
-	templateVars["CODEXK8S_REPOSITORY_ROOT"] = s.repositoryRootForRuntimeEnv(repositoryRoot)
+	templateVars["KODEX_PRODUCTION_NAMESPACE"] = targetNamespace
+	templateVars["KODEX_WORKER_K8S_NAMESPACE"] = targetNamespace
+	templateVars["KODEX_REPOSITORY_ROOT"] = s.repositoryRootForRuntimeEnv(repositoryRoot)
 	if repoName := strings.TrimSpace(params.RepositoryFullName); repoName != "" {
-		templateVars["CODEXK8S_GITHUB_REPO"] = repoName
+		templateVars["KODEX_GITHUB_REPO"] = repoName
 	}
 	if err := s.ensureRuntimeNamespaceRepoSnapshot(ctx, params, targetEnv, targetNamespace, repositoryRoot, templateVars, runID); err != nil {
 		s.appendTaskLogBestEffort(ctx, runID, "repo-sync", "error", "Ensure runtime namespace repo snapshot failed: "+err.Error())
 		return zero, fmt.Errorf("ensure runtime namespace repo snapshot: %w", err)
 	}
-	if strings.TrimSpace(templateVars["CODEXK8S_WORKER_JOB_IMAGE"]) == "" {
-		if value := strings.TrimSpace(templateVars["CODEXK8S_AGENT_RUNNER_IMAGE"]); value != "" {
-			templateVars["CODEXK8S_WORKER_JOB_IMAGE"] = value
+	if strings.TrimSpace(templateVars["KODEX_WORKER_JOB_IMAGE"]) == "" {
+		if value := strings.TrimSpace(templateVars["KODEX_AGENT_RUNNER_IMAGE"]); value != "" {
+			templateVars["KODEX_WORKER_JOB_IMAGE"] = value
 		}
 	}
 
 	// Allow services.yaml to override public host resolution (full-env domainTemplate).
 	applyEnvironmentDomainTemplate(templateVars, loaded.Stack, targetEnv)
 
-	if strings.EqualFold(strings.TrimSpace(loaded.Stack.Spec.Project), "codex-k8s") {
-		s.appendTaskLogBestEffort(ctx, runID, "prerequisites", "info", "Ensuring codex-k8s prerequisites")
+	if strings.EqualFold(strings.TrimSpace(loaded.Stack.Spec.Project), "kodex") {
+		s.appendTaskLogBestEffort(ctx, runID, "prerequisites", "info", "Ensuring kodex prerequisites")
 		if err := s.ensureCodexK8sPrerequisites(ctx, repositoryRoot, targetNamespace, templateVars, loaded.Stack, runID); err != nil {
 			s.appendTaskLogBestEffort(ctx, runID, "prerequisites", "error", "Ensure prerequisites failed: "+err.Error())
-			return zero, fmt.Errorf("ensure codex-k8s prerequisites: %w", err)
+			return zero, fmt.Errorf("ensure kodex prerequisites: %w", err)
 		}
 	}
 
-	issuerBefore := strings.TrimSpace(templateVars["CODEXK8S_CERT_ISSUER_ENABLED"])
+	issuerBefore := strings.TrimSpace(templateVars["KODEX_CERT_ISSUER_ENABLED"])
 	if err := s.prepareTLS(ctx, repositoryRoot, targetEnv, targetNamespace, templateVars, runID); err != nil {
 		s.appendTaskLogBestEffort(ctx, runID, "tls", "error", "Prepare TLS failed: "+err.Error())
 		return zero, fmt.Errorf("prepare tls: %w", err)
 	}
-	if strings.TrimSpace(templateVars["CODEXK8S_CERT_ISSUER_ENABLED"]) != issuerBefore {
+	if strings.TrimSpace(templateVars["KODEX_CERT_ISSUER_ENABLED"]) != issuerBefore {
 		reloaded, err := servicescfg.Load(servicesConfigPath, servicescfg.LoadOptions{
 			Env:       targetEnv,
 			Namespace: targetNamespace,

@@ -3,8 +3,8 @@ package runstatus
 import (
 	"testing"
 
-	webhookdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/webhook"
-	nextstepdomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/nextstep"
+	webhookdomain "github.com/codex-k8s/kodex/libs/go/domain/webhook"
+	nextstepdomain "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/nextstep"
 )
 
 func TestStageDescriptorFromTriggerKind_UsesConfiguredReviseLabels(t *testing.T) {
@@ -65,8 +65,8 @@ func TestStageDescriptorFromTriggerKind_UsesConfiguredReviseLabels(t *testing.T)
 func TestBuildNextStepActions_SkipsDiscussionMode(t *testing.T) {
 	t.Parallel()
 
-	actions := buildNextStepActions("https://platform.codex-k8s.dev", nextstepdomain.DefaultLabels(), runContext{}, commentState{
-		RepositoryFullName: "codex-k8s/codex-k8s",
+	actions := buildNextStepActions("https://platform.kodex.works", nextstepdomain.DefaultLabels(), runContext{}, commentState{
+		RepositoryFullName: "codex-k8s/kodex",
 		IssueNumber:        298,
 		TriggerKind:        triggerKindDiscussion,
 		TriggerLabel:       "mode:discussion",

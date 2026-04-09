@@ -1,7 +1,7 @@
 ---
 doc_id: BRF-CK8S-0001
 type: brief
-title: "codex-k8s platform bootstrap"
+title: "kodex platform bootstrap"
 status: active
 owner_role: PM
 created_at: 2026-02-06
@@ -16,12 +16,12 @@ approvals:
   approved_at: 2026-02-19
 ---
 
-# Brief: codex-k8s platform bootstrap
+# Brief: kodex platform bootstrap
 
 ## TL;DR (1 абзац)
 - **Проблема:** текущая связка `codexctl` + `github.com/codex-k8s/yaml-mcp-server` + ручные практики разнесена по репозиториям и не даёт единого control-plane.
 - **Для кого:** Owner и команда, управляющие несколькими проектами и агентами в Kubernetes.
-- **Предлагаемое решение:** единый сервис `codex-k8s` (Go + Vue3), webhook-driven, с хранением состояния и знаний в PostgreSQL (`JSONB` + `pgvector`).
+- **Предлагаемое решение:** единый сервис `kodex` (Go + Vue3), webhook-driven, с хранением состояния и знаний в PostgreSQL (`JSONB` + `pgvector`).
 - **Почему сейчас:** принято решение консолидировать архитектуру и убрать workflow-first оркестрацию продуктовых процессов.
 - **Что считаем успехом:** production разворачивается одним bootstrap-скриптом, push в `main` обновляет production, ручные тесты проходят через UI и webhook сценарии.
 - **Что считаем успехом (расширено):** кроме базового dogfooding, в MVP работают full stage labels, MCP control tools (secret/db/feedback), staff debug observability и `run:self-improve`.
@@ -31,7 +31,7 @@ approvals:
 
 ## Контекст
 - Предыстория: в `project-example` и `codexctl` собран рабочий базис, но он распределён по отдельным компонентам.
-- Текущее состояние: новый репозиторий `codex-k8s` создан, структура и гайды перенесены/актуализированы.
+- Текущее состояние: новый репозиторий `kodex` создан, структура и гайды перенесены/актуализированы.
 - Почему это важно: нужна единая платформа управления агентами, слотами, вебхуками, MCP-инструментами и документами.
 
 ## Цель
@@ -55,7 +55,7 @@ approvals:
 - Зафиксировать operating model агентов: базовый штат из 8 ролей (включая `dev` и `reviewer`), mixed runtime (`full-env`/`code-only`); custom-agent factory вынести в post-MVP.
 - Зафиксировать review контур: для всех `run:*` выполняется pre-review (`reviewer` и/или профильная роль), затем финальный Owner review.
 - Зафиксировать policy шаблонов промптов: role-specific repo seeds (`work/revise`) без DB override в MVP.
-- Добавить locale-aware prompt policy: platform default locale (`CODEXK8S_AGENT_DEFAULT_LOCALE`, fallback `ru`) с baseline локалями `ru` и `en`.
+- Добавить locale-aware prompt policy: platform default locale (`KODEX_AGENT_DEFAULT_LOCALE`, fallback `ru`) с baseline локалями `ru` и `en`.
 - Добавить resumable lifecycle для agent runs: сохранение `codex-cli` session JSON и возобновление после пауз.
 - Ввести contract-first OpenAPI для external/staff API с codegen server/client до расширения транспорта внешних клиентов.
 - Добавить режим обучения для пользовательских задач:
@@ -90,7 +90,7 @@ approvals:
 
 ## Риски и допущения
 - Риск: root SSH bootstrap может быть хрупким на нестандартных образах Ubuntu.
-- Допущение: доступен GitHub fine-grained token с правами на repository management и administration для webhook/labels/bootstrap path; runtime-агенты используют отдельный `CODEXK8S_GIT_BOT_TOKEN`.
+- Допущение: доступен GitHub fine-grained token с правами на repository management и administration для webhook/labels/bootstrap path; runtime-агенты используют отдельный `KODEX_GIT_BOT_TOKEN`.
 - Риск: learning mode может зашумлять PR комментарии при слабой фильтрации "важных мест".
 
 ## Решение по self-deploy (принято)
@@ -122,10 +122,10 @@ approvals:
     - ресурсы: namespaces/configmaps/secrets/deployments/pods+logs/jobs+logs/pvc;
     - YAML-view/edit через Monaco Editor;
     - safety guardrails:
-      - в `production`/`prod` платформенные ресурсы помечаются `app.kubernetes.io/part-of=codex-k8s` (критерий для UI/guardrails и backend policy);
-      - в `ai` (ai-slots) при dogfooding платформа может разворачиваться без `app.kubernetes.io/part-of=codex-k8s`, чтобы UI позволял тестировать действия над ресурсами самой платформы (в т.ч. destructive через dry-run);
-      - ресурсы с `app.kubernetes.io/part-of=codex-k8s` нельзя удалять (UI и backend policy);
-      - `production`/`prod` — строго view-only для ресурсов с `app.kubernetes.io/part-of=codex-k8s`;
+      - в `production`/`prod` платформенные ресурсы помечаются `app.kubernetes.io/part-of=kodex` (критерий для UI/guardrails и backend policy);
+      - в `ai` (ai-slots) при dogfooding платформа может разворачиваться без `app.kubernetes.io/part-of=kodex`, чтобы UI позволял тестировать действия над ресурсами самой платформы (в т.ч. destructive через dry-run);
+      - ресурсы с `app.kubernetes.io/part-of=kodex` нельзя удалять (UI и backend policy);
+      - `production`/`prod` — строго view-only для ресурсов с `app.kubernetes.io/part-of=kodex`;
       - ai-slots — destructive действия только dry-run (кнопки есть для dogfooding/debug, реальное действие не выполняется).
   - Agents:
     - UI lifecycle для agent settings и prompt templates.

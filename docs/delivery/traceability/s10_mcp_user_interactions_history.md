@@ -22,7 +22,7 @@ approvals:
 - Текущее покрытие FR/NFR остаётся в `docs/delivery/requirements_traceability.md`.
 
 ## Актуализация по Issue #360 (`run:intake`, 2026-03-12)
-- Intake зафиксировал built-in MCP user interactions как отдельную product initiative поверх существующего built-in server `codex_k8s`.
+- Intake зафиксировал built-in MCP user interactions как отдельную product initiative поверх существующего built-in server `kodex`.
 - В качестве baseline зафиксированы:
   - MVP tools `user.notify` и `user.decision.request`;
   - channel-neutral interaction-domain;
@@ -51,7 +51,7 @@ approvals:
 - Зафиксированы:
   - user stories, FR/AC/NFR и wave priorities для `user.notify`, `user.decision.request`, typed response semantics и adapter-neutral contract;
   - explicit edge cases для stale/duplicate/invalid responses, fallback-to-comments и separation from approval flow;
-  - handover decisions, которые нельзя потерять на `run:arch`: built-in `codex_k8s`, non-blocking `user.notify`, wait-state только для `user.decision.request`, platform-owned audit/correlation/retry semantics и deferred scope для Telegram/adapters.
+  - handover decisions, которые нельзя потерять на `run:arch`: built-in `kodex`, non-blocking `user.notify`, wait-state только для `user.decision.request`, platform-owned audit/correlation/retry semantics и deferred scope для Telegram/adapters.
 - Для continuity создана follow-up issue `#385` (`run:arch`) без trigger-лейбла.
 - Попытка использовать Context7 для GitHub CLI manual снова завершилась ошибкой `Monthly quota exceeded`; для non-interactive GitHub flow использованы локальные `gh issue create --help`, `gh pr create --help`, `gh pr edit --help`.
 - Root FR/NFR matrix в `docs/delivery/requirements_traceability.md` не менялась по существу: PRD stage уточняет product contract и delivery evidence, а в root-матрице синхронизирована только связь по issue/traceability governance.
@@ -121,7 +121,7 @@ approvals:
 - Реализован worker lifecycle package для stream `S10-E02` в `services/jobs/worker` и `services/internal/control-plane`:
   - `worker` получил polling loop для expiry и outbound dispatch, configurable limits/timeouts/backoff/max-attempts, flow events `interaction.dispatch.attempted` / `interaction.dispatch.retry_scheduled` и transport client к новым `control-plane` RPC;
   - `control-plane` получил worker-facing domain/repository API для claim/complete/expire interaction delivery attempts, включая reclaim stuck pending attempts, ledger update по `delivery_id`, terminal outcome classification и wait-context cleanup/resume payload publication только после terminal status;
-  - gRPC contract `proto/codexk8s/controlplane/v1/controlplane.proto` расширен RPC `ClaimNextInteractionDispatch`, `CompleteInteractionDispatch`, `ExpireNextInteraction`, после чего regenerated Go stubs синхронизированы для `control-plane`, `worker` и `agent-runner`;
+  - gRPC contract `proto/kodex/controlplane/v1/controlplane.proto` расширен RPC `ClaimNextInteractionDispatch`, `CompleteInteractionDispatch`, `ExpireNextInteraction`, после чего regenerated Go stubs синхронизированы для `control-plane`, `worker` и `agent-runner`;
   - текущий dispatch adapter оставлен `noop`, потому что channel-specific delivery adapters не входят в core scope issue `#392`; user-facing MCP tools по-прежнему скрыты rollout gate и не открываются до волн `#393/#394`.
 - Rollout boundary сохранён:
   - callback ingress / OpenAPI / typed HTTP DTO остаются в scope issue `#393`;
@@ -162,7 +162,7 @@ approvals:
   - `control-plane` при scheduling resume-run теперь сохраняет terminal `interaction_resume_payload` в persisted `agent_runs.run_payload`, сохраняя existing session snapshot path в `agent_sessions` как единственный resume-source для `codex exec resume`;
   - `worker` извлекает этот typed payload из run payload и прокидывает его в env нового run job без локального recompute interaction semantics;
   - `agent-runner` валидирует machine-readable payload, требует наличие restored Codex session/session_id и добавляет typed JSON block в начало prompt перед `codex exec resume`, чтобы модель получала deterministic terminal outcome без повторного adapter lookup;
-  - `joblauncher` синхронно пробрасывает новый env contract `CODEXK8S_INTERACTION_RESUME_PAYLOAD`, а `services/jobs/agent-runner/README.md` актуализирован под новый resume path.
+  - `joblauncher` синхронно пробрасывает новый env contract `KODEX_INTERACTION_RESUME_PAYLOAD`, а `services/jobs/agent-runner/README.md` актуализирован под новый resume path.
 - Rollout boundary сохранён:
   - interaction source-of-truth остаётся у `control-plane`; `worker` и `agent-runner` только потребляют persisted payload;
   - channel-specific adapters и broader pause/resume engine refactor по-прежнему остаются вне scope issue `#394`.
@@ -171,12 +171,12 @@ approvals:
   - `go test ./services/internal/control-plane/... ./services/jobs/worker/... ./services/jobs/agent-runner/...`
   - `git diff --check`
   - runtime diagnostics:
-    - `kubectl get pods,job -n codex-k8s-dev-1 -o wide`
-    - `kubectl get events -n codex-k8s-dev-1 --sort-by=.lastTimestamp | tail -n 20`
-    - `kubectl logs deploy/codex-k8s-control-plane -n codex-k8s-dev-1 --tail=40`
-    - `kubectl logs deploy/codex-k8s-worker -n codex-k8s-dev-1 --tail=40`
+    - `kubectl get pods,job -n kodex-dev-1 -o wide`
+    - `kubectl get events -n kodex-dev-1 --sort-by=.lastTimestamp | tail -n 20`
+    - `kubectl logs deploy/kodex-control-plane -n kodex-dev-1 --tail=40`
+    - `kubectl logs deploy/kodex-worker -n kodex-dev-1 --tail=40`
 - Runtime evidence:
-  - candidate namespace `codex-k8s-dev-1` содержит running pods `codex-k8s-control-plane`, `codex-k8s-worker`, `codex-k8s-web-console`, `codex-k8s`, текущий run job и `postgres-0`;
+  - candidate namespace `kodex-dev-1` содержит running pods `kodex-control-plane`, `kodex-worker`, `kodex-web-console`, `kodex`, текущий run job и `postgres-0`;
   - recent events/logs показывают ожидаемые hot-reload restarts control-plane/worker и кратковременные probe/dial failures в момент локальной пересборки, но без новых resume-specific ошибок.
 - Для verification использован Context7:
   - `/protocolbuffers/protobuf` для проверки additive contract discipline при расширении typed payload-handshake.
@@ -185,7 +185,7 @@ approvals:
 
 ## Актуализация по Issue #437 (`run:dev`, 2026-03-14)
 - Реализован hardening follow-up для resume handoff поверх stream `S10-E04`:
-  - `worker` и `joblauncher` больше не используют `CODEXK8S_INTERACTION_RESUME_PAYLOAD` и не записывают interaction outcome в Pod env/spec;
+  - `worker` и `joblauncher` больше не используют `KODEX_INTERACTION_RESUME_PAYLOAD` и не записывают interaction outcome в Pod env/spec;
   - `control-plane` получил run-scoped gRPC lookup `GetRunInteractionResumePayload`, а `agent-runner` забирает persisted payload уже после старта pod через bearer-аутентифицированный runtime call;
   - callback classification и resume scheduling теперь явно ограничены size-контрактом: `response.free_text <= 8192` UTF-8 bytes, serialized `interaction_resume_payload <= 12288` bytes, overflow классифицируется как `invalid` без постановки resume-run;
   - docs и contract-first артефакты синхронизированы для нового secure carrier path и size guardrails.
@@ -199,20 +199,20 @@ approvals:
   - `git diff --check`
   - runtime diagnostics:
     - `kubectl config view --minify -o jsonpath='{..namespace}'`
-    - `kubectl -n codex-k8s-dev-1 get pods,deploy,job -o wide`
-    - `kubectl -n codex-k8s-dev-1 logs deploy/codex-k8s-control-plane --tail=60`
-    - `kubectl -n codex-k8s-dev-1 logs deploy/codex-k8s-worker --tail=60`
+    - `kubectl -n kodex-dev-1 get pods,deploy,job -o wide`
+    - `kubectl -n kodex-dev-1 logs deploy/kodex-control-plane --tail=60`
+    - `kubectl -n kodex-dev-1 logs deploy/kodex-worker --tail=60`
 - Runtime evidence:
-  - candidate namespace `codex-k8s-dev-1` содержит ready deployments `codex-k8s-control-plane`, `codex-k8s-worker`, `codex-k8s`, `codex-k8s-web-console`, running run job и healthy `postgres-0`;
+  - candidate namespace `kodex-dev-1` содержит ready deployments `kodex-control-plane`, `kodex-worker`, `kodex`, `kodex-web-console`, running run job и healthy `postgres-0`;
   - в логах `control-plane` зафиксирован ожидаемый transient compile failure во время hot-reload до regeneration нового proto-stub, после чего сервис перезапустился штатно;
   - в логах `worker` зафиксирован кратковременный `dial tcp ...:9090: connect: connection refused` во время restart окна `control-plane`, после чего worker восстановился без новых resume-specific ошибок.
 - Root FR/NFR matrix в `docs/delivery/requirements_traceability.md` не менялась по существу: issue `#437` ужесточает transport/runtime handoff и payload limits внутри approved Sprint S10 scope, не меняя продуктовый baseline.
 
 ## Актуализация по Issue #395 (`run:dev`, 2026-03-14)
 - Реализован observability/readiness package для stream `S10-E05` в `services/internal/control-plane`, `services/jobs/worker`, `services/external/api-gateway`, `docs/ops` и `docs/architecture/initiatives/s10_mcp_user_interactions`:
-  - `control-plane` публикует runtime counters/histogram (`codexk8s_interaction_requests_created_total`, `codexk8s_interaction_resume_total`, `codexk8s_interaction_decision_turnaround_seconds`) и persisted custom collector поверх БД snapshot path для state/backlog/overdue/callback/dispatch evidence;
-  - `worker` публикует runtime metrics `codexk8s_interaction_dispatch_attempt_total` и `codexk8s_interaction_dispatch_retry_scheduled_total`, расширяет structured logs по dispatch/expiry и теперь отдаёт `/metrics`, `/health/livez`, `/health/readyz` на отдельном HTTP bind address;
-  - `api-gateway` публикует callback ingress metrics `codexk8s_interaction_callback_requests_total` и `codexk8s_interaction_callback_duration_seconds`, а также structured success log `interaction callback handled` без утечки `free_text` в логи;
+  - `control-plane` публикует runtime counters/histogram (`kodex_interaction_requests_created_total`, `kodex_interaction_resume_total`, `kodex_interaction_decision_turnaround_seconds`) и persisted custom collector поверх БД snapshot path для state/backlog/overdue/callback/dispatch evidence;
+  - `worker` публикует runtime metrics `kodex_interaction_dispatch_attempt_total` и `kodex_interaction_dispatch_retry_scheduled_total`, расширяет structured logs по dispatch/expiry и теперь отдаёт `/metrics`, `/health/livez`, `/health/readyz` на отдельном HTTP bind address;
+  - `api-gateway` публикует callback ingress metrics `kodex_interaction_callback_requests_total` и `kodex_interaction_callback_duration_seconds`, а также structured success log `interaction callback handled` без утечки `free_text` в логи;
   - добавлен handover-документ `docs/architecture/initiatives/s10_mcp_user_interactions/observability_readiness.md`, а `docs/architecture/initiatives/s10_mcp_user_interactions/design_doc.md`, `docs/ops/production_runbook.md`, `docs/delivery/traceability/s10_mcp_user_interactions_history.md` и `docs/delivery/issue_map.md` синхронизированы под точные metric/log names, runtime smoke и readiness gate.
 - Rollout/readiness discipline сохранены:
   - ownership split между `control-plane`, `worker` и `api-gateway` не изменён;
@@ -225,23 +225,23 @@ approvals:
   - `git diff --check`
   - runtime diagnostics:
     - `kubectl config view --minify -o jsonpath='{..namespace}'`
-    - `kubectl get pods,deploy,job -n codex-k8s-dev-4 -o wide`
-    - `kubectl get svc -n codex-k8s-dev-4 -o wide`
-    - `kubectl logs deploy/codex-k8s-control-plane -n codex-k8s-dev-4 --tail=120`
-    - `kubectl logs deploy/codex-k8s-worker -n codex-k8s-dev-4 --tail=120`
-    - `kubectl logs deploy/codex-k8s -n codex-k8s-dev-4 --tail=120`
-    - `kubectl port-forward deploy/codex-k8s-control-plane -n codex-k8s-dev-4 18081:8081`
-    - `kubectl port-forward deploy/codex-k8s-worker -n codex-k8s-dev-4 18082:8082`
-    - `kubectl port-forward deploy/codex-k8s -n codex-k8s-dev-4 18080:8080`
+    - `kubectl get pods,deploy,job -n kodex-dev-4 -o wide`
+    - `kubectl get svc -n kodex-dev-4 -o wide`
+    - `kubectl logs deploy/kodex-control-plane -n kodex-dev-4 --tail=120`
+    - `kubectl logs deploy/kodex-worker -n kodex-dev-4 --tail=120`
+    - `kubectl logs deploy/kodex -n kodex-dev-4 --tail=120`
+    - `kubectl port-forward deploy/kodex-control-plane -n kodex-dev-4 18081:8081`
+    - `kubectl port-forward deploy/kodex-worker -n kodex-dev-4 18082:8082`
+    - `kubectl port-forward deploy/kodex -n kodex-dev-4 18080:8080`
     - `curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:18081/metrics`
-    - `curl -s http://127.0.0.1:18082/metrics | rg 'codexk8s_interaction_dispatch_'`
+    - `curl -s http://127.0.0.1:18082/metrics | rg 'kodex_interaction_dispatch_'`
     - `curl -s -o /tmp/interaction_callback_probe.out -w '%{http_code}' -H 'Content-Type: application/json' -X POST http://127.0.0.1:18080/api/v1/mcp/interactions/callback --data '{"interaction_id":"smoke-probe","callback_kind":"decision_response"}'`
-    - `curl -s http://127.0.0.1:18080/metrics | rg 'codexk8s_interaction_callback_'`
+    - `curl -s http://127.0.0.1:18080/metrics | rg 'kodex_interaction_callback_'`
 - Runtime evidence:
-  - текущий candidate namespace `codex-k8s-dev-4` содержит running deployments `codex-k8s-control-plane`, `codex-k8s-worker`, `codex-k8s`, `codex-k8s-web-console`, migration job `Complete` и активный run job;
-  - `kubectl get svc -n codex-k8s-dev-4 -o wide` показывает только `codex-k8s`, `codex-k8s-control-plane`, `codex-k8s-web-console`, `postgres`; новый `codex-k8s-worker` Service добавлен в repo-манифесты, но ещё не materialized в текущем hot-reload candidate, поэтому worker `/metrics` проверялся через `port-forward` на deployment;
-  - `/metrics` у `control-plane`, `worker` и `api-gateway` отвечают `200`; `worker` экспортирует preinitialized families `codexk8s_interaction_dispatch_attempt_total{adapter="noop",status=...}` и `codexk8s_interaction_dispatch_retry_scheduled_total{adapter="noop",error_code=...}`;
-  - synthetic callback probe без токена вернул `401`, тело `/tmp/interaction_callback_probe.out` = `{"code":"unauthorized","message":"missing mcp callback token"}`, после чего `api-gateway` `/metrics` показал `codexk8s_interaction_callback_requests_total{callback_kind="unknown",classification="error"} 1` и соответствующий histogram sample;
+  - текущий candidate namespace `kodex-dev-4` содержит running deployments `kodex-control-plane`, `kodex-worker`, `kodex`, `kodex-web-console`, migration job `Complete` и активный run job;
+  - `kubectl get svc -n kodex-dev-4 -o wide` показывает только `kodex`, `kodex-control-plane`, `kodex-web-console`, `postgres`; новый `kodex-worker` Service добавлен в repo-манифесты, но ещё не materialized в текущем hot-reload candidate, поэтому worker `/metrics` проверялся через `port-forward` на deployment;
+  - `/metrics` у `control-plane`, `worker` и `api-gateway` отвечают `200`; `worker` экспортирует preinitialized families `kodex_interaction_dispatch_attempt_total{adapter="noop",status=...}` и `kodex_interaction_dispatch_retry_scheduled_total{adapter="noop",error_code=...}`;
+  - synthetic callback probe без токена вернул `401`, тело `/tmp/interaction_callback_probe.out` = `{"code":"unauthorized","message":"missing mcp callback token"}`, после чего `api-gateway` `/metrics` показал `kodex_interaction_callback_requests_total{callback_kind="unknown",classification="error"} 1` и соответствующий histogram sample;
   - `control-plane` `/metrics` доступен без 5xx, но interaction-specific samples в текущем candidate ещё не появились из-за отсутствия реального tool/callback traffic; в последних 120 строках логов нет `collect interaction metrics snapshot failed`;
   - recent `control-plane`/`worker` logs содержат ожидаемые hot-reload restarts во время локальной пересборки; последние successful restarts подтверждают `control-plane http started`, `control-plane grpc started` и `worker http started`, без новых interaction-specific panic/crash evidence.
 - Для verification использован Context7:

@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/codex-k8s/codex-k8s/libs/go/registry"
+	"github.com/codex-k8s/kodex/libs/go/registry"
 )
 
 type registryJobImageChecker struct {

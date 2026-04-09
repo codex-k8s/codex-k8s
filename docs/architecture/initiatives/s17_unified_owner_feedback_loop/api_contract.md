@@ -27,7 +27,7 @@ approvals:
   - `services/external/api-gateway/api/server/api.yaml`
   - `services/external/telegram-interaction-adapter/api/server/api.yaml`
 - Future gRPC source of truth:
-  - `proto/codexk8s/controlplane/v1/controlplane.proto`
+  - `proto/kodex/controlplane/v1/controlplane.proto`
 - Design-stage interim source:
   - `docs/architecture/initiatives/s17_unified_owner_feedback_loop/design_doc.md`
   - `docs/architecture/initiatives/s17_unified_owner_feedback_loop/api_contract.md`
@@ -334,9 +334,9 @@ approvals:
   - staff response submissions with `submission_id`, `classification`, `continuation_path`
   - Telegram callback classification with `binding_handle`, `callback_kind`, `classification`
 - Метрики:
-  - `codexk8s_owner_feedback_staff_response_total{classification}`
-  - `codexk8s_owner_feedback_callback_total{callback_kind,classification}`
-  - `codexk8s_owner_feedback_response_source_total{response_source_kind}`
+  - `kodex_owner_feedback_staff_response_total{classification}`
+  - `kodex_owner_feedback_callback_total{callback_kind,classification}`
+  - `kodex_owner_feedback_response_source_total{response_source_kind}`
 - Трейсы:
   - `staff web-console -> api-gateway -> control-plane -> postgres`
   - `telegram-interaction-adapter -> api-gateway -> control-plane -> postgres`

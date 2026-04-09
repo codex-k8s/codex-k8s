@@ -5,7 +5,7 @@ import (
 
 	"github.com/google/uuid"
 
-	querytypes "github.com/codex-k8s/codex-k8s/services/jobs/worker/internal/domain/types/query"
+	querytypes "github.com/codex-k8s/kodex/services/jobs/worker/internal/domain/types/query"
 )
 
 func TestParseRunQueuePayload_ReturnsDeployOnlyRuntime(t *testing.T) {
@@ -41,7 +41,7 @@ func TestIsDeployOnlyRun(t *testing.T) {
 		{
 			name: "runtime missing",
 			payload: querytypes.RunQueuePayload{
-				Repository: querytypes.RepositoryPayload{FullName: "codex-k8s/repo"},
+				Repository: querytypes.RepositoryPayload{FullName: "kodex/repo"},
 			},
 			want: false,
 		},
@@ -79,7 +79,7 @@ func TestRequiresProjectSlot(t *testing.T) {
 		{
 			name: "runtime missing defaults to slot",
 			payload: querytypes.RunQueuePayload{
-				Repository: querytypes.RepositoryPayload{FullName: "codex-k8s/repo"},
+				Repository: querytypes.RepositoryPayload{FullName: "kodex/repo"},
 			},
 			want: true,
 		},

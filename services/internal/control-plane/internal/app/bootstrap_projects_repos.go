@@ -9,12 +9,12 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/codex-k8s/codex-k8s/libs/go/crypto/tokencrypt"
-	"github.com/codex-k8s/codex-k8s/libs/go/repo/provider"
-	platformtokenrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/platformtoken"
-	projectrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/project"
-	repocfgrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/repocfg"
-	querytypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/query"
+	"github.com/codex-k8s/kodex/libs/go/crypto/tokencrypt"
+	"github.com/codex-k8s/kodex/libs/go/repo/provider"
+	platformtokenrepo "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/repository/platformtoken"
+	projectrepo "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/repository/project"
+	repocfgrepo "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/repository/repocfg"
+	querytypes "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/types/query"
 )
 
 type seedBootstrapProjectsAndRepositoriesParams struct {
@@ -180,7 +180,7 @@ func ensureBootstrapGitHubRepositoryBinding(ctx context.Context, params ensureBo
 	}
 	token := strings.TrimSpace(params.TokenRaw)
 	if token == "" {
-		return ensuredBootstrapGitHubRepositoryBinding{}, fmt.Errorf("github token is required to seed repository binding for %s (set CODEXK8S_GITHUB_PAT)", repoFullName)
+		return ensuredBootstrapGitHubRepositoryBinding{}, fmt.Errorf("github token is required to seed repository binding for %s (set KODEX_GITHUB_PAT)", repoFullName)
 	}
 
 	info, err := params.GitHub.ValidateRepository(ctx, token, owner, name)

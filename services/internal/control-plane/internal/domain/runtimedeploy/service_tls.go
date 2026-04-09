@@ -15,7 +15,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/codex-k8s/codex-k8s/libs/go/manifesttpl"
+	"github.com/codex-k8s/kodex/libs/go/manifesttpl"
 )
 
 const (
@@ -33,9 +33,9 @@ type tlsValidationResult struct {
 }
 
 func (s *Service) prepareTLS(ctx context.Context, repositoryRoot string, targetEnv string, namespace string, vars map[string]string, runID string) error {
-	host := strings.TrimSpace(valueOr(vars, "CODEXK8S_PUBLIC_DOMAIN", ""))
+	host := strings.TrimSpace(valueOr(vars, "KODEX_PUBLIC_DOMAIN", ""))
 	if host == "" {
-		host = strings.TrimSpace(valueOr(vars, "CODEXK8S_PRODUCTION_DOMAIN", ""))
+		host = strings.TrimSpace(valueOr(vars, "KODEX_PRODUCTION_DOMAIN", ""))
 	}
 	if host == "" {
 		return nil
@@ -45,15 +45,15 @@ func (s *Service) prepareTLS(ctx context.Context, repositoryRoot string, targetE
 		return fmt.Errorf("ensure namespace %s: %w", namespace, err)
 	}
 
-	tlsSecretName := strings.TrimSpace(valueOr(vars, "CODEXK8S_TLS_SECRET_NAME", ""))
+	tlsSecretName := strings.TrimSpace(valueOr(vars, "KODEX_TLS_SECRET_NAME", ""))
 	if tlsSecretName == "" {
 		tlsSecretName = defaultTLSSecretName(targetEnv)
-		vars["CODEXK8S_TLS_SECRET_NAME"] = tlsSecretName
+		vars["KODEX_TLS_SECRET_NAME"] = tlsSecretName
 	}
 
-	systemNamespace := strings.TrimSpace(valueOr(vars, "CODEXK8S_TLS_SYSTEM_NAMESPACE", ""))
+	systemNamespace := strings.TrimSpace(valueOr(vars, "KODEX_TLS_SYSTEM_NAMESPACE", ""))
 	if systemNamespace == "" {
-		return fmt.Errorf("CODEXK8S_TLS_SYSTEM_NAMESPACE is required")
+		return fmt.Errorf("KODEX_TLS_SYSTEM_NAMESPACE is required")
 	}
 	if err := s.k8s.EnsureNamespace(ctx, systemNamespace); err != nil {
 		return fmt.Errorf("ensure tls system namespace %s: %w", systemNamespace, err)
@@ -75,8 +75,8 @@ func (s *Service) prepareTLS(ctx context.Context, repositoryRoot string, targetE
 		if validation.Valid {
 			s.appendTaskLogBestEffort(ctx, runID, "tls", "info", "TLS secret already present in namespace "+namespace+", reusing")
 			_ = s.bestEffortUpsertTLSSecretToSystem(ctx, systemNamespace, systemSecretName, host, targetSecretData, runID)
-			vars["CODEXK8S_CERT_ISSUER_ENABLED"] = "false"
-			vars["CODEXK8S_CERT_MANAGER_ANNOTATE"] = "false"
+			vars["KODEX_CERT_ISSUER_ENABLED"] = "false"
+			vars["KODEX_CERT_MANAGER_ANNOTATE"] = "false"
 			return nil
 		}
 		s.appendTaskLogBestEffort(ctx, runID, "tls", "info", "Existing TLS secret in namespace "+namespace+" is not reusable: "+validation.Reason)
@@ -93,8 +93,8 @@ func (s *Service) prepareTLS(ctx context.Context, repositoryRoot string, targetE
 				return fmt.Errorf("upsert reused tls secret into %s/%s: %w", namespace, tlsSecretName, err)
 			}
 			s.appendTaskLogBestEffort(ctx, runID, "tls", "info", "Reused TLS secret from system namespace "+systemNamespace+" for host "+host)
-			vars["CODEXK8S_CERT_ISSUER_ENABLED"] = "false"
-			vars["CODEXK8S_CERT_MANAGER_ANNOTATE"] = "false"
+			vars["KODEX_CERT_ISSUER_ENABLED"] = "false"
+			vars["KODEX_CERT_MANAGER_ANNOTATE"] = "false"
 			return nil
 		}
 		s.appendTaskLogBestEffort(ctx, runID, "tls", "info", "TLS system secret is not reusable: "+validation.Reason)
@@ -102,10 +102,10 @@ func (s *Service) prepareTLS(ctx context.Context, repositoryRoot string, targetE
 
 	// No reusable secret found. Only enable cert-manager after confirming that the domain
 	// resolves to this cluster via echo-probe (HTTP-01 prerequisite).
-	if strings.TrimSpace(valueOr(vars, "CODEXK8S_LETSENCRYPT_EMAIL", "")) == "" || strings.TrimSpace(valueOr(vars, "CODEXK8S_LETSENCRYPT_SERVER", "")) == "" {
+	if strings.TrimSpace(valueOr(vars, "KODEX_LETSENCRYPT_EMAIL", "")) == "" || strings.TrimSpace(valueOr(vars, "KODEX_LETSENCRYPT_SERVER", "")) == "" {
 		s.appendTaskLogBestEffort(ctx, runID, "tls", "warning", "LetsEncrypt config is incomplete; skipping issuer deployment")
-		vars["CODEXK8S_CERT_ISSUER_ENABLED"] = "false"
-		vars["CODEXK8S_CERT_MANAGER_ANNOTATE"] = "false"
+		vars["KODEX_CERT_ISSUER_ENABLED"] = "false"
+		vars["KODEX_CERT_MANAGER_ANNOTATE"] = "false"
 		return nil
 	}
 
@@ -113,29 +113,29 @@ func (s *Service) prepareTLS(ctx context.Context, repositoryRoot string, targetE
 		return err
 	}
 
-	vars["CODEXK8S_CERT_ISSUER_ENABLED"] = "true"
-	vars["CODEXK8S_CERT_MANAGER_ANNOTATE"] = "true"
+	vars["KODEX_CERT_ISSUER_ENABLED"] = "true"
+	vars["KODEX_CERT_MANAGER_ANNOTATE"] = "true"
 	s.appendTaskLogBestEffort(ctx, runID, "tls", "info", "Echo probe succeeded, enabling cert-manager issuer for host "+host)
 	return nil
 }
 
 func (s *Service) finalizeTLS(ctx context.Context, targetEnv string, namespace string, vars map[string]string, runID string) error {
-	host := strings.TrimSpace(valueOr(vars, "CODEXK8S_PUBLIC_DOMAIN", ""))
+	host := strings.TrimSpace(valueOr(vars, "KODEX_PUBLIC_DOMAIN", ""))
 	if host == "" {
-		host = strings.TrimSpace(valueOr(vars, "CODEXK8S_PRODUCTION_DOMAIN", ""))
+		host = strings.TrimSpace(valueOr(vars, "KODEX_PRODUCTION_DOMAIN", ""))
 	}
 	if host == "" {
 		return nil
 	}
 
-	systemNamespace := strings.TrimSpace(valueOr(vars, "CODEXK8S_TLS_SYSTEM_NAMESPACE", ""))
+	systemNamespace := strings.TrimSpace(valueOr(vars, "KODEX_TLS_SYSTEM_NAMESPACE", ""))
 	if systemNamespace == "" {
 		return nil
 	}
 	if err := s.k8s.EnsureNamespace(ctx, systemNamespace); err != nil {
 		return fmt.Errorf("ensure tls system namespace %s: %w", systemNamespace, err)
 	}
-	tlsSecretName := strings.TrimSpace(valueOr(vars, "CODEXK8S_TLS_SECRET_NAME", ""))
+	tlsSecretName := strings.TrimSpace(valueOr(vars, "KODEX_TLS_SECRET_NAME", ""))
 	if tlsSecretName == "" {
 		tlsSecretName = defaultTLSSecretName(targetEnv)
 	}
@@ -151,7 +151,7 @@ func (s *Service) finalizeTLS(ctx context.Context, targetEnv string, namespace s
 		}
 	}
 
-	shouldWait := strings.EqualFold(strings.TrimSpace(valueOr(vars, "CODEXK8S_CERT_MANAGER_ANNOTATE", "false")), "true")
+	shouldWait := strings.EqualFold(strings.TrimSpace(valueOr(vars, "KODEX_CERT_MANAGER_ANNOTATE", "false")), "true")
 	timeout := s.cfg.RolloutTimeout
 	if timeout <= 0 {
 		timeout = 20 * time.Minute
@@ -252,9 +252,9 @@ func (s *Service) runEchoProbe(ctx context.Context, repositoryRoot string, names
 	}
 
 	renderVars := cloneStringMap(vars)
-	renderVars["CODEXK8S_PRODUCTION_NAMESPACE"] = namespace
-	renderVars["CODEXK8S_ECHO_PROBE_HOST"] = host
-	renderVars["CODEXK8S_ECHO_PROBE_TOKEN"] = token
+	renderVars["KODEX_PRODUCTION_NAMESPACE"] = namespace
+	renderVars["KODEX_ECHO_PROBE_HOST"] = host
+	renderVars["KODEX_ECHO_PROBE_TOKEN"] = token
 
 	rendered, err := manifesttpl.Render(templatePath, raw, renderVars)
 	if err != nil {
@@ -264,11 +264,11 @@ func (s *Service) runEchoProbe(ctx context.Context, repositoryRoot string, names
 	if _, err := s.k8s.ApplyManifest(ctx, rendered, namespace, s.cfg.KanikoFieldManager); err != nil {
 		return fmt.Errorf("apply echo probe manifest: %w", err)
 	}
-	if err := s.k8s.WaitForDeploymentReady(ctx, namespace, "codex-k8s-echo-probe", s.cfg.RolloutTimeout); err != nil {
+	if err := s.k8s.WaitForDeploymentReady(ctx, namespace, "kodex-echo-probe", s.cfg.RolloutTimeout); err != nil {
 		return fmt.Errorf("wait echo probe deployment: %w", err)
 	}
 
-	url := fmt.Sprintf("http://%s/.well-known/codex-k8s-probe/%s", host, token)
+	url := fmt.Sprintf("http://%s/.well-known/kodex-probe/%s", host, token)
 	s.appendTaskLogBestEffort(ctx, runID, "tls", "info", "Echo probe request: "+url)
 
 	probeCtx, cancel := context.WithTimeout(ctx, echoProbeTimeout)
@@ -306,7 +306,7 @@ func tlsSystemSecretNameForHost(host string) string {
 		return ""
 	}
 	sum := sha256.Sum256([]byte(normalized))
-	return "codex-k8s-tls-" + hex.EncodeToString(sum[:8])
+	return "kodex-tls-" + hex.EncodeToString(sum[:8])
 }
 
 func tlsSecretDataOnly(data map[string][]byte) map[string][]byte {

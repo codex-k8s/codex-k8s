@@ -7,8 +7,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	floweventdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/flowevent"
-	cpclient "github.com/codex-k8s/codex-k8s/services/jobs/agent-runner/internal/controlplane"
+	floweventdomain "github.com/codex-k8s/kodex/libs/go/domain/flowevent"
+	cpclient "github.com/codex-k8s/kodex/services/jobs/agent-runner/internal/controlplane"
 )
 
 func TestRestoreLatestSession_AllowsInteractionResumeWithoutPR(t *testing.T) {
@@ -16,7 +16,7 @@ func TestRestoreLatestSession_AllowsInteractionResumeWithoutPR(t *testing.T) {
 
 	service := NewService(Config{
 		RunID:                    "run-resume",
-		RepositoryFullName:       "codex-k8s/codex-k8s",
+		RepositoryFullName:       "codex-k8s/kodex",
 		AgentKey:                 "dev",
 		InteractionResumePayload: `{"interaction_id":"interaction-1"}`,
 	}, &fakeSessionRestoreControlPlane{
@@ -146,7 +146,7 @@ func TestRestoreLatestSession_WithoutPRAndWithoutInteractionResumeMarksPRNotFoun
 
 	service := NewService(Config{
 		RunID:              "run-revise",
-		RepositoryFullName: "codex-k8s/codex-k8s",
+		RepositoryFullName: "codex-k8s/kodex",
 		AgentKey:           "dev",
 	}, &fakeSessionRestoreControlPlane{
 		snapshot: cpclient.AgentSessionSnapshot{
@@ -174,7 +174,7 @@ func TestRestoreLatestSession_AllowsGitHubRateLimitResumeWithoutPR(t *testing.T)
 
 	service := NewService(Config{
 		RunID:                        "run-github-resume",
-		RepositoryFullName:           "codex-k8s/codex-k8s",
+		RepositoryFullName:           "codex-k8s/kodex",
 		AgentKey:                     "dev",
 		GitHubRateLimitResumePayload: `{"wait_id":"wait-1"}`,
 	}, &fakeSessionRestoreControlPlane{
@@ -271,7 +271,7 @@ func TestRestoreLatestSession_WritesSnapshotWithRunScopedFilename(t *testing.T) 
 	sessionsDir := t.TempDir()
 	service := NewService(Config{
 		RunID:                    "run-snapshot",
-		RepositoryFullName:       "codex-k8s/codex-k8s",
+		RepositoryFullName:       "codex-k8s/kodex",
 		AgentKey:                 "dev",
 		InteractionResumePayload: `{"interaction_id":"interaction-1"}`,
 	}, &fakeSessionRestoreControlPlane{

@@ -34,7 +34,7 @@ kube_env() {
 }
 
 repo_dir() {
-  echo "/opt/codex-k8s"
+  echo "/opt/kodex"
 }
 
 set_env_var() {

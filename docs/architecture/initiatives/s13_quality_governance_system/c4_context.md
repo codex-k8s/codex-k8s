@@ -17,7 +17,7 @@ approvals:
 # C4 Context: Sprint S13 Day 4 Quality Governance System
 
 ## TL;DR
-- `Quality Governance System` остаётся capability slice внутри `codex-k8s`, а не отдельной внешней governance-платформой.
+- `Quality Governance System` остаётся capability slice внутри `kodex`, а не отдельной внешней governance-платформой.
 - Owner/reviewer, delivery roles и platform operator получают разные visibility surfaces, но единый source-of-truth для policy semantics живёт внутри platform domain.
 
 ## Диаграмма (Mermaid C4Context)
@@ -29,7 +29,7 @@ Person(owner, "Owner / reviewer", "Принимает go/no-go, waiver и residu
 Person(delivery, "Delivery role / agent", "Готовит working draft, semantic waves и evidence")
 Person(operator, "Platform operator", "Диагностирует governance gaps и release readiness")
 
-System(system, "codex-k8s quality governance slice", "Canonical change-governance capability для agent-scale delivery")
+System(system, "kodex quality governance slice", "Canonical change-governance capability для agent-scale delivery")
 
 System_Ext(github, "GitHub", "Issues, PRs, reviews, labels, webhooks и review/publication surfaces")
 System_Ext(k8s, "Kubernetes", "Runtime substrate для agent-runner и worker")

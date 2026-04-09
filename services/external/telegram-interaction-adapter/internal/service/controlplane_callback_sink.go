@@ -7,8 +7,8 @@ import (
 	"strings"
 	"time"
 
-	controlplanev1 "github.com/codex-k8s/codex-k8s/proto/gen/go/codexk8s/controlplane/v1"
-	controlplaneclient "github.com/codex-k8s/codex-k8s/services/external/telegram-interaction-adapter/internal/controlplane"
+	controlplanev1 "github.com/codex-k8s/kodex/proto/gen/go/kodex/controlplane/v1"
+	controlplaneclient "github.com/codex-k8s/kodex/services/external/telegram-interaction-adapter/internal/controlplane"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 

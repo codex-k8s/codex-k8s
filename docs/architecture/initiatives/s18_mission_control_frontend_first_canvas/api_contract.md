@@ -24,7 +24,7 @@ approvals:
 
 ## Спецификации (source of truth)
 - OpenAPI (не меняется в Sprint S18): `services/external/api-gateway/api/server/api.yaml`
-- gRPC proto (не меняется в Sprint S18): `proto/codexk8s/controlplane/v1/controlplane.proto`
+- gRPC proto (не меняется в Sprint S18): `proto/kodex/controlplane/v1/controlplane.proto`
 - Feature-local source contract для `run:dev`:
   - `src/features/mission-control/prototype/source.ts`
   - `src/features/mission-control/prototype/types.ts`

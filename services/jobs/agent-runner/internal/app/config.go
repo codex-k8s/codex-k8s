@@ -6,48 +6,48 @@ import (
 	"time"
 
 	"github.com/caarlos0/env/v11"
-	webhookdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/webhook"
+	webhookdomain "github.com/codex-k8s/kodex/libs/go/domain/webhook"
 )
 
 // Config defines environment-backed runtime settings for agent-runner job.
 type Config struct {
-	RunID                string `env:"CODEXK8S_RUN_ID,required,notEmpty"`
-	CorrelationID        string `env:"CODEXK8S_CORRELATION_ID,required,notEmpty"`
-	ProjectID            string `env:"CODEXK8S_PROJECT_ID"`
-	RepositoryFullName   string `env:"CODEXK8S_REPOSITORY_FULL_NAME,required,notEmpty"`
-	AgentKey             string `env:"CODEXK8S_AGENT_KEY,required,notEmpty"`
-	IssueNumber          int64  `env:"CODEXK8S_ISSUE_NUMBER"`
-	RunTargetBranch      string `env:"CODEXK8S_RUN_TARGET_BRANCH"`
-	ExistingPRNumber     int    `env:"CODEXK8S_EXISTING_PR_NUMBER"`
-	RuntimeMode          string `env:"CODEXK8S_RUNTIME_MODE" envDefault:"code-only"`
-	RuntimeTargetEnv     string `env:"CODEXK8S_RUNTIME_TARGET_ENV"`
-	RuntimeBuildRef      string `env:"CODEXK8S_RUNTIME_BUILD_REF"`
-	RuntimeAccessProfile string `env:"CODEXK8S_RUNTIME_ACCESS_PROFILE"`
+	RunID                string `env:"KODEX_RUN_ID,required,notEmpty"`
+	CorrelationID        string `env:"KODEX_CORRELATION_ID,required,notEmpty"`
+	ProjectID            string `env:"KODEX_PROJECT_ID"`
+	RepositoryFullName   string `env:"KODEX_REPOSITORY_FULL_NAME,required,notEmpty"`
+	AgentKey             string `env:"KODEX_AGENT_KEY,required,notEmpty"`
+	IssueNumber          int64  `env:"KODEX_ISSUE_NUMBER"`
+	RunTargetBranch      string `env:"KODEX_RUN_TARGET_BRANCH"`
+	ExistingPRNumber     int    `env:"KODEX_EXISTING_PR_NUMBER"`
+	RuntimeMode          string `env:"KODEX_RUNTIME_MODE" envDefault:"code-only"`
+	RuntimeTargetEnv     string `env:"KODEX_RUNTIME_TARGET_ENV"`
+	RuntimeBuildRef      string `env:"KODEX_RUNTIME_BUILD_REF"`
+	RuntimeAccessProfile string `env:"KODEX_RUNTIME_ACCESS_PROFILE"`
 	// QualityGovernanceEnabled is a worker-injected snapshot of the current runtime system setting.
-	QualityGovernanceEnabled bool `env:"CODEXK8S_QUALITY_GOVERNANCE_ENABLED" envDefault:"false"`
+	QualityGovernanceEnabled bool `env:"KODEX_QUALITY_GOVERNANCE_ENABLED" envDefault:"false"`
 
-	ControlPlaneGRPCTarget string `env:"CODEXK8S_CONTROL_PLANE_GRPC_TARGET,required,notEmpty"`
-	MCPBaseURL             string `env:"CODEXK8S_MCP_BASE_URL,required,notEmpty"`
-	MCPBearerToken         string `env:"CODEXK8S_MCP_BEARER_TOKEN,required,notEmpty"`
+	ControlPlaneGRPCTarget string `env:"KODEX_CONTROL_PLANE_GRPC_TARGET,required,notEmpty"`
+	MCPBaseURL             string `env:"KODEX_MCP_BASE_URL,required,notEmpty"`
+	MCPBearerToken         string `env:"KODEX_MCP_BEARER_TOKEN,required,notEmpty"`
 
-	TriggerKind          string `env:"CODEXK8S_RUN_TRIGGER_KIND" envDefault:"dev"`
-	TriggerLabel         string `env:"CODEXK8S_RUN_TRIGGER_LABEL"`
-	DiscussionMode       bool   `env:"CODEXK8S_DISCUSSION_MODE" envDefault:"false"`
-	PromptTemplateKind   string `env:"CODEXK8S_PROMPT_TEMPLATE_KIND" envDefault:"work"`
-	PromptTemplateSource string `env:"CODEXK8S_PROMPT_TEMPLATE_SOURCE" envDefault:"repo_seed"`
-	PromptTemplateLocale string `env:"CODEXK8S_PROMPT_TEMPLATE_LOCALE" envDefault:"ru"`
-	StateInReviewLabel   string `env:"CODEXK8S_STATE_IN_REVIEW_LABEL" envDefault:"state:in-review"`
-	AgentModel           string `env:"CODEXK8S_AGENT_MODEL"`
-	AgentReasoningEffort string `env:"CODEXK8S_AGENT_REASONING_EFFORT" envDefault:"high"`
-	AgentBaseBranch      string `env:"CODEXK8S_AGENT_BASE_BRANCH" envDefault:"main"`
-	AgentDisplayName     string `env:"CODEXK8S_AGENT_DISPLAY_NAME,required,notEmpty"`
+	TriggerKind          string `env:"KODEX_RUN_TRIGGER_KIND" envDefault:"dev"`
+	TriggerLabel         string `env:"KODEX_RUN_TRIGGER_LABEL"`
+	DiscussionMode       bool   `env:"KODEX_DISCUSSION_MODE" envDefault:"false"`
+	PromptTemplateKind   string `env:"KODEX_PROMPT_TEMPLATE_KIND" envDefault:"work"`
+	PromptTemplateSource string `env:"KODEX_PROMPT_TEMPLATE_SOURCE" envDefault:"repo_seed"`
+	PromptTemplateLocale string `env:"KODEX_PROMPT_TEMPLATE_LOCALE" envDefault:"ru"`
+	StateInReviewLabel   string `env:"KODEX_STATE_IN_REVIEW_LABEL" envDefault:"state:in-review"`
+	AgentModel           string `env:"KODEX_AGENT_MODEL"`
+	AgentReasoningEffort string `env:"KODEX_AGENT_REASONING_EFFORT" envDefault:"high"`
+	AgentBaseBranch      string `env:"KODEX_AGENT_BASE_BRANCH" envDefault:"main"`
+	AgentDisplayName     string `env:"KODEX_AGENT_DISPLAY_NAME,required,notEmpty"`
 
-	GitBotToken    string `env:"CODEXK8S_GIT_BOT_TOKEN,required,notEmpty"`
-	GitBotUsername string `env:"CODEXK8S_GIT_BOT_USERNAME,required,notEmpty"`
-	GitBotMail     string `env:"CODEXK8S_GIT_BOT_MAIL,required,notEmpty"`
-	OpenAIAPIKey   string `env:"CODEXK8S_OPENAI_API_KEY"`
+	GitBotToken    string `env:"KODEX_GIT_BOT_TOKEN,required,notEmpty"`
+	GitBotUsername string `env:"KODEX_GIT_BOT_USERNAME,required,notEmpty"`
+	GitBotMail     string `env:"KODEX_GIT_BOT_MAIL,required,notEmpty"`
+	OpenAIAPIKey   string `env:"KODEX_OPENAI_API_KEY"`
 
-	DiscussionPollInterval time.Duration `env:"CODEXK8S_DISCUSSION_POLL_INTERVAL" envDefault:"15s"`
+	DiscussionPollInterval time.Duration `env:"KODEX_DISCUSSION_POLL_INTERVAL" envDefault:"15s"`
 }
 
 // LoadConfig parses and validates configuration from environment.

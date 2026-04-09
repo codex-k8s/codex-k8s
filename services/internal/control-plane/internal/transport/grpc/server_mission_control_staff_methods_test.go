@@ -7,10 +7,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/codex-k8s/codex-k8s/libs/go/errs"
-	missioncontroldomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/missioncontrol"
-	enumtypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/enum"
-	valuetypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/value"
+	"github.com/codex-k8s/kodex/libs/go/errs"
+	missioncontroldomain "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/missioncontrol"
+	enumtypes "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/types/enum"
+	valuetypes "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/types/value"
 )
 
 func TestBuildMissionControlSnapshotID_EmptySnapshotStable(t *testing.T) {
@@ -99,9 +99,9 @@ func TestMissionControlEntityDetailsToProtoPopulatesProjectionPayloads(t *testin
 		t.Parallel()
 
 		raw, err := json.Marshal(valuetypes.MissionControlWorkItemProjectionPayload{
-			RepositoryFullName: "codex-k8s/codex-k8s",
+			RepositoryFullName: "codex-k8s/kodex",
 			IssueNumber:        372,
-			IssueURL:           "https://github.com/codex-k8s/codex-k8s/issues/372",
+			IssueURL:           "https://github.com/codex-k8s/kodex/issues/372",
 			LastRunID:          "run-1",
 			LastStatus:         "running",
 			TriggerKind:        "dev_revise",
@@ -118,7 +118,7 @@ func TestMissionControlEntityDetailsToProtoPopulatesProjectionPayloads(t *testin
 		details := missioncontroldomain.EntityDetails{
 			Entity: missioncontroldomain.Entity{
 				EntityKind:        enumtypes.MissionControlEntityKindWorkItem,
-				EntityExternalKey: "codex-k8s/codex-k8s#372",
+				EntityExternalKey: "codex-k8s/kodex#372",
 				DetailPayloadJSON: raw,
 				ProviderUpdatedAt: &providerSyncAt,
 			},
@@ -146,9 +146,9 @@ func TestMissionControlEntityDetailsToProtoPopulatesProjectionPayloads(t *testin
 		t.Parallel()
 
 		raw, err := json.Marshal(valuetypes.MissionControlPullRequestProjectionPayload{
-			RepositoryFullName: "codex-k8s/codex-k8s",
+			RepositoryFullName: "codex-k8s/kodex",
 			PullRequestNumber:  442,
-			PullRequestURL:     "https://github.com/codex-k8s/codex-k8s/pull/442",
+			PullRequestURL:     "https://github.com/codex-k8s/kodex/pull/442",
 			LastRunID:          "run-2",
 			LastStatus:         "running",
 			BranchHead:         "codex/issue-372",
@@ -161,18 +161,18 @@ func TestMissionControlEntityDetailsToProtoPopulatesProjectionPayloads(t *testin
 		details := missioncontroldomain.EntityDetails{
 			Entity: missioncontroldomain.Entity{
 				EntityKind:        enumtypes.MissionControlEntityKindPullRequest,
-				EntityExternalKey: "codex-k8s/codex-k8s/pull/442",
+				EntityExternalKey: "codex-k8s/kodex/pull/442",
 				DetailPayloadJSON: raw,
 			},
 			Relations: []valuetypes.MissionControlRelationView{{
 				RelationKind: enumtypes.MissionControlRelationKindLinkedTo,
 				SourceEntityRef: valuetypes.MissionControlEntityRef{
 					EntityKind:     enumtypes.MissionControlEntityKindWorkItem,
-					EntityPublicID: "codex-k8s/codex-k8s#372",
+					EntityPublicID: "codex-k8s/kodex#372",
 				},
 				TargetEntityRef: valuetypes.MissionControlEntityRef{
 					EntityKind:     enumtypes.MissionControlEntityKindPullRequest,
-					EntityPublicID: "codex-k8s/codex-k8s/pull/442",
+					EntityPublicID: "codex-k8s/kodex/pull/442",
 				},
 			}},
 		}
@@ -199,7 +199,7 @@ func TestMissionControlEntityDetailsToProtoPopulatesProjectionPayloads(t *testin
 			RuntimeMode:       "full-env",
 			WaitingReason:     "owner_review",
 			LastHeartbeatAt:   &lastHeartbeat,
-			LastRunRepository: "codex-k8s/codex-k8s",
+			LastRunRepository: "codex-k8s/kodex",
 		})
 		if err != nil {
 			t.Fatalf("marshal agent payload: %v", err)

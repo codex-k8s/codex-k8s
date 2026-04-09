@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	floweventdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/flowevent"
+	floweventdomain "github.com/codex-k8s/kodex/libs/go/domain/flowevent"
 )
 
 func TestDispatchInteractionsSchedulesRetryableFailure(t *testing.T) {

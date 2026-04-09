@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	cpclient "github.com/codex-k8s/codex-k8s/services/jobs/agent-runner/internal/controlplane"
+	cpclient "github.com/codex-k8s/kodex/services/jobs/agent-runner/internal/controlplane"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )

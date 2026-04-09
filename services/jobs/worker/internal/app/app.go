@@ -12,18 +12,18 @@ import (
 	"syscall"
 	"time"
 
-	libslauncher "github.com/codex-k8s/codex-k8s/libs/go/k8s/joblauncher"
-	"github.com/codex-k8s/codex-k8s/libs/go/postgres"
-	sharedsystemsettings "github.com/codex-k8s/codex-k8s/libs/go/systemsettings"
-	k8slauncher "github.com/codex-k8s/codex-k8s/services/jobs/worker/internal/clients/kubernetes/launcher"
-	"github.com/codex-k8s/codex-k8s/services/jobs/worker/internal/controlplane"
-	systemsettingsdomain "github.com/codex-k8s/codex-k8s/services/jobs/worker/internal/domain/systemsettings"
-	"github.com/codex-k8s/codex-k8s/services/jobs/worker/internal/domain/worker"
-	floweventrepo "github.com/codex-k8s/codex-k8s/services/jobs/worker/internal/repository/postgres/flowevent"
-	learningfeedbackrepo "github.com/codex-k8s/codex-k8s/services/jobs/worker/internal/repository/postgres/learningfeedback"
-	runqueuerepo "github.com/codex-k8s/codex-k8s/services/jobs/worker/internal/repository/postgres/runqueue"
-	systemsettingrepo "github.com/codex-k8s/codex-k8s/services/jobs/worker/internal/repository/postgres/systemsetting"
-	workerinstancerepo "github.com/codex-k8s/codex-k8s/services/jobs/worker/internal/repository/postgres/workerinstance"
+	libslauncher "github.com/codex-k8s/kodex/libs/go/k8s/joblauncher"
+	"github.com/codex-k8s/kodex/libs/go/postgres"
+	sharedsystemsettings "github.com/codex-k8s/kodex/libs/go/systemsettings"
+	k8slauncher "github.com/codex-k8s/kodex/services/jobs/worker/internal/clients/kubernetes/launcher"
+	"github.com/codex-k8s/kodex/services/jobs/worker/internal/controlplane"
+	systemsettingsdomain "github.com/codex-k8s/kodex/services/jobs/worker/internal/domain/systemsettings"
+	"github.com/codex-k8s/kodex/services/jobs/worker/internal/domain/worker"
+	floweventrepo "github.com/codex-k8s/kodex/services/jobs/worker/internal/repository/postgres/flowevent"
+	learningfeedbackrepo "github.com/codex-k8s/kodex/services/jobs/worker/internal/repository/postgres/learningfeedback"
+	runqueuerepo "github.com/codex-k8s/kodex/services/jobs/worker/internal/repository/postgres/runqueue"
+	systemsettingrepo "github.com/codex-k8s/kodex/services/jobs/worker/internal/repository/postgres/systemsetting"
+	workerinstancerepo "github.com/codex-k8s/kodex/services/jobs/worker/internal/repository/postgres/workerinstance"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
@@ -38,105 +38,105 @@ func Run() error {
 
 	pollInterval, err := time.ParseDuration(cfg.PollInterval)
 	if err != nil {
-		return fmt.Errorf("parse CODEXK8S_WORKER_POLL_INTERVAL: %w", err)
+		return fmt.Errorf("parse KODEX_WORKER_POLL_INTERVAL: %w", err)
 	}
 	if pollInterval <= 0 {
-		return fmt.Errorf("CODEXK8S_WORKER_POLL_INTERVAL must be > 0")
+		return fmt.Errorf("KODEX_WORKER_POLL_INTERVAL must be > 0")
 	}
 	workerHeartbeatInterval, err := time.ParseDuration(cfg.WorkerHeartbeatInterval)
 	if err != nil {
-		return fmt.Errorf("parse CODEXK8S_WORKER_HEARTBEAT_INTERVAL: %w", err)
+		return fmt.Errorf("parse KODEX_WORKER_HEARTBEAT_INTERVAL: %w", err)
 	}
 	if workerHeartbeatInterval <= 0 {
-		return fmt.Errorf("CODEXK8S_WORKER_HEARTBEAT_INTERVAL must be > 0")
+		return fmt.Errorf("KODEX_WORKER_HEARTBEAT_INTERVAL must be > 0")
 	}
 	workerInstanceTTL, err := time.ParseDuration(cfg.WorkerInstanceTTL)
 	if err != nil {
-		return fmt.Errorf("parse CODEXK8S_WORKER_INSTANCE_TTL: %w", err)
+		return fmt.Errorf("parse KODEX_WORKER_INSTANCE_TTL: %w", err)
 	}
 	if workerInstanceTTL <= 0 {
-		return fmt.Errorf("CODEXK8S_WORKER_INSTANCE_TTL must be > 0")
+		return fmt.Errorf("KODEX_WORKER_INSTANCE_TTL must be > 0")
 	}
 	if workerInstanceTTL <= workerHeartbeatInterval {
-		return fmt.Errorf("CODEXK8S_WORKER_INSTANCE_TTL must be greater than CODEXK8S_WORKER_HEARTBEAT_INTERVAL")
+		return fmt.Errorf("KODEX_WORKER_INSTANCE_TTL must be greater than KODEX_WORKER_HEARTBEAT_INTERVAL")
 	}
 
 	slotLeaseTTL, err := time.ParseDuration(cfg.SlotLeaseTTL)
 	if err != nil {
-		return fmt.Errorf("parse CODEXK8S_WORKER_SLOT_LEASE_TTL: %w", err)
+		return fmt.Errorf("parse KODEX_WORKER_SLOT_LEASE_TTL: %w", err)
 	}
 	if slotLeaseTTL <= 0 {
-		return fmt.Errorf("CODEXK8S_WORKER_SLOT_LEASE_TTL must be > 0")
+		return fmt.Errorf("KODEX_WORKER_SLOT_LEASE_TTL must be > 0")
 	}
 	runLeaseTTL, err := time.ParseDuration(cfg.RunLeaseTTL)
 	if err != nil {
-		return fmt.Errorf("parse CODEXK8S_WORKER_RUN_LEASE_TTL: %w", err)
+		return fmt.Errorf("parse KODEX_WORKER_RUN_LEASE_TTL: %w", err)
 	}
 	if runLeaseTTL <= 0 {
-		return fmt.Errorf("CODEXK8S_WORKER_RUN_LEASE_TTL must be > 0")
+		return fmt.Errorf("KODEX_WORKER_RUN_LEASE_TTL must be > 0")
 	}
 	tickTimeout, err := time.ParseDuration(cfg.TickTimeout)
 	if err != nil {
-		return fmt.Errorf("parse CODEXK8S_WORKER_TICK_TIMEOUT: %w", err)
+		return fmt.Errorf("parse KODEX_WORKER_TICK_TIMEOUT: %w", err)
 	}
 	if tickTimeout <= 0 {
-		return fmt.Errorf("CODEXK8S_WORKER_TICK_TIMEOUT must be > 0")
+		return fmt.Errorf("KODEX_WORKER_TICK_TIMEOUT must be > 0")
 	}
 	runtimePrepareRetryTimeout, err := time.ParseDuration(cfg.RuntimePrepareRetryTimeout)
 	if err != nil {
-		return fmt.Errorf("parse CODEXK8S_WORKER_RUNTIME_PREPARE_RETRY_TIMEOUT: %w", err)
+		return fmt.Errorf("parse KODEX_WORKER_RUNTIME_PREPARE_RETRY_TIMEOUT: %w", err)
 	}
 	if runtimePrepareRetryTimeout <= 0 {
-		return fmt.Errorf("CODEXK8S_WORKER_RUNTIME_PREPARE_RETRY_TIMEOUT must be > 0")
+		return fmt.Errorf("KODEX_WORKER_RUNTIME_PREPARE_RETRY_TIMEOUT must be > 0")
 	}
 	runtimePrepareRetryInterval, err := time.ParseDuration(cfg.RuntimePrepareRetryInterval)
 	if err != nil {
-		return fmt.Errorf("parse CODEXK8S_WORKER_RUNTIME_PREPARE_RETRY_INTERVAL: %w", err)
+		return fmt.Errorf("parse KODEX_WORKER_RUNTIME_PREPARE_RETRY_INTERVAL: %w", err)
 	}
 	if runtimePrepareRetryInterval <= 0 {
-		return fmt.Errorf("CODEXK8S_WORKER_RUNTIME_PREPARE_RETRY_INTERVAL must be > 0")
+		return fmt.Errorf("KODEX_WORKER_RUNTIME_PREPARE_RETRY_INTERVAL must be > 0")
 	}
 	missionControlWarmupInterval, err := time.ParseDuration(cfg.MissionControlWarmupInterval)
 	if err != nil {
-		return fmt.Errorf("parse CODEXK8S_WORKER_MISSION_CONTROL_WARMUP_INTERVAL: %w", err)
+		return fmt.Errorf("parse KODEX_WORKER_MISSION_CONTROL_WARMUP_INTERVAL: %w", err)
 	}
 	if missionControlWarmupInterval <= 0 {
-		return fmt.Errorf("CODEXK8S_WORKER_MISSION_CONTROL_WARMUP_INTERVAL must be > 0")
+		return fmt.Errorf("KODEX_WORKER_MISSION_CONTROL_WARMUP_INTERVAL must be > 0")
 	}
 	missionControlClaimTTL, err := time.ParseDuration(cfg.MissionControlClaimTTL)
 	if err != nil {
-		return fmt.Errorf("parse CODEXK8S_WORKER_MISSION_CONTROL_CLAIM_TTL: %w", err)
+		return fmt.Errorf("parse KODEX_WORKER_MISSION_CONTROL_CLAIM_TTL: %w", err)
 	}
 	if missionControlClaimTTL <= 0 {
-		return fmt.Errorf("CODEXK8S_WORKER_MISSION_CONTROL_CLAIM_TTL must be > 0")
+		return fmt.Errorf("KODEX_WORKER_MISSION_CONTROL_CLAIM_TTL must be > 0")
 	}
 	missionControlRetryBaseInterval, err := time.ParseDuration(cfg.MissionControlRetryBaseInterval)
 	if err != nil {
-		return fmt.Errorf("parse CODEXK8S_WORKER_MISSION_CONTROL_RETRY_BASE_INTERVAL: %w", err)
+		return fmt.Errorf("parse KODEX_WORKER_MISSION_CONTROL_RETRY_BASE_INTERVAL: %w", err)
 	}
 	if missionControlRetryBaseInterval <= 0 {
-		return fmt.Errorf("CODEXK8S_WORKER_MISSION_CONTROL_RETRY_BASE_INTERVAL must be > 0")
+		return fmt.Errorf("KODEX_WORKER_MISSION_CONTROL_RETRY_BASE_INTERVAL must be > 0")
 	}
 	jobImageCheckTimeout, err := time.ParseDuration(cfg.JobImageCheckTimeout)
 	if err != nil {
-		return fmt.Errorf("parse CODEXK8S_WORKER_JOB_IMAGE_CHECK_TIMEOUT: %w", err)
+		return fmt.Errorf("parse KODEX_WORKER_JOB_IMAGE_CHECK_TIMEOUT: %w", err)
 	}
 	if jobImageCheckTimeout <= 0 {
-		return fmt.Errorf("CODEXK8S_WORKER_JOB_IMAGE_CHECK_TIMEOUT must be > 0")
+		return fmt.Errorf("KODEX_WORKER_JOB_IMAGE_CHECK_TIMEOUT must be > 0")
 	}
 	telegramInteractionAdapterTimeout, err := time.ParseDuration(cfg.TelegramInteractionAdapterTimeout)
 	if err != nil {
-		return fmt.Errorf("parse CODEXK8S_TELEGRAM_INTERACTION_ADAPTER_TIMEOUT: %w", err)
+		return fmt.Errorf("parse KODEX_TELEGRAM_INTERACTION_ADAPTER_TIMEOUT: %w", err)
 	}
 	if telegramInteractionAdapterTimeout <= 0 {
-		return fmt.Errorf("CODEXK8S_TELEGRAM_INTERACTION_ADAPTER_TIMEOUT must be > 0")
+		return fmt.Errorf("KODEX_TELEGRAM_INTERACTION_ADAPTER_TIMEOUT must be > 0")
 	}
 
 	learningDefault := false
 	if strings.TrimSpace(cfg.LearningModeDefault) != "" {
 		v, err := strconv.ParseBool(cfg.LearningModeDefault)
 		if err != nil {
-			return fmt.Errorf("parse CODEXK8S_LEARNING_MODE_DEFAULT=%q: %w", cfg.LearningModeDefault, err)
+			return fmt.Errorf("parse KODEX_LEARNING_MODE_DEFAULT=%q: %w", cfg.LearningModeDefault, err)
 		}
 		learningDefault = v
 	}

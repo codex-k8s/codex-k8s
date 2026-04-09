@@ -151,7 +151,7 @@ approvals:
   - в staff UI добавлены operator controls `Cancel/Stop`, confirm dialog с optional reason,
     success/error feedback и отображение audit state на details page.
 - Contract-first артефакты синхронизированы:
-  `api/server/api.yaml`, `proto/codexk8s/controlplane/v1/controlplane.proto`,
+  `api/server/api.yaml`, `proto/kodex/controlplane/v1/controlplane.proto`,
   backend/frontend codegen.
 - В traceability добавлены updates по issue `#252`, `#253` и `#255`; remaining backlog нормализован как `#254`, `#256`, `#258..#260`.
 

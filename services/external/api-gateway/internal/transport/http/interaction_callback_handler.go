@@ -8,10 +8,10 @@ import (
 
 	"github.com/labstack/echo/v5"
 
-	"github.com/codex-k8s/codex-k8s/libs/go/errs"
-	"github.com/codex-k8s/codex-k8s/services/external/api-gateway/internal/controlplane"
-	"github.com/codex-k8s/codex-k8s/services/external/api-gateway/internal/transport/http/casters"
-	"github.com/codex-k8s/codex-k8s/services/external/api-gateway/internal/transport/http/models"
+	"github.com/codex-k8s/kodex/libs/go/errs"
+	"github.com/codex-k8s/kodex/services/external/api-gateway/internal/controlplane"
+	"github.com/codex-k8s/kodex/services/external/api-gateway/internal/transport/http/casters"
+	"github.com/codex-k8s/kodex/services/external/api-gateway/internal/transport/http/models"
 )
 
 type interactionCallbackHandler struct {

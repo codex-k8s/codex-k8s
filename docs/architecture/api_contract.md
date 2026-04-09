@@ -1,7 +1,7 @@
 ---
 doc_id: API-CK8S-0001
 type: api-contract
-title: "codex-k8s — API Contract Overview"
+title: "kodex — API Contract Overview"
 status: active
 owner_role: SA
 created_at: 2026-02-06
@@ -16,7 +16,7 @@ approvals:
   approved_at: 2026-02-19
 ---
 
-# API Contract Overview: codex-k8s
+# API Contract Overview: kodex
 
 ## TL;DR
 - Тип API: REST (public webhook + staff/private), internal gRPC между edge и control-plane.
@@ -30,7 +30,7 @@ approvals:
 
 ## Спецификации (source of truth)
 - OpenAPI (api-gateway): `services/external/api-gateway/api/server/api.yaml`
-- gRPC proto: `proto/codexk8s/controlplane/v1/controlplane.proto`
+- gRPC proto: `proto/kodex/controlplane/v1/controlplane.proto`
 - AsyncAPI (если есть): `services/external/api-gateway/api/server/asyncapi.yaml` (webhook/event payloads)
 
 ## Состояние MCP после S2 Day6 / S3 target
@@ -58,7 +58,7 @@ approvals:
 - Остальные GitHub/Kubernetes runtime-операции выполняются напрямую из agent pod через `gh`/`kubectl` в рамках RBAC/policy.
 
 ## Модель доступа GitHub для агентного pod (S2 Day4)
-- Агентный pod получает отдельный `CODEXK8S_GIT_BOT_TOKEN`.
+- Агентный pod получает отдельный `KODEX_GIT_BOT_TOKEN`.
 - Токен используется напрямую через `gh` и `git`:
   - clone/fetch/commit/push в рабочую ветку;
   - issue/PR/review/comments операции.
@@ -95,7 +95,7 @@ approvals:
   - `make gen-openapi-ts`
   - output: `services/staff/web-console/src/shared/api/generated/**`
 - В CI добавлена проверка консистентности codegen:
-  - `deploy/base/codex-k8s/codegen-check-job.yaml.tpl` (`make gen-openapi` + `git diff --exit-code`).
+  - `deploy/base/kodex/codegen-check-job.yaml.tpl` (`make gen-openapi` + `git diff --exit-code`).
 
 ## Endpoints / Methods (текущий и MVP target срез)
 | Operation | Method | Path | Auth | Notes |
@@ -254,7 +254,7 @@ approvals:
   а stale write получает conflict c `actual_snapshot_version`.
 
 ## Prompt locale behavior
-- В текущем MVP locale prompt templates берется из platform default `CODEXK8S_AGENT_DEFAULT_LOCALE`.
+- В текущем MVP locale prompt templates берется из platform default `KODEX_AGENT_DEFAULT_LOCALE`.
 - Если значение пустое, worker использует `ru`.
 - При рендере `agent-runner` нормализует locale к поддержанным значениям:
   - `ru*` -> `ru`

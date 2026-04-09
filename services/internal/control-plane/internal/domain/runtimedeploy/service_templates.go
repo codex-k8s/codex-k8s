@@ -70,71 +70,71 @@ func (s *Service) buildTemplateVars(params PrepareParams, namespace string) map[
 		vars[key] = value
 	}
 	// Preserve platform namespace for cross-namespace secret reads (ai env uses shared secrets from platform ns).
-	if strings.TrimSpace(vars["CODEXK8S_PLATFORM_NAMESPACE"]) == "" {
-		vars["CODEXK8S_PLATFORM_NAMESPACE"] = strings.TrimSpace(vars["CODEXK8S_PRODUCTION_NAMESPACE"])
+	if strings.TrimSpace(vars["KODEX_PLATFORM_NAMESPACE"]) == "" {
+		vars["KODEX_PLATFORM_NAMESPACE"] = strings.TrimSpace(vars["KODEX_PRODUCTION_NAMESPACE"])
 	}
 
 	targetEnv := strings.TrimSpace(params.TargetEnv)
 	if targetEnv == "" {
 		targetEnv = "ai"
 	}
-	// Manifests and runtime prerequisites rely on CODEXK8S_ENV / CODEXK8S_SERVICES_CONFIG_ENV.
-	vars["CODEXK8S_ENV"] = targetEnv
-	vars["CODEXK8S_SERVICES_CONFIG_ENV"] = targetEnv
-	vars["CODEXK8S_HOT_RELOAD"] = resolveHotReloadFlag(targetEnv, vars["CODEXK8S_HOT_RELOAD"])
+	// Manifests and runtime prerequisites rely on KODEX_ENV / KODEX_SERVICES_CONFIG_ENV.
+	vars["KODEX_ENV"] = targetEnv
+	vars["KODEX_SERVICES_CONFIG_ENV"] = targetEnv
+	vars["KODEX_HOT_RELOAD"] = resolveHotReloadFlag(targetEnv, vars["KODEX_HOT_RELOAD"])
 	// AI hot-reload requires Go sources to stay in the image.
 	// Force cleanup=false for AI builds even if production env exported true.
 	if strings.EqualFold(strings.TrimSpace(targetEnv), "ai") {
-		vars["CODEXK8S_KANIKO_CLEANUP"] = "false"
+		vars["KODEX_KANIKO_CLEANUP"] = "false"
 	}
 
 	targetNamespace := strings.TrimSpace(namespace)
 	if targetNamespace != "" {
-		vars["CODEXK8S_PRODUCTION_NAMESPACE"] = targetNamespace
-		vars["CODEXK8S_WORKER_K8S_NAMESPACE"] = targetNamespace
+		vars["KODEX_PRODUCTION_NAMESPACE"] = targetNamespace
+		vars["KODEX_WORKER_K8S_NAMESPACE"] = targetNamespace
 	}
 
 	publicDomain := resolvePublicDomain(targetEnv, targetNamespace, vars)
 	if publicDomain != "" {
-		vars["CODEXK8S_PUBLIC_DOMAIN"] = publicDomain
-		if strings.EqualFold(targetEnv, "ai") || strings.TrimSpace(vars["CODEXK8S_PUBLIC_BASE_URL"]) == "" {
-			vars["CODEXK8S_PUBLIC_BASE_URL"] = "https://" + publicDomain
+		vars["KODEX_PUBLIC_DOMAIN"] = publicDomain
+		if strings.EqualFold(targetEnv, "ai") || strings.TrimSpace(vars["KODEX_PUBLIC_BASE_URL"]) == "" {
+			vars["KODEX_PUBLIC_BASE_URL"] = "https://" + publicDomain
 		}
 	}
-	if strings.TrimSpace(vars["CODEXK8S_SHARED_OAUTH2_PROXY_AUTH_URL"]) == "" {
-		if productionDomain := strings.TrimSpace(valueOr(vars, "CODEXK8S_PRODUCTION_DOMAIN", "")); productionDomain != "" {
-			vars["CODEXK8S_SHARED_OAUTH2_PROXY_AUTH_URL"] = "https://" + productionDomain + "/oauth2/auth"
+	if strings.TrimSpace(vars["KODEX_SHARED_OAUTH2_PROXY_AUTH_URL"]) == "" {
+		if productionDomain := strings.TrimSpace(valueOr(vars, "KODEX_PRODUCTION_DOMAIN", "")); productionDomain != "" {
+			vars["KODEX_SHARED_OAUTH2_PROXY_AUTH_URL"] = "https://" + productionDomain + "/oauth2/auth"
 		}
 	}
-	if strings.TrimSpace(vars["CODEXK8S_SHARED_OAUTH2_PROXY_SIGNIN_URL"]) == "" {
-		if productionDomain := strings.TrimSpace(valueOr(vars, "CODEXK8S_PRODUCTION_DOMAIN", "")); productionDomain != "" {
-			vars["CODEXK8S_SHARED_OAUTH2_PROXY_SIGNIN_URL"] = "https://" + productionDomain + "/oauth2/start?rd=$scheme://$host$request_uri"
+	if strings.TrimSpace(vars["KODEX_SHARED_OAUTH2_PROXY_SIGNIN_URL"]) == "" {
+		if productionDomain := strings.TrimSpace(valueOr(vars, "KODEX_PRODUCTION_DOMAIN", "")); productionDomain != "" {
+			vars["KODEX_SHARED_OAUTH2_PROXY_SIGNIN_URL"] = "https://" + productionDomain + "/oauth2/start?rd=$scheme://$host$request_uri"
 		}
 	}
-	if strings.TrimSpace(vars["CODEXK8S_OAUTH2_PROXY_COOKIE_DOMAIN"]) == "" {
-		if productionDomain := strings.TrimSpace(valueOr(vars, "CODEXK8S_PRODUCTION_DOMAIN", "")); productionDomain != "" {
-			vars["CODEXK8S_OAUTH2_PROXY_COOKIE_DOMAIN"] = "." + strings.TrimPrefix(productionDomain, ".")
+	if strings.TrimSpace(vars["KODEX_OAUTH2_PROXY_COOKIE_DOMAIN"]) == "" {
+		if productionDomain := strings.TrimSpace(valueOr(vars, "KODEX_PRODUCTION_DOMAIN", "")); productionDomain != "" {
+			vars["KODEX_OAUTH2_PROXY_COOKIE_DOMAIN"] = "." + strings.TrimPrefix(productionDomain, ".")
 		}
 	}
-	if strings.TrimSpace(vars["CODEXK8S_TLS_SECRET_NAME"]) == "" {
-		vars["CODEXK8S_TLS_SECRET_NAME"] = defaultTLSSecretName(targetEnv)
+	if strings.TrimSpace(vars["KODEX_TLS_SECRET_NAME"]) == "" {
+		vars["KODEX_TLS_SECRET_NAME"] = defaultTLSSecretName(targetEnv)
 	}
 
 	buildRef := resolveRuntimeBuildRef(
 		params.BuildRef,
-		vars["CODEXK8S_BUILD_REF"],
-		vars["CODEXK8S_AGENT_BASE_BRANCH"],
+		vars["KODEX_BUILD_REF"],
+		vars["KODEX_AGENT_BASE_BRANCH"],
 	)
-	vars["CODEXK8S_BUILD_REF"] = buildRef
-	vars["CODEXK8S_BUILD_TAG"] = sanitizeImageTag(buildRef)
+	vars["KODEX_BUILD_REF"] = buildRef
+	vars["KODEX_BUILD_TAG"] = sanitizeImageTag(buildRef)
 	if repo := strings.TrimSpace(params.RepositoryFullName); repo != "" {
-		vars["CODEXK8S_GITHUB_REPO"] = repo
+		vars["KODEX_GITHUB_REPO"] = repo
 	}
-	if strings.TrimSpace(vars["CODEXK8S_PLATFORM_DEPLOYMENT_REPLICAS"]) == "" {
-		vars["CODEXK8S_PLATFORM_DEPLOYMENT_REPLICAS"] = defaultPlatformDeploymentReplicas(params.TargetEnv)
+	if strings.TrimSpace(vars["KODEX_PLATFORM_DEPLOYMENT_REPLICAS"]) == "" {
+		vars["KODEX_PLATFORM_DEPLOYMENT_REPLICAS"] = defaultPlatformDeploymentReplicas(params.TargetEnv)
 	}
-	if strings.TrimSpace(vars["CODEXK8S_WORKER_REPLICAS"]) == "" {
-		vars["CODEXK8S_WORKER_REPLICAS"] = defaultWorkerReplicas(params.TargetEnv, vars["CODEXK8S_PLATFORM_DEPLOYMENT_REPLICAS"])
+	if strings.TrimSpace(vars["KODEX_WORKER_REPLICAS"]) == "" {
+		vars["KODEX_WORKER_REPLICAS"] = defaultWorkerReplicas(params.TargetEnv, vars["KODEX_PLATFORM_DEPLOYMENT_REPLICAS"])
 	}
 
 	return vars
@@ -182,18 +182,18 @@ func defaultWorkerReplicas(targetEnv string, platformReplicas string) string {
 
 func resolvePublicDomain(targetEnv string, namespace string, vars map[string]string) string {
 	if strings.EqualFold(strings.TrimSpace(targetEnv), "ai") {
-		base := strings.TrimSpace(valueOr(vars, "CODEXK8S_AI_DOMAIN", ""))
+		base := strings.TrimSpace(valueOr(vars, "KODEX_AI_DOMAIN", ""))
 		ns := strings.TrimSpace(namespace)
 		if base != "" && ns != "" {
 			return ns + "." + base
 		}
 	}
-	return strings.TrimSpace(valueOr(vars, "CODEXK8S_PRODUCTION_DOMAIN", ""))
+	return strings.TrimSpace(valueOr(vars, "KODEX_PRODUCTION_DOMAIN", ""))
 }
 
 func defaultTLSSecretName(targetEnv string) string {
 	if strings.EqualFold(strings.TrimSpace(targetEnv), "ai") {
-		return "codex-k8s-ai-tls"
+		return "kodex-ai-tls"
 	}
-	return "codex-k8s-production-tls"
+	return "kodex-production-tls"
 }

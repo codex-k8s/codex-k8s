@@ -1,7 +1,7 @@
 ---
 doc_id: ARC-MCP-CK8S-0001
 type: mcp-approval-flow
-title: "codex-k8s — MCP Approval and Audit Flow"
+title: "kodex — MCP Approval and Audit Flow"
 status: active
 owner_role: SA
 created_at: 2026-02-11
@@ -24,7 +24,7 @@ approvals:
 - Approval gate в MCP управляется policy matrix: для label-инструментов возможен `approval:none`, для privileged control tools — `approval:required`.
 - Все действия логируются в единый audit-контур (`flow_events`, `agent_sessions`, `links`, `token_usage`).
 - HTTP approver/executor поддерживаются как стандартные контракты интеграции; Telegram зафиксирован как приоритетный adapter path для следующего этапа.
-- В `codex-k8s` сохраняется двухслойная модель MCP: встроенные Go-ручки платформы + внешний декларативный слой (`github.com/codex-k8s/yaml-mcp-server`).
+- В `kodex` сохраняется двухслойная модель MCP: встроенные Go-ручки платформы + внешний декларативный слой (`github.com/codex-k8s/yaml-mcp-server`).
 - Для review->revise UX (Issue #95, ADR-0006) label orchestration и сервисные action-cards остаются в MCP policy/audit контуре.
 
 ## Политика апрувов
@@ -48,7 +48,7 @@ approvals:
   - `describe` выполняется как read-only action без side effects;
   - `delete` требует явного `confirm_delete=true`;
   - ownership-check выполняется по таблице `project_databases`;
-  - окружения ограничиваются allowlist (`CODEXK8S_PROJECT_DB_LIFECYCLE_ALLOWED_ENVS`, fallback `dev,production,production,prod`).
+  - окружения ограничиваются allowlist (`KODEX_PROJECT_DB_LIFECYCLE_ALLOWED_ENVS`, fallback `dev,production,production,prod`).
 
 ### Planned (следующие этапы)
 - Для части label/runtime/secret инструментов будет включаться обязательный approver gate.
@@ -83,7 +83,7 @@ approvals:
 ## Базовый режим S2 Day4+
 
 - Начиная с Day4, для agent pod действует split access model:
-  - в pod выдаётся отдельный Git bot-token (`CODEXK8S_GIT_BOT_TOKEN`) для `gh/git` операций;
+  - в pod выдаётся отдельный Git bot-token (`KODEX_GIT_BOT_TOKEN`) для `gh/git` операций;
   - control-plane MCP инструменты используют bot-token из `platform_github_tokens.bot_token_encrypted`;
   - для `full-env` формируется namespaced `KUBECONFIG` и разрешён direct `kubectl` в рамках namespace;
   - MCP остаётся для label operations и policy-аудита transitions.
@@ -122,7 +122,7 @@ approvals:
   - async режим с callback обязателен для долгих операций;
   - единый `correlation_id` проходит от запроса до callback;
   - решение/результат фиксируется в `flow_events` и связывается с `agent_sessions`.
-- Это позволяет добавлять Slack/Mattermost/Jira и другие адаптеры без изменений core-кода `codex-k8s`.
+- Это позволяет добавлять Slack/Mattermost/Jira и другие адаптеры без изменений core-кода `kodex`.
 
 ## Timeout поведение во время MCP ожидания
 

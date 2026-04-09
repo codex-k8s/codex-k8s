@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	runtimedeploydomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/runtimedeploy"
+	runtimedeploydomain "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/runtimedeploy"
 )
 
 type runtimeDeployReconciler interface {

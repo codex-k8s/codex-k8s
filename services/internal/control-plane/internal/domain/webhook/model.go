@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"time"
 
-	webhookdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/webhook"
+	webhookdomain "github.com/codex-k8s/kodex/libs/go/domain/webhook"
 )
 
 // IngestCommand is a normalized webhook command accepted by the domain service.

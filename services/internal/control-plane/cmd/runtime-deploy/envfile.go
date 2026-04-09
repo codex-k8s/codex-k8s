@@ -48,15 +48,15 @@ func loadEnvFile(path string) (map[string]string, error) {
 }
 
 func applyRuntimeDeployEnvDefaults(values map[string]string) {
-	setEnvDefault(values, "CODEXK8S_PRODUCTION_NAMESPACE", "codex-k8s-prod")
-	setEnvDefault(values, "CODEXK8S_PRODUCTION_DOMAIN", "platform.codex-k8s.dev")
-	setEnvDefault(values, "CODEXK8S_INTERNAL_REGISTRY_SERVICE", "codex-k8s-registry")
-	setEnvDefault(values, "CODEXK8S_INTERNAL_REGISTRY_PORT", "5000")
-	setEnvDefault(values, "CODEXK8S_INTERNAL_REGISTRY_STORAGE_SIZE", "20Gi")
-	setEnvDefault(values, "CODEXK8S_INTERNAL_REGISTRY_HOST", "127.0.0.1:"+strings.TrimSpace(values["CODEXK8S_INTERNAL_REGISTRY_PORT"]))
-	setEnvDefault(values, "CODEXK8S_RUNTIME_DEPLOY_FIELD_MANAGER", "codex-k8s-control-plane")
-	setEnvDefault(values, "CODEXK8S_GITHUB_WEBHOOK_EVENTS", defaultGitHubWebhookEvents)
-	setEnvDefault(values, "CODEXK8S_GITHUB_WEBHOOK_URL", resolveWebhookURL(values))
+	setEnvDefault(values, "KODEX_PRODUCTION_NAMESPACE", "kodex-prod")
+	setEnvDefault(values, "KODEX_PRODUCTION_DOMAIN", "platform.kodex.works")
+	setEnvDefault(values, "KODEX_INTERNAL_REGISTRY_SERVICE", "kodex-registry")
+	setEnvDefault(values, "KODEX_INTERNAL_REGISTRY_PORT", "5000")
+	setEnvDefault(values, "KODEX_INTERNAL_REGISTRY_STORAGE_SIZE", "20Gi")
+	setEnvDefault(values, "KODEX_INTERNAL_REGISTRY_HOST", "127.0.0.1:"+strings.TrimSpace(values["KODEX_INTERNAL_REGISTRY_PORT"]))
+	setEnvDefault(values, "KODEX_RUNTIME_DEPLOY_FIELD_MANAGER", "kodex-control-plane")
+	setEnvDefault(values, "KODEX_GITHUB_WEBHOOK_EVENTS", defaultGitHubWebhookEvents)
+	setEnvDefault(values, "KODEX_GITHUB_WEBHOOK_URL", resolveWebhookURL(values))
 }
 
 func setEnvDefault(values map[string]string, key string, fallback string) {
@@ -71,10 +71,10 @@ func setEnvDefault(values map[string]string, key string, fallback string) {
 }
 
 func resolveWebhookURL(values map[string]string) string {
-	if explicit := strings.TrimSpace(values["CODEXK8S_GITHUB_WEBHOOK_URL"]); explicit != "" {
+	if explicit := strings.TrimSpace(values["KODEX_GITHUB_WEBHOOK_URL"]); explicit != "" {
 		return explicit
 	}
-	domain := strings.TrimSpace(values["CODEXK8S_PRODUCTION_DOMAIN"])
+	domain := strings.TrimSpace(values["KODEX_PRODUCTION_DOMAIN"])
 	if domain == "" {
 		return ""
 	}

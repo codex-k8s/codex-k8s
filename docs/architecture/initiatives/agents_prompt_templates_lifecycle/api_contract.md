@@ -1,7 +1,7 @@
 ---
 doc_id: API-APT-CK8S-0001
 type: api-contract
-title: "codex-k8s — API contract: agents settings and prompt templates lifecycle"
+title: "kodex — API contract: agents settings and prompt templates lifecycle"
 status: in-review
 owner_role: SA
 created_at: 2026-02-25
@@ -26,7 +26,7 @@ approvals:
 
 ## Спецификации (source of truth)
 - OpenAPI (to be updated in `run:dev`): `services/external/api-gateway/api/server/api.yaml`.
-- gRPC proto (to be updated in `run:dev`): `proto/codexk8s/controlplane/v1/controlplane.proto`.
+- gRPC proto (to be updated in `run:dev`): `proto/kodex/controlplane/v1/controlplane.proto`.
 - Transport mapping requirements:
   - HTTP DTO: `services/external/api-gateway/internal/transport/http/models`.
   - HTTP casters: `services/external/api-gateway/internal/transport/http/casters`.

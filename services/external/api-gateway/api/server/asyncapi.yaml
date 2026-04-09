@@ -1,6 +1,6 @@
 asyncapi: 2.6.0
 info:
-  title: codex-k8s webhook ingress events
+  title: kodex webhook ingress events
   version: 0.1.0
   description: Internal event model after GitHub webhook ingestion.
 channels:

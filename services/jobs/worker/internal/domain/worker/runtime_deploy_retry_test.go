@@ -30,7 +30,7 @@ func TestIsRetryableRuntimeDeployError_NamespaceTerminatingIsRetryable(t *testin
 
 	err := status.Error(
 		codes.Internal,
-		"runtime deploy task failed: ensure runtime namespace repo snapshot: jobs.batch \"codex-k8s-repo-sync\" is forbidden: unable to create new content in namespace codex-k8s-dev-2 because it is being terminated",
+		"runtime deploy task failed: ensure runtime namespace repo snapshot: jobs.batch \"kodex-repo-sync\" is forbidden: unable to create new content in namespace kodex-dev-2 because it is being terminated",
 	)
 	if !isRetryableRuntimeDeployError(err) {
 		t.Fatal("expected terminating namespace runtime deploy error to be retryable")

@@ -6,8 +6,8 @@ import (
 	"log/slog"
 	"time"
 
-	agentcallbackdomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/agentcallback"
-	runtimedeploydomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/runtimedeploy"
+	agentcallbackdomain "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/agentcallback"
+	runtimedeploydomain "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/runtimedeploy"
 )
 
 const (

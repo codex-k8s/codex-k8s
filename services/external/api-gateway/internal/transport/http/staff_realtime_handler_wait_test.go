@@ -3,7 +3,7 @@ package http
 import (
 	"testing"
 
-	"github.com/codex-k8s/codex-k8s/services/external/api-gateway/internal/transport/http/models"
+	"github.com/codex-k8s/kodex/services/external/api-gateway/internal/transport/http/models"
 )
 
 func TestBuildRunWaitRealtimeMessages_EmitsWaitEntered(t *testing.T) {

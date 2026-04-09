@@ -24,7 +24,7 @@ approvals:
 
 ## Спецификации (source of truth)
 - Future OpenAPI source of truth: `services/external/api-gateway/api/server/api.yaml`
-- Future gRPC source of truth: `proto/codexk8s/controlplane/v1/controlplane.proto`
+- Future gRPC source of truth: `proto/kodex/controlplane/v1/controlplane.proto`
 - Design-stage interim sources:
   - `docs/architecture/initiatives/s13_quality_governance_system/design_doc.md`
   - `docs/architecture/initiatives/s13_quality_governance_system/api_contract.md`

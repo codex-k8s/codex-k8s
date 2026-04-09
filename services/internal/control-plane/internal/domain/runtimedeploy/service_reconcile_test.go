@@ -37,7 +37,7 @@ func TestRepositoryRootForRuntimeEnv_PrefersConfiguredRoot(t *testing.T) {
 			RepositoryRoot: "/repo-cache",
 		},
 	}
-	if got := svc.repositoryRootForRuntimeEnv("/repo-cache/github/codex-k8s/codex-k8s/main"); got != "/repo-cache" {
+	if got := svc.repositoryRootForRuntimeEnv("/repo-cache/github/codex-k8s/kodex/main"); got != "/repo-cache" {
 		t.Fatalf("repositoryRootForRuntimeEnv() = %q, want %q", got, "/repo-cache")
 	}
 }
@@ -48,7 +48,7 @@ func TestRepositoryRootForRuntimeEnv_FallsBackToResolvedWhenConfigEmpty(t *testi
 	svc := &Service{
 		cfg: Config{},
 	}
-	if got := svc.repositoryRootForRuntimeEnv("/repo-cache/github/codex-k8s/codex-k8s/main"); got != "/repo-cache" {
+	if got := svc.repositoryRootForRuntimeEnv("/repo-cache/github/codex-k8s/kodex/main"); got != "/repo-cache" {
 		t.Fatalf("repositoryRootForRuntimeEnv() = %q, want %q", got, "/repo-cache")
 	}
 }
@@ -63,7 +63,7 @@ func TestNormalizeRepositoryCacheRoot(t *testing.T) {
 	}{
 		{
 			name: "snapshot path collapses to cache root",
-			in:   "/repo-cache/github/codex-k8s/codex-k8s/0acb7d5",
+			in:   "/repo-cache/github/codex-k8s/kodex/0acb7d5",
 			want: "/repo-cache",
 		},
 		{

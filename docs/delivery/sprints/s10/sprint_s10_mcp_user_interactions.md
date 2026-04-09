@@ -19,7 +19,7 @@ approvals:
 # Sprint S10: Built-in MCP user interactions and channel-neutral adapter contracts (Issue #360)
 
 ## TL;DR
-- Sprint S10 открывает отдельный product stream для встроенных MCP-взаимодействий с пользователем поверх уже существующего built-in сервера `codex_k8s`.
+- Sprint S10 открывает отдельный product stream для встроенных MCP-взаимодействий с пользователем поверх уже существующего built-in сервера `kodex`.
 - Issue `#360` фиксирует intake baseline: MVP строится вокруг `user.notify` и `user.decision.request`, approval semantics не смешиваются с user-dialog semantics, а core interaction-domain остаётся channel-neutral.
 - Vision-пакет по Issue `#378` фиксирует mission, KPI/guardrails, persona outcomes и continuity issue `#383` для `run:prd`.
 - PRD-пакет по Issue `#383` фиксирует user stories, FR/AC/NFR, wave priorities, wait-state/correlation guardrails и создаёт architecture continuity issue `#385`; Telegram и другие channel adapters остаются отдельным последовательным потоком после проработки core platform contracts.
@@ -42,7 +42,7 @@ approvals:
 ### Out of scope
 - Кодовая реализация до завершения и утверждения `run:plan`.
 - Telegram adapter, голос/STT, channel-specific UX affordances и расширенные conversation threads в рамках Sprint S10.
-- Добавление нового MCP server entry в runtime `config.toml` вместо расширения существующего `mcp_servers.codex_k8s`.
+- Добавление нового MCP server entry в runtime `config.toml` вместо расширения существующего `mcp_servers.kodex`.
 - Попытка использовать `owner.feedback.request` как замену отдельному interaction-domain.
 
 ## Рекомендованный launch profile
@@ -65,7 +65,7 @@ approvals:
 | Plan (`#389`) | Delivery waves, quality-gates, execution issues, DoR/DoD | `em` + `km` | Сформирован execution package `#391..#395` и owner-managed handover в `run:dev` |
 
 ## Guardrails спринта
-- Инициатива расширяет существующий built-in MCP server `codex_k8s`; новый runtime server block не вводится.
+- Инициатива расширяет существующий built-in MCP server `kodex`; новый runtime server block не вводится.
 - Approval flow и user interaction flow остаются отдельными доменными контурами с разными семантиками и wait-state правилами.
 - `user.notify` не создаёт paused/waiting state; `user.decision.request` блокирует run только там, где ответ пользователя действительно обязателен.
 - Dispatch, retries, idempotency, audit и callback correlation остаются responsibility platform domain, а не agent pod.

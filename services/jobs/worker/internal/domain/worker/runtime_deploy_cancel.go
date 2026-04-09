@@ -4,10 +4,10 @@ import (
 	"context"
 	"fmt"
 
-	floweventdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/flowevent"
-	rundomain "github.com/codex-k8s/codex-k8s/libs/go/domain/run"
-	runqueuerepo "github.com/codex-k8s/codex-k8s/services/jobs/worker/internal/domain/repository/runqueue"
-	valuetypes "github.com/codex-k8s/codex-k8s/services/jobs/worker/internal/domain/types/value"
+	floweventdomain "github.com/codex-k8s/kodex/libs/go/domain/flowevent"
+	rundomain "github.com/codex-k8s/kodex/libs/go/domain/run"
+	runqueuerepo "github.com/codex-k8s/kodex/services/jobs/worker/internal/domain/repository/runqueue"
+	valuetypes "github.com/codex-k8s/kodex/services/jobs/worker/internal/domain/types/value"
 )
 
 func (s *Service) finishRuntimePrepareCanceledRun(ctx context.Context, run runqueuerepo.RunningRun, execution valuetypes.RunExecutionContext, skipNamespaceCleanup bool) error {

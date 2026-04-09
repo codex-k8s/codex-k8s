@@ -6,8 +6,8 @@ import (
 	"strings"
 	"time"
 
-	agentdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/agent"
-	webhookdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/webhook"
+	agentdomain "github.com/codex-k8s/kodex/libs/go/domain/agent"
+	webhookdomain "github.com/codex-k8s/kodex/libs/go/domain/webhook"
 )
 
 type runPayloadInput struct {

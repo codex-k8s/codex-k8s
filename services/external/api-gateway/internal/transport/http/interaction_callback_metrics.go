@@ -16,14 +16,14 @@ const (
 var (
 	interactionCallbackRequestsTotal = promauto.NewCounterVec(
 		prometheus.CounterOpts{
-			Name: "codexk8s_interaction_callback_requests_total",
+			Name: "kodex_interaction_callback_requests_total",
 			Help: "Total number of interaction callback HTTP requests handled by api-gateway.",
 		},
 		[]string{"callback_kind", "classification"},
 	)
 	interactionCallbackDuration = promauto.NewHistogramVec(
 		prometheus.HistogramOpts{
-			Name:    "codexk8s_interaction_callback_duration_seconds",
+			Name:    "kodex_interaction_callback_duration_seconds",
 			Help:    "Duration of interaction callback handling in seconds.",
 			Buckets: prometheus.DefBuckets,
 		},

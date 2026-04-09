@@ -12,17 +12,17 @@ import (
 	"strings"
 	"time"
 
-	"github.com/codex-k8s/codex-k8s/libs/go/manifesttpl"
-	"github.com/codex-k8s/codex-k8s/libs/go/servicescfg"
-	querytypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/query"
+	"github.com/codex-k8s/kodex/libs/go/manifesttpl"
+	"github.com/codex-k8s/kodex/libs/go/servicescfg"
+	querytypes "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/types/query"
 )
 
 const runtimeFingerprintVersion = "v1"
 
 const (
-	runtimeFingerprintHashAnnotationKey    = "codex-k8s.dev/runtime-fingerprint-hash"
-	runtimeFingerprintJSONAnnotationKey    = "codex-k8s.dev/runtime-fingerprint-json"
-	runtimeFingerprintUpdatedAnnotationKey = "codex-k8s.dev/runtime-fingerprint-updated-at"
+	runtimeFingerprintHashAnnotationKey    = "kodex.works/runtime-fingerprint-hash"
+	runtimeFingerprintJSONAnnotationKey    = "kodex.works/runtime-fingerprint-json"
+	runtimeFingerprintUpdatedAnnotationKey = "kodex.works/runtime-fingerprint-updated-at"
 )
 
 const (
@@ -257,11 +257,11 @@ func (s *Service) buildRuntimeFingerprint(ctx context.Context, params EvaluateRe
 	prepareParams.TargetEnv = targetEnv
 	templateVars = s.buildTemplateVars(prepareParams, targetNamespace)
 	applyStackImageVars(templateVars, loaded.Stack)
-	templateVars["CODEXK8S_PRODUCTION_NAMESPACE"] = targetNamespace
-	templateVars["CODEXK8S_WORKER_K8S_NAMESPACE"] = targetNamespace
-	templateVars["CODEXK8S_REPOSITORY_ROOT"] = s.repositoryRootForRuntimeEnv(repositoryRoot)
+	templateVars["KODEX_PRODUCTION_NAMESPACE"] = targetNamespace
+	templateVars["KODEX_WORKER_K8S_NAMESPACE"] = targetNamespace
+	templateVars["KODEX_REPOSITORY_ROOT"] = s.repositoryRootForRuntimeEnv(repositoryRoot)
 	if params.RepositoryFullName != "" {
-		templateVars["CODEXK8S_GITHUB_REPO"] = params.RepositoryFullName
+		templateVars["KODEX_GITHUB_REPO"] = params.RepositoryFullName
 	}
 	applyEnvironmentDomainTemplate(templateVars, loaded.Stack, targetEnv)
 

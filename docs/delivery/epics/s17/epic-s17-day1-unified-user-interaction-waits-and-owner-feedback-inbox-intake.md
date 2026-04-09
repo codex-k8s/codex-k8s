@@ -127,7 +127,7 @@ approvals:
 
 ## Constraints
 - Sprint S17 обязан сохранять решения Sprint S10/S11 как baseline, а не проектироваться заново:
-  - built-in tools остаются внутри existing `codex_k8s` MCP server;
+  - built-in tools остаются внутри existing `kodex` MCP server;
   - interaction-domain остаётся отдельным от approval flow;
   - Telegram transport сохраняется channel-specific contour, а platform semantics остаются channel-neutral.
 - `run:self-improve` остаётся явным исключением и не обязан поддерживать owner-facing human wait contract.

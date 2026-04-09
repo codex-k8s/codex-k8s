@@ -4,8 +4,8 @@ import (
 	"testing"
 	"time"
 
-	agentrunrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/agentrun"
-	enumtypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/enum"
+	agentrunrepo "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/repository/agentrun"
+	enumtypes "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/types/enum"
 )
 
 func TestTrackRunLineageLinksOlderRunToLatestContour(t *testing.T) {
@@ -13,12 +13,12 @@ func TestTrackRunLineageLinksOlderRunToLatestContour(t *testing.T) {
 
 	lineageState := make(map[string]string)
 	latest := agentrunrepo.RunLookupItem{RunID: "run-2", IssueNumber: 542}
-	if got := trackRunLineage(lineageState, "codex-k8s/codex-k8s", latest, runProjectionKey(latest.RunID)); got != "" {
+	if got := trackRunLineage(lineageState, "codex-k8s/kodex", latest, runProjectionKey(latest.RunID)); got != "" {
 		t.Fatalf("trackRunLineage() for latest run = %q, want empty successor", got)
 	}
 
 	older := agentrunrepo.RunLookupItem{RunID: "run-1", IssueNumber: 542}
-	if got, want := trackRunLineage(lineageState, "codex-k8s/codex-k8s", older, runProjectionKey(older.RunID)), "run-2"; got != want {
+	if got, want := trackRunLineage(lineageState, "codex-k8s/kodex", older, runProjectionKey(older.RunID)), "run-2"; got != want {
 		t.Fatalf("trackRunLineage() successor = %q, want %q", got, want)
 	}
 }
@@ -29,7 +29,7 @@ func TestRunContinuityStatusUsesLatestSucceededRunState(t *testing.T) {
 	if got, want := runContinuityStatus(
 		"succeeded",
 		enumtypes.MissionControlCoverageClassOpenPrimary,
-		"codex-k8s/codex-k8s/pull/542",
+		"codex-k8s/kodex/pull/542",
 		"",
 	), enumtypes.MissionControlContinuityStatusOutOfScope; got != want {
 		t.Fatalf("runContinuityStatus() = %s, want %s", got, want)

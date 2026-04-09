@@ -47,7 +47,7 @@ approvals:
   - для `delete` обязателен `confirm_delete=true`;
   - в ответ добавлены `exists`, `owned_by_project`, `owner_project_id` для диагностируемого `describe`.
 - Внедрены policy checks до постановки approval:
-  - allowlist окружений (`CODEXK8S_PROJECT_DB_LIFECYCLE_ALLOWED_ENVS`, fallback: `dev,production,production,prod`);
+  - allowlist окружений (`KODEX_PROJECT_DB_LIFECYCLE_ALLOWED_ENVS`, fallback: `dev,production,production,prod`);
   - валидация `database_name` по regex и длине;
   - ownership checks по проекту/окружению.
 - Добавлен ownership-контур в БД и repository-слой:
@@ -60,7 +60,7 @@ approvals:
 - Усилена валидация approve/apply шага:
   - проверка `project_id` в payload против run context при применении approved action.
 - Runtime/deploy wiring:
-  - новый env `CODEXK8S_PROJECT_DB_LIFECYCLE_ALLOWED_ENVS` добавлен в bootstrap/deploy/workflows и в runtime secret прокидку.
+  - новый env `KODEX_PROJECT_DB_LIFECYCLE_ALLOWED_ENVS` добавлен в bootstrap/deploy/workflows и в runtime secret прокидку.
 
 ## Проверки
 - `go test ./services/internal/control-plane/internal/domain/mcp/...` — passed.

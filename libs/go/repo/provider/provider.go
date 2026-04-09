@@ -14,7 +14,7 @@ const (
 
 // WebhookSpec describes how a provider webhook should be configured.
 type WebhookSpec struct {
-	// URL is a public callback URL, e.g. https://platform.codex-k8s.dev/api/v1/webhooks/github.
+	// URL is a public callback URL, e.g. https://platform.kodex.works/api/v1/webhooks/github.
 	URL string
 	// Secret is the shared secret used to sign payloads.
 	Secret string
@@ -49,7 +49,7 @@ type RepositoryProvider interface {
 	ValidateRepository(ctx context.Context, token string, owner string, name string) (RepositoryInfo, error)
 	// EnsureWebhook ensures a webhook with desired spec exists on the repo.
 	EnsureWebhook(ctx context.Context, token string, owner string, name string, spec WebhookSpec) error
-	// DeleteWebhook attempts to delete codex-k8s webhook(s) matching webhookURL.
+	// DeleteWebhook attempts to delete kodex webhook(s) matching webhookURL.
 	//
 	// Callers should treat errors as best-effort failures (tokens may be revoked, permissions missing, etc).
 	DeleteWebhook(ctx context.Context, token string, owner string, name string, webhookURL string) error

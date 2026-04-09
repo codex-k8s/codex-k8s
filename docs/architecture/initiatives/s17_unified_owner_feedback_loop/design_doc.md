@@ -252,11 +252,11 @@ sequenceDiagram
   - `owner_feedback.continuation.recovery`
   - `owner_feedback.visibility.transitioned`
 - Метрики:
-  - `codexk8s_owner_feedback_requests_total{canonical_status}`
-  - `codexk8s_owner_feedback_response_classification_total{response_source,classification}`
-  - `codexk8s_owner_feedback_wait_window_seconds{continuation_path}`
-  - `codexk8s_owner_feedback_overdue_total{surface_kind}`
-  - `codexk8s_owner_feedback_manual_fallback_total{reason}`
+  - `kodex_owner_feedback_requests_total{canonical_status}`
+  - `kodex_owner_feedback_response_classification_total{response_source,classification}`
+  - `kodex_owner_feedback_wait_window_seconds{continuation_path}`
+  - `kodex_owner_feedback_overdue_total{surface_kind}`
+  - `kodex_owner_feedback_manual_fallback_total{reason}`
 - Трейсы:
   - `agent-runner -> control-plane -> postgres`
   - `worker -> telegram-interaction-adapter`

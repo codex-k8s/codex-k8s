@@ -11,11 +11,11 @@ func TestJWT_IssueAndVerify(t *testing.T) {
 	key := []byte("test-secret")
 	now := time.Now().UTC()
 
-	signer, err := NewSigner("codex-k8s", key, 15*time.Minute)
+	signer, err := NewSigner("kodex", key, 15*time.Minute)
 	if err != nil {
 		t.Fatalf("NewSigner: %v", err)
 	}
-	verifier, err := NewVerifier("codex-k8s", key, 0)
+	verifier, err := NewVerifier("kodex", key, 0)
 	if err != nil {
 		t.Fatalf("NewVerifier: %v", err)
 	}

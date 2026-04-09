@@ -32,7 +32,7 @@ Person(agent, "Agent pod", "Вызывает built-in interaction tools")
 System_Ext(adapters, "Interaction adapters", "Telegram/Slack/Web/HTTP adapters")
 System_Ext(github, "GitHub", "Issue/PR context and deep-links")
 
-System_Boundary(b0, "codex-k8s") {
+System_Boundary(b0, "kodex") {
   Container(runner, "Agent Runner / agent pod", "Codex CLI job", "Calls built-in tools and resumes run after typed response")
   Container(gw, "API Gateway", "Go HTTP", "Thin-edge callback ingress, adapter auth, payload normalization")
   Container(cp, "Control Plane", "Go", "Owns interaction aggregate, wait-state transitions, validation, audit and tool semantics")

@@ -5,7 +5,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/codex-k8s/codex-k8s/libs/go/servicescfg"
+	"github.com/codex-k8s/kodex/libs/go/servicescfg"
 )
 
 const defaultNamespaceLeaseTTL = 24 * time.Hour

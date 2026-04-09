@@ -6,9 +6,9 @@ import (
 
 	"google.golang.org/grpc"
 
-	controlplanev1 "github.com/codex-k8s/codex-k8s/proto/gen/go/codexk8s/controlplane/v1"
-	"github.com/codex-k8s/codex-k8s/services/external/api-gateway/internal/transport/http/generated"
-	"github.com/codex-k8s/codex-k8s/services/external/api-gateway/internal/transport/http/models"
+	controlplanev1 "github.com/codex-k8s/kodex/proto/gen/go/kodex/controlplane/v1"
+	"github.com/codex-k8s/kodex/services/external/api-gateway/internal/transport/http/generated"
+	"github.com/codex-k8s/kodex/services/external/api-gateway/internal/transport/http/models"
 )
 
 func callUnaryWithArg[Arg any, Req any, Resp any](

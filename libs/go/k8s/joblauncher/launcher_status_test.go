@@ -16,7 +16,7 @@ func TestLauncher_Status_ImagePullBackOffIsFailed(t *testing.T) {
 	ctx := context.Background()
 	client := fake.NewClientset(
 		&batchv1.Job{
-			ObjectMeta: metav1.ObjectMeta{Name: "codex-k8s-run-abc", Namespace: "ns"},
+			ObjectMeta: metav1.ObjectMeta{Name: "kodex-run-abc", Namespace: "ns"},
 			Status:     batchv1.JobStatus{},
 		},
 		&corev1.Pod{
@@ -24,7 +24,7 @@ func TestLauncher_Status_ImagePullBackOffIsFailed(t *testing.T) {
 				Name:      "pod-1",
 				Namespace: "ns",
 				Labels: map[string]string{
-					"job-name": "codex-k8s-run-abc",
+					"job-name": "kodex-run-abc",
 				},
 			},
 			Status: corev1.PodStatus{
@@ -42,7 +42,7 @@ func TestLauncher_Status_ImagePullBackOffIsFailed(t *testing.T) {
 	)
 
 	l := NewForClient(Config{Namespace: "ns"}, client)
-	state, err := l.Status(ctx, JobRef{Namespace: "ns", Name: "codex-k8s-run-abc"})
+	state, err := l.Status(ctx, JobRef{Namespace: "ns", Name: "kodex-run-abc"})
 	if err != nil {
 		t.Fatalf("Status returned error: %v", err)
 	}
@@ -103,16 +103,16 @@ func TestLauncher_Launch_AIRepairCreatesPod(t *testing.T) {
 		RunID:              "run-ai-repair",
 		CorrelationID:      "corr-ai-repair",
 		ProjectID:          "project-1",
-		Namespace:          "codex-k8s-prod",
+		Namespace:          "kodex-prod",
 		TriggerKind:        "ai_repair",
-		ServiceAccountName: "codex-k8s-control-plane",
+		ServiceAccountName: "kodex-control-plane",
 	}
 	ref, err := l.Launch(ctx, spec)
 	if err != nil {
 		t.Fatalf("Launch returned error: %v", err)
 	}
 
-	if ref.Name == "" || ref.Namespace != "codex-k8s-prod" {
+	if ref.Name == "" || ref.Namespace != "kodex-prod" {
 		t.Fatalf("unexpected launch ref: %+v", ref)
 	}
 	if _, err := client.BatchV1().Jobs(ref.Namespace).Get(ctx, ref.Name, metav1.GetOptions{}); err == nil {
@@ -122,7 +122,7 @@ func TestLauncher_Launch_AIRepairCreatesPod(t *testing.T) {
 	if err != nil {
 		t.Fatalf("expected ai-repair pod %s/%s, got error: %v", ref.Namespace, ref.Name, err)
 	}
-	if got, want := pod.Spec.ServiceAccountName, "codex-k8s-control-plane"; got != want {
+	if got, want := pod.Spec.ServiceAccountName, "kodex-control-plane"; got != want {
 		t.Fatalf("expected service account %q, got %q", want, got)
 	}
 	if got, want := len(pod.Spec.Containers), 2; got != want {
@@ -204,7 +204,7 @@ func TestLauncher_Launch_FullEnvMountsRepoCachePVC(t *testing.T) {
 		RunID:         "run-full-env",
 		CorrelationID: "corr-full-env",
 		ProjectID:     "project-1",
-		Namespace:     "codex-k8s-dev-1",
+		Namespace:     "kodex-dev-1",
 		RuntimeMode:   "full-env",
 	}
 
@@ -256,7 +256,7 @@ func TestLauncher_Launch_DoesNotExposeInteractionResumePayloadEnv(t *testing.T) 
 		RunID:         "run-resume-env",
 		CorrelationID: "corr-resume-env",
 		ProjectID:     "project-1",
-		Namespace:     "codex-k8s-dev-resume",
+		Namespace:     "kodex-dev-resume",
 		RuntimeMode:   "full-env",
 	}
 
@@ -272,8 +272,8 @@ func TestLauncher_Launch_DoesNotExposeInteractionResumePayloadEnv(t *testing.T) 
 
 	env := job.Spec.Template.Spec.Containers[0].Env
 	for _, item := range env {
-		if item.Name == "CODEXK8S_INTERACTION_RESUME_PAYLOAD" {
-			t.Fatal("did not expect CODEXK8S_INTERACTION_RESUME_PAYLOAD env var")
+		if item.Name == "KODEX_INTERACTION_RESUME_PAYLOAD" {
+			t.Fatal("did not expect KODEX_INTERACTION_RESUME_PAYLOAD env var")
 		}
 	}
 }
@@ -282,7 +282,7 @@ func TestLauncher_Status_AIRepairPodRunContainerSucceeded(t *testing.T) {
 	t.Parallel()
 
 	ctx := context.Background()
-	ref := JobRef{Namespace: "ns", Name: "codex-k8s-run-ai"}
+	ref := JobRef{Namespace: "ns", Name: "kodex-run-ai"}
 	client := fake.NewClientset(
 		&corev1.Pod{
 			ObjectMeta: metav1.ObjectMeta{
@@ -361,7 +361,7 @@ func TestLauncher_ListWorkerPodNames(t *testing.T) {
 		&corev1.Pod{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "worker-b",
-				Namespace: "codex-k8s-prod",
+				Namespace: "kodex-prod",
 				Labels: map[string]string{
 					"app.kubernetes.io/name":      workerAppName,
 					"app.kubernetes.io/component": workerComponentLabel,
@@ -371,7 +371,7 @@ func TestLauncher_ListWorkerPodNames(t *testing.T) {
 		&corev1.Pod{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "worker-a",
-				Namespace: "codex-k8s-prod",
+				Namespace: "kodex-prod",
 				Labels: map[string]string{
 					"app.kubernetes.io/name":      workerAppName,
 					"app.kubernetes.io/component": workerComponentLabel,
@@ -381,7 +381,7 @@ func TestLauncher_ListWorkerPodNames(t *testing.T) {
 		&corev1.Pod{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "unrelated",
-				Namespace: "codex-k8s-prod",
+				Namespace: "kodex-prod",
 				Labels: map[string]string{
 					"app.kubernetes.io/name":      workerAppName,
 					"app.kubernetes.io/component": "api-gateway",
@@ -389,9 +389,9 @@ func TestLauncher_ListWorkerPodNames(t *testing.T) {
 			},
 		},
 	)
-	l := NewForClient(Config{Namespace: "codex-k8s-prod"}, client)
+	l := NewForClient(Config{Namespace: "kodex-prod"}, client)
 
-	got, err := l.ListWorkerPodNames(ctx, "codex-k8s-prod")
+	got, err := l.ListWorkerPodNames(ctx, "kodex-prod")
 	if err != nil {
 		t.Fatalf("ListWorkerPodNames returned error: %v", err)
 	}

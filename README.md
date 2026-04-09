@@ -1,12 +1,12 @@
 <div align="center">
-  <img src="docs/media/logo.png" alt="codex-k8s logo" width="120" height="120" />
-  <h1>codex-k8s</h1>
+  <img src="docs/media/logo.png" alt="kodex logo" width="120" height="120" />
+  <h1>kodex</h1>
   <p>🧠 Webhook-driven платформа управления AI-агентами в Kubernetes для полного цикла: от идеи и документации до кода, PR, деплоя и эксплуатации.</p>
   <p><b>Что дает платформа:</b> агенты работают в полноценном, но изолированном runtime-окружении Kubernetes; процесс разработки ведется через документацию и stage-модель; весь delivery-цикл закрывается в одной системе — от discovery и проектирования до реализации, ревью, релиза и ops.</p>
 </div>
 
-![Go Version](https://img.shields.io/github/go-mod/go-version/codex-k8s/codex-k8s)
-[![Go Reference](https://pkg.go.dev/badge/github.com/codex-k8s/codex-k8s.svg)](https://pkg.go.dev/github.com/codex-k8s/codex-k8s)
+![Go Version](https://img.shields.io/github/go-mod/go-version/codex-k8s/kodex)
+[![Go Reference](https://pkg.go.dev/badge/github.com/codex-k8s/kodex.svg)](https://pkg.go.dev/github.com/codex-k8s/kodex)
 
 ## 🚧 Статус Публикации
 
@@ -22,13 +22,13 @@
 
 | Этап | Issue | PR |
 |---|---|---|
-| S6 Day1 - Intake | [#184 Проработка раздела редактирования параметров агентов и их промптов](https://github.com/codex-k8s/codex-k8s/issues/184) | [#186 Issue #184: intake-документация и трассируемость для S6 Agents/Prompt lifecycle](https://github.com/codex-k8s/codex-k8s/pull/186) |
-| S6 Day2 - Vision | [#185 S6 Day2: Vision для lifecycle управления агентами и шаблонами промптов](https://github.com/codex-k8s/codex-k8s/issues/185) | [#188 S6 Day2 Vision: lifecycle управления агентами и prompt templates](https://github.com/codex-k8s/codex-k8s/pull/188) |
-| S6 Day3 - PRD | [#187 S6 Day3: PRD для lifecycle управления агентами и шаблонами промптов](https://github.com/codex-k8s/codex-k8s/issues/187) | [#190 Issue #187: PRD-пакет S6 Day3 и handover в run:arch](https://github.com/codex-k8s/codex-k8s/pull/190) |
-| S6 Day4 - Architecture | [#189 S6 Day4: Architecture для lifecycle управления агентами и шаблонами промптов](https://github.com/codex-k8s/codex-k8s/issues/189) | [#196 S6 Day4: архитектурный пакет и handover для lifecycle агентов и prompt templates](https://github.com/codex-k8s/codex-k8s/pull/196) |
-| S6 Day5 - Design | [#195 S6 Day5: Design для lifecycle управления агентами и шаблонами промптов](https://github.com/codex-k8s/codex-k8s/issues/195) | [#198 S6 Day5: Design package для lifecycle управления агентами и шаблонами](https://github.com/codex-k8s/codex-k8s/pull/198) |
-| S6 Day6 - Plan | [#197 S6 Day6: Plan для реализации lifecycle управления агентами и шаблонами промптов](https://github.com/codex-k8s/codex-k8s/issues/197) | [#200 S6 Day6: execution package и handover в run:dev для lifecycle agents/prompts](https://github.com/codex-k8s/codex-k8s/pull/200) |
-| S6 Day7 - Development | [#199 S6 Day7: Реализация lifecycle управления агентами и шаблонами промптов](https://github.com/codex-k8s/codex-k8s/issues/199) | [#202 S6 Day7: реализация lifecycle управления агентами и шаблонами промптов (#199)](https://github.com/codex-k8s/codex-k8s/pull/202) |
+| S6 Day1 - Intake | [#184 Проработка раздела редактирования параметров агентов и их промптов](https://github.com/codex-k8s/kodex/issues/184) | [#186 Issue #184: intake-документация и трассируемость для S6 Agents/Prompt lifecycle](https://github.com/codex-k8s/kodex/pull/186) |
+| S6 Day2 - Vision | [#185 S6 Day2: Vision для lifecycle управления агентами и шаблонами промптов](https://github.com/codex-k8s/kodex/issues/185) | [#188 S6 Day2 Vision: lifecycle управления агентами и prompt templates](https://github.com/codex-k8s/kodex/pull/188) |
+| S6 Day3 - PRD | [#187 S6 Day3: PRD для lifecycle управления агентами и шаблонами промптов](https://github.com/codex-k8s/kodex/issues/187) | [#190 Issue #187: PRD-пакет S6 Day3 и handover в run:arch](https://github.com/codex-k8s/kodex/pull/190) |
+| S6 Day4 - Architecture | [#189 S6 Day4: Architecture для lifecycle управления агентами и шаблонами промптов](https://github.com/codex-k8s/kodex/issues/189) | [#196 S6 Day4: архитектурный пакет и handover для lifecycle агентов и prompt templates](https://github.com/codex-k8s/kodex/pull/196) |
+| S6 Day5 - Design | [#195 S6 Day5: Design для lifecycle управления агентами и шаблонами промптов](https://github.com/codex-k8s/kodex/issues/195) | [#198 S6 Day5: Design package для lifecycle управления агентами и шаблонами](https://github.com/codex-k8s/kodex/pull/198) |
+| S6 Day6 - Plan | [#197 S6 Day6: Plan для реализации lifecycle управления агентами и шаблонами промптов](https://github.com/codex-k8s/kodex/issues/197) | [#200 S6 Day6: execution package и handover в run:dev для lifecycle agents/prompts](https://github.com/codex-k8s/kodex/pull/200) |
+| S6 Day7 - Development | [#199 S6 Day7: Реализация lifecycle управления агентами и шаблонами промптов](https://github.com/codex-k8s/kodex/issues/199) | [#202 S6 Day7: реализация lifecycle управления агентами и шаблонами промптов (#199)](https://github.com/codex-k8s/kodex/pull/202) |
 
 По факту этапы выше были выполнены менее чем за сутки. Далее идут этапы `qa -> release -> postdeploy -> ops`: каждый запускается своим label на задаче, и каждый выполняется отдельным агентом со своей ролью и инструкциями.
 Для late-stage delivery действует единая runtime-семантика: `run:dev -> run:qa -> run:release` в `full-env` продолжают один candidate namespace/build lineage до merge, а `run:postdeploy -> run:ops` работают уже против production namespace с read-only RBAC.
@@ -38,7 +38,7 @@
 
 ![Текущий скриншот платформы](docs/media/screenshot.png)
 
-`codex-k8s` запускает агентные роли по GitHub-лейблам (`run:*`) и ведет задачу по stage-модели:
+`kodex` запускает агентные роли по GitHub-лейблам (`run:*`) и ведет задачу по stage-модели:
 `intake -> vision -> prd -> arch -> design -> plan -> dev -> qa -> release -> postdeploy -> ops`.
 
 Ключевые функции платформы:

@@ -15,8 +15,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/codex-k8s/codex-k8s/cmd/codex-bootstrap/internal/envfile"
-	webhookdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/webhook"
+	"github.com/codex-k8s/kodex/cmd/codex-bootstrap/internal/envfile"
+	webhookdomain "github.com/codex-k8s/kodex/libs/go/domain/webhook"
 	gh "github.com/google/go-github/v82/github"
 )
 
@@ -31,16 +31,16 @@ var preflightRequiredEnvKeys = []string{
 	"TARGET_ROOT_SSH_KEY",
 	"OPERATOR_USER",
 	"OPERATOR_SSH_PUBKEY_PATH",
-	"CODEXK8S_GITHUB_REPO",
-	"CODEXK8S_GITHUB_PAT",
-	"CODEXK8S_PRODUCTION_DOMAIN",
-	"CODEXK8S_AI_DOMAIN",
-	"CODEXK8S_LETSENCRYPT_EMAIL",
-	"CODEXK8S_PUBLIC_BASE_URL",
-	"CODEXK8S_BOOTSTRAP_OWNER_EMAIL",
-	"CODEXK8S_GITHUB_OAUTH_CLIENT_ID",
-	"CODEXK8S_GITHUB_OAUTH_CLIENT_SECRET",
-	"CODEXK8S_GIT_BOT_TOKEN",
+	"KODEX_GITHUB_REPO",
+	"KODEX_GITHUB_PAT",
+	"KODEX_PRODUCTION_DOMAIN",
+	"KODEX_AI_DOMAIN",
+	"KODEX_LETSENCRYPT_EMAIL",
+	"KODEX_PUBLIC_BASE_URL",
+	"KODEX_BOOTSTRAP_OWNER_EMAIL",
+	"KODEX_GITHUB_OAUTH_CLIENT_ID",
+	"KODEX_GITHUB_OAUTH_CLIENT_SECRET",
+	"KODEX_GIT_BOT_TOKEN",
 }
 
 func runPreflight(args []string, stdout io.Writer, stderr io.Writer) int {
@@ -115,8 +115,8 @@ func runPreflight(args []string, stdout io.Writer, stderr io.Writer) int {
 		}
 	}
 
-	if strings.TrimSpace(loadedEnv["CODEXK8S_OPENAI_API_KEY"]) == "" {
-		warnings = append(warnings, "CODEXK8S_OPENAI_API_KEY is empty. If you use Codex via ChatGPT subscription, you'll be prompted to authorize via device code on first agent run.")
+	if strings.TrimSpace(loadedEnv["KODEX_OPENAI_API_KEY"]) == "" {
+		warnings = append(warnings, "KODEX_OPENAI_API_KEY is empty. If you use Codex via ChatGPT subscription, you'll be prompted to authorize via device code on first agent run.")
 	}
 
 	writef(stdout, "preflight env-file=%s\n", absEnv)
@@ -240,15 +240,15 @@ func checkSSHConnectivity(values map[string]string, timeout time.Duration) error
 }
 
 func checkGitHubAccess(values map[string]string, timeout time.Duration) ([]string, error) {
-	token := strings.TrimSpace(values["CODEXK8S_GITHUB_PAT"])
-	repoFullName := strings.TrimSpace(values["CODEXK8S_GITHUB_REPO"])
+	token := strings.TrimSpace(values["KODEX_GITHUB_PAT"])
+	repoFullName := strings.TrimSpace(values["KODEX_GITHUB_REPO"])
 	if token == "" || repoFullName == "" {
-		return nil, errors.New("CODEXK8S_GITHUB_PAT and CODEXK8S_GITHUB_REPO must be set for GitHub checks")
+		return nil, errors.New("KODEX_GITHUB_PAT and KODEX_GITHUB_REPO must be set for GitHub checks")
 	}
 
 	owner, repo, err := splitRepositoryFullName(repoFullName)
 	if err != nil {
-		return nil, fmt.Errorf("CODEXK8S_GITHUB_REPO: %w", err)
+		return nil, fmt.Errorf("KODEX_GITHUB_REPO: %w", err)
 	}
 
 	httpClient := &http.Client{Timeout: timeout}
@@ -276,7 +276,7 @@ func checkGitHubAccess(values map[string]string, timeout time.Duration) ([]strin
 		warnings = append(warnings, fmt.Sprintf("webhook %q is not configured in %s yet", webhookURL, repoFullName))
 	}
 
-	expectedLabel := strings.TrimSpace(values["CODEXK8S_RUN_DEV_LABEL"])
+	expectedLabel := strings.TrimSpace(values["KODEX_RUN_DEV_LABEL"])
 	if expectedLabel == "" {
 		expectedLabel = preflightDefaultLabelName
 	}
@@ -284,13 +284,13 @@ func checkGitHubAccess(values map[string]string, timeout time.Duration) ([]strin
 		warnings = append(warnings, fmt.Sprintf("label %q is not configured in %s yet", expectedLabel, repoFullName))
 	}
 
-	firstProjectRepo := strings.TrimSpace(values["CODEXK8S_FIRST_PROJECT_GITHUB_REPO"])
+	firstProjectRepo := strings.TrimSpace(values["KODEX_FIRST_PROJECT_GITHUB_REPO"])
 	if firstProjectRepo == "" {
 		return warnings, nil
 	}
 	firstOwner, firstRepo, splitErr := splitRepositoryFullName(firstProjectRepo)
 	if splitErr != nil {
-		return warnings, fmt.Errorf("CODEXK8S_FIRST_PROJECT_GITHUB_REPO: %w", splitErr)
+		return warnings, fmt.Errorf("KODEX_FIRST_PROJECT_GITHUB_REPO: %w", splitErr)
 	}
 	if _, _, err := client.Repositories.Get(ctx, firstOwner, firstRepo); err != nil {
 		return warnings, fmt.Errorf("get first project repository %s: %w", firstProjectRepo, err)
@@ -319,10 +319,10 @@ func splitRepositoryFullName(value string) (string, string, error) {
 }
 
 func resolveWebhookURL(values map[string]string) string {
-	if explicit := strings.TrimSpace(values["CODEXK8S_GITHUB_WEBHOOK_URL"]); explicit != "" {
+	if explicit := strings.TrimSpace(values["KODEX_GITHUB_WEBHOOK_URL"]); explicit != "" {
 		return explicit
 	}
-	domain := strings.TrimSpace(values["CODEXK8S_PRODUCTION_DOMAIN"])
+	domain := strings.TrimSpace(values["KODEX_PRODUCTION_DOMAIN"])
 	if domain == "" {
 		return ""
 	}

@@ -4,8 +4,8 @@ import (
 	"context"
 	"testing"
 
-	nextstepdomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/nextstep"
-	valuetypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/value"
+	nextstepdomain "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/nextstep"
+	valuetypes "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/types/value"
 )
 
 type stubNextStepGitHubMgmt struct {
@@ -98,7 +98,7 @@ func TestPreviewOrExecuteIssueStageTransition_AcceptsConfiguredReviseLabels(t *t
 		t.Run(testCase.name, func(t *testing.T) {
 			t.Parallel()
 
-			result, err := service.previewOrExecuteIssueStageTransition(context.Background(), "token", "codex-k8s", "codex-k8s", 255, testCase.targetLabel, false)
+			result, err := service.previewOrExecuteIssueStageTransition(context.Background(), "token", "kodex", "kodex", 255, testCase.targetLabel, false)
 			if err != nil {
 				t.Fatalf("previewOrExecuteIssueStageTransition() error = %v", err)
 			}
@@ -122,8 +122,8 @@ func TestPreviewOrExecuteIssueStageTransitionWithCASDetectsRunLabelDrift(t *test
 	_, err := service.previewOrExecuteIssueStageTransitionWithCAS(
 		context.Background(),
 		"token",
-		"codex-k8s",
-		"codex-k8s",
+		"kodex",
+		"kodex",
 		427,
 		"run:release",
 		[]string{"run:dev:revise"},

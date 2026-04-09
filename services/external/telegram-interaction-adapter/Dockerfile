@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1.7
 
-ARG GOLANG_IMAGE=127.0.0.1:5000/codex-k8s/mirror/golang:1.25.8-bookworm
+ARG GOLANG_IMAGE=127.0.0.1:5000/kodex/mirror/golang:1.25.8-bookworm
 
 FROM ${GOLANG_IMAGE} AS builder
 WORKDIR /src

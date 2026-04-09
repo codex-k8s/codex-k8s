@@ -26,7 +26,7 @@ func TestRegisterOrReplaceCollectorReplacesExistingCollector(t *testing.T) {
 	}
 
 	for _, family := range metricFamilies {
-		if family.GetName() != "codexk8s_test_interaction_collector" {
+		if family.GetName() != "kodex_test_interaction_collector" {
 			continue
 		}
 		if got := family.GetMetric()[0].GetGauge().GetValue(); got != 2 {
@@ -45,7 +45,7 @@ type stubCollector struct {
 
 func newStubCollector(value float64) *stubCollector {
 	return &stubCollector{
-		desc:  prometheus.NewDesc("codexk8s_test_interaction_collector", "test collector replacement", nil, nil),
+		desc:  prometheus.NewDesc("kodex_test_interaction_collector", "test collector replacement", nil, nil),
 		value: value,
 	}
 }

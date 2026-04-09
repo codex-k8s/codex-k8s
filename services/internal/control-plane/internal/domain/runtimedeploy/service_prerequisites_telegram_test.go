@@ -3,7 +3,7 @@ package runtimedeploy
 import (
 	"testing"
 
-	"github.com/codex-k8s/codex-k8s/libs/go/servicescfg"
+	"github.com/codex-k8s/kodex/libs/go/servicescfg"
 )
 
 func TestResolveTelegramRuntimeSecretValues_GeneratesRequiredSecrets(t *testing.T) {
@@ -11,7 +11,7 @@ func TestResolveTelegramRuntimeSecretValues_GeneratesRequiredSecrets(t *testing.
 
 	resolver := servicescfg.NewSecretResolver(nil)
 	values := map[string]string{
-		"CODEXK8S_TELEGRAM_BOT_TOKEN": "bot-token",
+		"KODEX_TELEGRAM_BOT_TOKEN": "bot-token",
 	}
 
 	got, err := resolveTelegramRuntimeSecretValues(resolver, "ai", values, nil, nil)
@@ -41,12 +41,12 @@ func TestResolveTelegramRuntimeSecretValues_PreservesExistingValues(t *testing.T
 
 	resolver := servicescfg.NewSecretResolver(nil)
 	existing := map[string][]byte{
-		"CODEXK8S_TELEGRAM_BOT_TOKEN":                          []byte("existing-bot-token"),
-		"CODEXK8S_TELEGRAM_CHAT_ID":                            []byte("chat-1"),
-		"CODEXK8S_TELEGRAM_INTERACTION_ADAPTER_BASE_URL":       []byte("http://existing-adapter:8080"),
-		"CODEXK8S_TELEGRAM_INTERACTION_ADAPTER_BEARER_TOKEN":   []byte("existing-bearer"),
-		"CODEXK8S_TELEGRAM_INTERACTION_ADAPTER_WEBHOOK_SECRET": []byte("existing-webhook"),
-		"CODEXK8S_TELEGRAM_INTERACTION_ADAPTER_TIMEOUT":        []byte("15s"),
+		"KODEX_TELEGRAM_BOT_TOKEN":                          []byte("existing-bot-token"),
+		"KODEX_TELEGRAM_CHAT_ID":                            []byte("chat-1"),
+		"KODEX_TELEGRAM_INTERACTION_ADAPTER_BASE_URL":       []byte("http://existing-adapter:8080"),
+		"KODEX_TELEGRAM_INTERACTION_ADAPTER_BEARER_TOKEN":   []byte("existing-bearer"),
+		"KODEX_TELEGRAM_INTERACTION_ADAPTER_WEBHOOK_SECRET": []byte("existing-webhook"),
+		"KODEX_TELEGRAM_INTERACTION_ADAPTER_TIMEOUT":        []byte("15s"),
 	}
 
 	got, err := resolveTelegramRuntimeSecretValues(resolver, "production", map[string]string{}, existing, nil)

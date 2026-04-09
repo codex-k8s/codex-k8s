@@ -33,7 +33,7 @@ approvals:
   - агентный pod не получает прямые Kubernetes креды;
   - агентный pod получает отдельный bot-token только для git transport (commit/push в незащищенные ветки);
   - issue/pr/comments/labels и branch-context операции выполняются через MCP ручки (policy + audit);
-  - в pod доступен только `CODEXK8S_OPENAI_API_KEY` и технич. параметры run.
+  - в pod доступен только `KODEX_OPENAI_API_KEY` и технич. параметры run.
 - Policy шаблонов промптов:
   - `work`/`review` шаблоны для запуска берутся по приоритету `DB override -> repo seed`;
   - шаблоны выбираются по locale policy `project locale -> system default -> en`;
@@ -167,8 +167,8 @@ Seed usage:
 
 ### 5. Auth и креды в Job
 
-- Для `codex login` используется `CODEXK8S_OPENAI_API_KEY`:
-  - `printenv CODEXK8S_OPENAI_API_KEY | codex login --with-api-key`
+- Для `codex login` используется `KODEX_OPENAI_API_KEY`:
+  - `printenv KODEX_OPENAI_API_KEY | codex login --with-api-key`
 - Прямые Kubernetes креды в агентный pod не выдаются.
 - В pod выдаётся только GitHub bot-token для git transport (`git fetch/pull/push` в незащищённые ветки).
 - GitHub governance операции (issue/pr/comments/labels/branch context) и Kubernetes операции делаются через MCP-ручки approver/executor.
@@ -208,7 +208,7 @@ PR policy:
 ### Story-1: Agent execution image
 - Добавить отдельный Dockerfile/target для agent job runtime.
 - Установить `@openai/codex` и обязательные утилиты.
-- Согласовать переменные окружения (`CODEXK8S_OPENAI_API_KEY`, repo slug, issue/pr/run ids, MCP endpoint/token).
+- Согласовать переменные окружения (`KODEX_OPENAI_API_KEY`, repo slug, issue/pr/run ids, MCP endpoint/token).
 
 ### Story-2: Prompt/config/model render and launch
 - Реализовать резолв effective template (`work`/`review`, locale fallback) через Day3.5 context assembler.
@@ -282,7 +282,7 @@ PR policy:
   - в `agent_sessions` добавлен `agent_key`;
   - latest-session lookup выполняется по `repository_full_name + branch_name + agent_key`;
   - revise-path восстанавливает только сессию соответствующего системного агента.
-- В worker runtime-context протащен `agent_key` и `CODEXK8S_CONTROL_PLANE_GRPC_TARGET` в run job env.
+- В worker runtime-context протащен `agent_key` и `KODEX_CONTROL_PLANE_GRPC_TARGET` в run job env.
 - В `flow_events` сохранены события Day4:
   - `run.agent.started`,
   - `run.agent.session.restored`,
@@ -295,15 +295,15 @@ PR policy:
 - В run pod реализована split access model:
   - прямых Kubernetes credentials нет;
   - GitHub/Kubernetes governance-операции выполняются через MCP;
-  - для git transport path используется выделенный `CODEXK8S_GIT_BOT_TOKEN`.
+  - для git transport path используется выделенный `KODEX_GIT_BOT_TOKEN`.
 - Обновлены CI/deploy/bootstrap pipeline:
   - добавлен компонент сборки `agent-runner`;
-  - добавлены image/env/secret/variable (`CODEXK8S_AGENT_RUNNER_IMAGE`, `CODEXK8S_WORKER_RUN_CREDENTIALS_SECRET_NAME`, `CODEXK8S_AGENT_DEFAULT_*`, `CODEXK8S_AGENT_BASE_BRANCH`, `CODEXK8S_GIT_BOT_TOKEN`);
-  - `CODEXK8S_WORKER_JOB_IMAGE` по умолчанию переключен на `agent-runner`.
+  - добавлены image/env/secret/variable (`KODEX_AGENT_RUNNER_IMAGE`, `KODEX_WORKER_RUN_CREDENTIALS_SECRET_NAME`, `KODEX_AGENT_DEFAULT_*`, `KODEX_AGENT_BASE_BRANCH`, `KODEX_GIT_BOT_TOKEN`);
+  - `KODEX_WORKER_JOB_IMAGE` по умолчанию переключен на `agent-runner`.
 
 ### Актуализация baseline (post-Day4 hardening, 2026-02-12)
 - Для agent pod закреплён direct execution path:
-  - GitHub операции (issue/PR/comments/review + git push) выполняются через `gh`/`git` с `CODEXK8S_GIT_BOT_TOKEN`;
+  - GitHub операции (issue/PR/comments/review + git push) выполняются через `gh`/`git` с `KODEX_GIT_BOT_TOKEN`;
   - в `full-env` для namespace выдаётся `KUBECONFIG`, runtime-дебаг выполняется через `kubectl`.
 - MCP-контур сокращён до label-операций (`github_labels_*`) для детерминированных transitions и аудита.
 - Прямой доступ к Kubernetes `secrets` в run namespace запрещён RBAC; future secret-management через MCP+approver вынесен в последующие эпики.
@@ -314,7 +314,7 @@ PR policy:
 - Follow-up в плане:
   - Day5: детерминированные post-run label transitions для owner flow (`run:* -> state:*`),
   - Day6: policy/audit hardening для автоматических label transitions и конфликтов.
-  - Day6+: вынести `mcp_servers.codex_k8s.tool_timeout_sec` в настраиваемую policy/runtime-конфигурацию (пер-run/пер-agent), чтобы поддержать долгие approver flow (часы) без ручных правок шаблона.
+  - Day6+: вынести `mcp_servers.kodex.tool_timeout_sec` в настраиваемую policy/runtime-конфигурацию (пер-run/пер-agent), чтобы поддержать долгие approver flow (часы) без ручных правок шаблона.
 ## Критерии приемки эпика — статус
 - Выполнено: `run:dev` запускает агентный Job и поддерживает PR-flow.
 - Выполнено: `run:dev:revise` работает с resume-path, при отсутствии PR отклоняется с `failed_precondition` и событием `run.revise.pr_not_found`.

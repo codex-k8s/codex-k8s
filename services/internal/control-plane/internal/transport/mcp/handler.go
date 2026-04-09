@@ -11,10 +11,10 @@ import (
 	"github.com/modelcontextprotocol/go-sdk/auth"
 	sdkmcp "github.com/modelcontextprotocol/go-sdk/mcp"
 
-	mcpdomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/mcp"
+	mcpdomain "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/mcp"
 )
 
-const tokenInfoSessionKey = "codexk8s_session"
+const tokenInfoSessionKey = "kodex_session"
 
 type domainService interface {
 	VerifyRunToken(ctx context.Context, rawToken string) (mcpdomain.SessionContext, error)
@@ -48,7 +48,7 @@ func NewHandler(service domainService, logger *slog.Logger) http.Handler {
 	}
 
 	server := sdkmcp.NewServer(&sdkmcp.Implementation{
-		Name:    "codex-k8s-control-plane-mcp",
+		Name:    "kodex-control-plane-mcp",
 		Version: "v0.0.1",
 	}, nil)
 
@@ -76,7 +76,7 @@ func verifyBearerToken(service domainService) auth.TokenVerifier {
 		return &auth.TokenInfo{
 			UserID:     session.RunID,
 			Expiration: session.ExpiresAt,
-			Scopes:     []string{"codexk8s:mcp"},
+			Scopes:     []string{"kodex:mcp"},
 			Extra: map[string]any{
 				tokenInfoSessionKey: session,
 			},

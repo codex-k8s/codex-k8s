@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	nextstepdomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/nextstep"
-	querytypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/query"
+	nextstepdomain "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/nextstep"
+	querytypes "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/types/query"
 )
 
 func mustRenderCommentBody(t *testing.T, state commentState, managementURL string, nextStepActions []nextStepCommentAction, recentStatuses []recentAgentStatus) string {
@@ -38,7 +38,7 @@ func TestRenderCommentBody_RendersTemplateByLocale(t *testing.T) {
 		Phase:        PhaseStarted,
 		TriggerKind:  triggerKindDev,
 		PromptLocale: localeRU,
-	}, "https://platform.codex-k8s.dev/runs/run-1", nil, nil)
+	}, "https://platform.kodex.works/runs/run-1", nil, nil)
 	if !strings.Contains(body, "### 🧠 Запуск ИИ-агента") {
 		t.Fatalf("rendered body does not contain russian title: %q", body)
 	}
@@ -56,7 +56,7 @@ func TestRenderCommentBody_RendersPlannedLaunchState(t *testing.T) {
 		RuntimeMode:  runtimeModeFullEnv,
 		RunStatus:    "pending",
 		PromptLocale: localeRU,
-	}, "https://platform.codex-k8s.dev/runs/run-planned", nil, nil)
+	}, "https://platform.kodex.works/runs/run-planned", nil, nil)
 	if !strings.Contains(body, "Планируется запуск агента") {
 		t.Fatalf("rendered body does not contain planned launch marker: %q", body)
 	}
@@ -73,11 +73,11 @@ func TestRenderCommentBody_RendersSlotURLAndAuthTimeline(t *testing.T) {
 		Phase:         PhaseReady,
 		AuthRequested: true,
 		RuntimeMode:   runtimeModeFullEnv,
-		Namespace:     "codex-k8s-dev-2",
-		SlotURL:       "https://codex-k8s-dev-2.ai.platform.codex-k8s.dev",
+		Namespace:     "kodex-dev-2",
+		SlotURL:       "https://kodex-dev-2.ai.platform.kodex.works",
 		RunStatus:     "running",
 		PromptLocale:  localeRU,
-	}, "https://platform.codex-k8s.dev/runs/run-2", nil, nil)
+	}, "https://platform.kodex.works/runs/run-2", nil, nil)
 	if !strings.Contains(body, "Ссылка на слот") {
 		t.Fatalf("rendered body does not contain slot url label: %q", body)
 	}
@@ -95,7 +95,7 @@ func TestRenderCommentBody_RendersAuthVerificationPayload(t *testing.T) {
 		PromptLocale:             localeRU,
 		CodexAuthVerificationURL: "https://example.com/device",
 		CodexAuthUserCode:        "ABCD-EFGH",
-	}, "https://platform.codex-k8s.dev/runs/run-auth", nil, nil, "Ссылка авторизации", "ABCD-EFGH")
+	}, "https://platform.kodex.works/runs/run-auth", nil, nil, "Ссылка авторизации", "ABCD-EFGH")
 }
 
 func TestRenderCommentBody_RuntimePreparationAndNamespaceMessages(t *testing.T) {
@@ -113,11 +113,11 @@ func TestRenderCommentBody_RuntimePreparationAndNamespaceMessages(t *testing.T) 
 				RunID:        "run-preparing",
 				Phase:        PhasePreparingRuntime,
 				RuntimeMode:  runtimeModeFullEnv,
-				Namespace:    "codex-k8s-dev-2",
+				Namespace:    "kodex-dev-2",
 				RunStatus:    "running",
 				PromptLocale: localeRU,
 			},
-			managementURL: "https://platform.codex-k8s.dev/runs/run-preparing",
+			managementURL: "https://platform.kodex.works/runs/run-preparing",
 			mustContain: []string{
 				"Идёт сборка и деплой",
 				"namespace, runtime stack, slot URL",
@@ -129,11 +129,11 @@ func TestRenderCommentBody_RuntimePreparationAndNamespaceMessages(t *testing.T) 
 				RunID:        "run-debug",
 				Phase:        PhaseNamespaceDeleted,
 				RuntimeMode:  runtimeModeFullEnv,
-				Namespace:    "codex-k8s-dev-2",
+				Namespace:    "kodex-dev-2",
 				RunStatus:    "succeeded",
 				PromptLocale: localeRU,
 			},
-			managementURL: "https://platform.codex-k8s.dev/runs/run-debug",
+			managementURL: "https://platform.kodex.works/runs/run-debug",
 			mustContain: []string{
 				"Namespace не удален",
 				"Удалить его можно на странице запуска",
@@ -164,25 +164,25 @@ func TestRenderCommentBody_RendersNextStepMatrix(t *testing.T) {
 			ActionKind:     querytypes.NextStepActionKindIssueStageTransition,
 			DisplayVariant: nextStepDisplayRevise,
 			TargetLabel:    "run:dev:revise",
-			URL:            "https://platform.codex-k8s.dev/?modal=next-step&repository_full_name=codex-k8s%2Fcodex-k8s&issue_number=95&action_kind=issue_stage_transition&target_label=run%3Adev%3Arevise&display_variant=revise",
+			URL:            "https://platform.kodex.works/?modal=next-step&repository_full_name=codex-k8s%2Fkodex&issue_number=95&action_kind=issue_stage_transition&target_label=run%3Adev%3Arevise&display_variant=revise",
 		},
 		{
 			ActionKind:     querytypes.NextStepActionKindIssueStageTransition,
 			DisplayVariant: nextStepDisplayVeryShortFlow,
 			TargetLabel:    "run:qa",
-			URL:            "https://platform.codex-k8s.dev/?modal=next-step&repository_full_name=codex-k8s%2Fcodex-k8s&issue_number=95&pull_request_number=123&action_kind=issue_stage_transition&target_label=run%3Aqa&display_variant=very_short_flow",
+			URL:            "https://platform.kodex.works/?modal=next-step&repository_full_name=codex-k8s%2Fkodex&issue_number=95&pull_request_number=123&action_kind=issue_stage_transition&target_label=run%3Aqa&display_variant=very_short_flow",
 		},
 		{
 			ActionKind:     querytypes.NextStepActionKindPullRequestLabelAdd,
 			DisplayVariant: nextStepDisplayReviewer,
 			TargetLabel:    "need:reviewer",
-			URL:            "https://platform.codex-k8s.dev/?modal=next-step&repository_full_name=codex-k8s%2Fcodex-k8s&issue_number=95&pull_request_number=123&action_kind=pull_request_label_add&target_label=need%3Areviewer&display_variant=reviewer",
+			URL:            "https://platform.kodex.works/?modal=next-step&repository_full_name=codex-k8s%2Fkodex&issue_number=95&pull_request_number=123&action_kind=pull_request_label_add&target_label=need%3Areviewer&display_variant=reviewer",
 		},
 		{
 			ActionKind:     querytypes.NextStepActionKindIssueStageTransition,
 			DisplayVariant: nextStepDisplayDocAudit,
 			TargetLabel:    "run:doc-audit",
-			URL:            "https://platform.codex-k8s.dev/?modal=next-step&repository_full_name=codex-k8s%2Fcodex-k8s&issue_number=95&action_kind=issue_stage_transition&target_label=run%3Adoc-audit&display_variant=doc_audit",
+			URL:            "https://platform.kodex.works/?modal=next-step&repository_full_name=codex-k8s%2Fkodex&issue_number=95&action_kind=issue_stage_transition&target_label=run%3Adoc-audit&display_variant=doc_audit",
 		},
 	}
 
@@ -191,9 +191,9 @@ func TestRenderCommentBody_RendersNextStepMatrix(t *testing.T) {
 		Phase:              PhaseStarted,
 		TriggerKind:        triggerKindDev,
 		PromptLocale:       localeRU,
-		RepositoryFullName: "codex-k8s/codex-k8s",
+		RepositoryFullName: "codex-k8s/kodex",
 		IssueNumber:        95,
-	}, "https://platform.codex-k8s.dev/runs/run-dev", nextStepActions, nil)
+	}, "https://platform.kodex.works/runs/run-dev", nextStepActions, nil)
 
 	if !strings.Contains(body, "Следующие шаги") {
 		t.Fatalf("expected next steps section in body: %q", body)
@@ -220,11 +220,11 @@ func TestRenderCommentBody_RendersDesignFastTrackAction(t *testing.T) {
 		Phase:              PhaseStarted,
 		TriggerKind:        "design",
 		PromptLocale:       localeRU,
-		RepositoryFullName: "codex-k8s/codex-k8s",
+		RepositoryFullName: "codex-k8s/kodex",
 		IssueNumber:        95,
-	}, "https://platform.codex-k8s.dev/runs/run-design", buildNextStepActions("https://platform.codex-k8s.dev", nextstepdomain.DefaultLabels(), runContext{}, commentState{
+	}, "https://platform.kodex.works/runs/run-design", buildNextStepActions("https://platform.kodex.works", nextstepdomain.DefaultLabels(), runContext{}, commentState{
 		TriggerKind:        "design",
-		RepositoryFullName: "codex-k8s/codex-k8s",
+		RepositoryFullName: "codex-k8s/kodex",
 		IssueNumber:        95,
 	}), nil)
 	if !strings.Contains(body, "`run:dev`") {
@@ -242,9 +242,9 @@ func TestRenderCommentBody_RendersIssueAndPRLinks(t *testing.T) {
 		RunID:          "run-links",
 		Phase:          PhaseStarted,
 		PromptLocale:   localeRU,
-		IssueURL:       "https://github.com/codex-k8s/codex-k8s/issues/95",
-		PullRequestURL: "https://github.com/codex-k8s/codex-k8s/pull/123",
-	}, "https://platform.codex-k8s.dev/runs/run-links", nil, nil, "issues/95", "pull/123")
+		IssueURL:       "https://github.com/codex-k8s/kodex/issues/95",
+		PullRequestURL: "https://github.com/codex-k8s/kodex/pull/123",
+	}, "https://platform.kodex.works/runs/run-links", nil, nil, "issues/95", "pull/123")
 }
 
 func TestRenderCommentBody_RendersRecentAgentStatusesRU(t *testing.T) {
@@ -254,7 +254,7 @@ func TestRenderCommentBody_RendersRecentAgentStatusesRU(t *testing.T) {
 		RunID:        "run-statuses-ru",
 		Phase:        PhaseStarted,
 		PromptLocale: localeRU,
-	}, "https://platform.codex-k8s.dev/runs/run-statuses-ru", nil, []recentAgentStatus{
+	}, "https://platform.kodex.works/runs/run-statuses-ru", nil, []recentAgentStatus{
 		{StatusText: "Обновляю API", ReportedAt: nowUTC().Format(time.RFC3339Nano)},
 		{StatusText: "Проверяю тесты", ReportedAt: nowUTC().Format(time.RFC3339Nano), RepeatCount: 2},
 	})
@@ -279,7 +279,7 @@ func TestRenderCommentBody_RendersRecentAgentStatusesEN(t *testing.T) {
 		RunID:        "run-statuses-en",
 		Phase:        PhaseStarted,
 		PromptLocale: localeEN,
-	}, "https://platform.codex-k8s.dev/runs/run-statuses-en", nil, []recentAgentStatus{
+	}, "https://platform.kodex.works/runs/run-statuses-en", nil, []recentAgentStatus{
 		{StatusText: "Running regression", ReportedAt: nowUTC().Format(time.RFC3339Nano)},
 	})
 	if !strings.Contains(body, "Latest Agent Statuses") {
@@ -299,11 +299,11 @@ func TestRenderCommentBody_RendersDiscussionRunAsPod(t *testing.T) {
 		TriggerKind:  triggerKindDev,
 		TriggerLabel: "mode:discussion",
 		RuntimeMode:  runtimeModeCode,
-		JobName:      "codex-k8s-run-run-discussion",
+		JobName:      "kodex-run-run-discussion",
 		JobNamespace: "codex-issue-demo",
 		Namespace:    "codex-issue-demo",
 		PromptLocale: localeRU,
-	}, "https://platform.codex-k8s.dev/runs/run-discussion", nil, nil)
+	}, "https://platform.kodex.works/runs/run-discussion", nil, nil)
 
 	if !strings.Contains(body, "Режим запуска: `discussion`") {
 		t.Fatalf("expected discussion trigger display in body: %q", body)
@@ -311,10 +311,10 @@ func TestRenderCommentBody_RendersDiscussionRunAsPod(t *testing.T) {
 	if !strings.Contains(body, "Runtime mode: `code-only`") {
 		t.Fatalf("expected code-only runtime mode in body: %q", body)
 	}
-	if !strings.Contains(body, "Pod: `codex-issue-demo/codex-k8s-run-run-discussion`") {
+	if !strings.Contains(body, "Pod: `codex-issue-demo/kodex-run-run-discussion`") {
 		t.Fatalf("expected pod workload reference in body: %q", body)
 	}
-	if strings.Contains(body, "Job: `codex-issue-demo/codex-k8s-run-run-discussion`") {
+	if strings.Contains(body, "Job: `codex-issue-demo/kodex-run-run-discussion`") {
 		t.Fatalf("expected job workload reference to be hidden for discussion run: %q", body)
 	}
 	if strings.Contains(body, "Ожидание подготовки окружения") {

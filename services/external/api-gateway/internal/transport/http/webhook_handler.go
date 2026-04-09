@@ -10,11 +10,11 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
-	"github.com/codex-k8s/codex-k8s/libs/go/crypto/githubsignature"
-	webhookdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/webhook"
-	"github.com/codex-k8s/codex-k8s/libs/go/errs"
-	controlplanev1 "github.com/codex-k8s/codex-k8s/proto/gen/go/codexk8s/controlplane/v1"
-	"github.com/codex-k8s/codex-k8s/services/external/api-gateway/internal/transport/http/casters"
+	"github.com/codex-k8s/kodex/libs/go/crypto/githubsignature"
+	webhookdomain "github.com/codex-k8s/kodex/libs/go/domain/webhook"
+	"github.com/codex-k8s/kodex/libs/go/errs"
+	controlplanev1 "github.com/codex-k8s/kodex/proto/gen/go/kodex/controlplane/v1"
+	"github.com/codex-k8s/kodex/services/external/api-gateway/internal/transport/http/casters"
 )
 
 const (
@@ -27,7 +27,7 @@ const (
 var (
 	webhookRequestsTotal = promauto.NewCounterVec(
 		prometheus.CounterOpts{
-			Name: "codexk8s_webhook_requests_total",
+			Name: "kodex_webhook_requests_total",
 			Help: "Total number of GitHub webhook requests handled by api-gateway.",
 		},
 		[]string{"result", "event"},
@@ -35,7 +35,7 @@ var (
 
 	webhookDuration = promauto.NewHistogramVec(
 		prometheus.HistogramOpts{
-			Name:    "codexk8s_webhook_duration_seconds",
+			Name:    "kodex_webhook_duration_seconds",
 			Help:    "Duration of GitHub webhook ingestion in seconds.",
 			Buckets: prometheus.DefBuckets,
 		},
