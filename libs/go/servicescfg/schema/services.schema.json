@@ -1,13 +1,13 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://codex-k8s.dev/schemas/services.schema.json",
-  "title": "codex-k8s services.yaml",
+  "$id": "https://kodex.works/schemas/services.schema.json",
+  "title": "kodex services.yaml",
   "type": "object",
   "required": ["apiVersion", "kind", "metadata", "spec"],
   "properties": {
     "apiVersion": {
       "type": "string",
-      "const": "codex-k8s.dev/v1alpha1"
+      "const": "kodex.works/v1alpha1"
     },
     "kind": {
       "type": "string",

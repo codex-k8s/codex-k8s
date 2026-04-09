@@ -1,9 +1,9 @@
-apiVersion: codex-k8s.dev/v1alpha1
+apiVersion: kodex.works/v1alpha1
 kind: ServiceStack
 metadata:
-  name: codex-k8s
+  name: kodex
 spec:
-  project: codex-k8s
+  project: kodex
   projectDocs:
     - path: README.md
       description: Обзор платформы, роли агентов, сценарии использования и пошаговый workflow от Issue до деплоя.
@@ -96,7 +96,7 @@ spec:
       bumpOn:
         - services/internal/control-plane
         - deploy/base/kaniko
-        - deploy/base/codex-k8s/codegen-check-job.yaml.tpl
+        - deploy/base/kodex/codegen-check-job.yaml.tpl
         - libs/go
         - proto
     worker:
@@ -183,16 +183,16 @@ spec:
     environmentAliases:
       production: [prod]
     keyOverrides:
-      - sourceKey: CODEXK8S_GITHUB_OAUTH_CLIENT_ID
+      - sourceKey: KODEX_GITHUB_OAUTH_CLIENT_ID
         overrideKeys:
-          ai: CODEXK8S_GITHUB_OAUTH_CLIENT_ID_AI
-          production: CODEXK8S_PRODUCTION_GITHUB_OAUTH_CLIENT_ID
-      - sourceKey: CODEXK8S_GITHUB_OAUTH_CLIENT_SECRET
+          ai: KODEX_GITHUB_OAUTH_CLIENT_ID_AI
+          production: KODEX_PRODUCTION_GITHUB_OAUTH_CLIENT_ID
+      - sourceKey: KODEX_GITHUB_OAUTH_CLIENT_SECRET
         overrideKeys:
-          ai: CODEXK8S_GITHUB_OAUTH_CLIENT_SECRET_AI
-          production: CODEXK8S_PRODUCTION_GITHUB_OAUTH_CLIENT_SECRET
+          ai: KODEX_GITHUB_OAUTH_CLIENT_SECRET_AI
+          production: KODEX_PRODUCTION_GITHUB_OAUTH_CLIENT_SECRET
     patterns:
-      - sourcePrefix: CODEXK8S_
+      - sourcePrefix: KODEX_
         excludeSuffixes:
           - _AI
         environments:
@@ -202,88 +202,88 @@ spec:
     kaniko-clone:
       type: external
       from: 'alpine/git:{{ index .Versions "alpine-git" }}'
-      local: '{{ envOr "CODEXK8S_INTERNAL_REGISTRY_HOST" "127.0.0.1:5000" }}/codex-k8s/mirror/alpine-git:{{ index .Versions "alpine-git" }}'
+      local: '{{ envOr "KODEX_INTERNAL_REGISTRY_HOST" "127.0.0.1:5000" }}/kodex/mirror/alpine-git:{{ index .Versions "alpine-git" }}'
     kaniko-executor:
       type: external
       from: 'gcr.io/kaniko-project/executor:{{ index .Versions "kaniko-executor" }}'
-      local: '{{ envOr "CODEXK8S_INTERNAL_REGISTRY_HOST" "127.0.0.1:5000" }}/codex-k8s/mirror/kaniko-executor:{{ index .Versions "kaniko-executor" }}'
+      local: '{{ envOr "KODEX_INTERNAL_REGISTRY_HOST" "127.0.0.1:5000" }}/kodex/mirror/kaniko-executor:{{ index .Versions "kaniko-executor" }}'
     repo-sync:
       type: external
       from: 'alpine/git:{{ index .Versions "alpine-git" }}'
-      local: '{{ envOr "CODEXK8S_INTERNAL_REGISTRY_HOST" "127.0.0.1:5000" }}/codex-k8s/mirror/alpine-git:{{ index .Versions "alpine-git" }}'
+      local: '{{ envOr "KODEX_INTERNAL_REGISTRY_HOST" "127.0.0.1:5000" }}/kodex/mirror/alpine-git:{{ index .Versions "alpine-git" }}'
     busybox:
       type: external
       from: 'busybox:{{ index .Versions "busybox" }}'
-      local: '{{ envOr "CODEXK8S_INTERNAL_REGISTRY_HOST" "127.0.0.1:5000" }}/codex-k8s/mirror/busybox:{{ index .Versions "busybox" }}'
+      local: '{{ envOr "KODEX_INTERNAL_REGISTRY_HOST" "127.0.0.1:5000" }}/kodex/mirror/busybox:{{ index .Versions "busybox" }}'
     postgres:
       type: external
       from: 'pgvector/pgvector:{{ index .Versions "pgvector" }}'
-      local: '{{ envOr "CODEXK8S_INTERNAL_REGISTRY_HOST" "127.0.0.1:5000" }}/codex-k8s/mirror/pgvector:{{ index .Versions "pgvector" }}'
+      local: '{{ envOr "KODEX_INTERNAL_REGISTRY_HOST" "127.0.0.1:5000" }}/kodex/mirror/pgvector:{{ index .Versions "pgvector" }}'
     oauth2-proxy:
       type: external
       from: 'quay.io/oauth2-proxy/oauth2-proxy:{{ index .Versions "oauth2-proxy" }}'
-      local: '{{ envOr "CODEXK8S_INTERNAL_REGISTRY_HOST" "127.0.0.1:5000" }}/codex-k8s/mirror/oauth2-proxy:{{ index .Versions "oauth2-proxy" }}'
+      local: '{{ envOr "KODEX_INTERNAL_REGISTRY_HOST" "127.0.0.1:5000" }}/kodex/mirror/oauth2-proxy:{{ index .Versions "oauth2-proxy" }}'
     codegen-check:
       type: external
       from: 'golang:{{ index .Versions "golang-codegen" }}'
-      local: '{{ envOr "CODEXK8S_INTERNAL_REGISTRY_HOST" "127.0.0.1:5000" }}/codex-k8s/mirror/golang:{{ index .Versions "golang-codegen" }}'
+      local: '{{ envOr "KODEX_INTERNAL_REGISTRY_HOST" "127.0.0.1:5000" }}/kodex/mirror/golang:{{ index .Versions "golang-codegen" }}'
     golang-alpine:
       type: external
       from: 'golang:{{ index .Versions "golang-alpine" }}'
-      local: '{{ envOr "CODEXK8S_INTERNAL_REGISTRY_HOST" "127.0.0.1:5000" }}/codex-k8s/mirror/golang:{{ index .Versions "golang-alpine" }}'
+      local: '{{ envOr "KODEX_INTERNAL_REGISTRY_HOST" "127.0.0.1:5000" }}/kodex/mirror/golang:{{ index .Versions "golang-alpine" }}'
     golang-bookworm:
       type: external
       from: 'golang:{{ index .Versions "golang-bookworm" }}'
-      local: '{{ envOr "CODEXK8S_INTERNAL_REGISTRY_HOST" "127.0.0.1:5000" }}/codex-k8s/mirror/golang:{{ index .Versions "golang-bookworm" }}'
+      local: '{{ envOr "KODEX_INTERNAL_REGISTRY_HOST" "127.0.0.1:5000" }}/kodex/mirror/golang:{{ index .Versions "golang-bookworm" }}'
     node-alpine:
       type: external
       from: 'node:{{ index .Versions "node-alpine" }}'
-      local: '{{ envOr "CODEXK8S_INTERNAL_REGISTRY_HOST" "127.0.0.1:5000" }}/codex-k8s/mirror/node:{{ index .Versions "node-alpine" }}'
+      local: '{{ envOr "KODEX_INTERNAL_REGISTRY_HOST" "127.0.0.1:5000" }}/kodex/mirror/node:{{ index .Versions "node-alpine" }}'
     node-bookworm:
       type: external
       from: 'node:{{ index .Versions "node-bookworm" }}'
-      local: '{{ envOr "CODEXK8S_INTERNAL_REGISTRY_HOST" "127.0.0.1:5000" }}/codex-k8s/mirror/node:{{ index .Versions "node-bookworm" }}'
+      local: '{{ envOr "KODEX_INTERNAL_REGISTRY_HOST" "127.0.0.1:5000" }}/kodex/mirror/node:{{ index .Versions "node-bookworm" }}'
     nginx-alpine:
       type: external
       from: 'nginx:{{ index .Versions "nginx-alpine" }}'
-      local: '{{ envOr "CODEXK8S_INTERNAL_REGISTRY_HOST" "127.0.0.1:5000" }}/codex-k8s/mirror/nginx:{{ index .Versions "nginx-alpine" }}'
+      local: '{{ envOr "KODEX_INTERNAL_REGISTRY_HOST" "127.0.0.1:5000" }}/kodex/mirror/nginx:{{ index .Versions "nginx-alpine" }}'
     kubectl:
       type: external
       from: 'alpine/k8s:{{ trimPrefix "v" (index .Versions "kubectl") }}'
-      local: '{{ envOr "CODEXK8S_INTERNAL_REGISTRY_HOST" "127.0.0.1:5000" }}/codex-k8s/mirror/alpine-k8s:{{ trimPrefix "v" (index .Versions "kubectl") }}'
+      local: '{{ envOr "KODEX_INTERNAL_REGISTRY_HOST" "127.0.0.1:5000" }}/kodex/mirror/alpine-k8s:{{ trimPrefix "v" (index .Versions "kubectl") }}'
     api-gateway:
       type: build
-      repository: '{{ envOr "CODEXK8S_INTERNAL_REGISTRY_HOST" "127.0.0.1:5000" }}/{{ envOr "CODEXK8S_API_GATEWAY_INTERNAL_IMAGE_REPOSITORY" "codex-k8s/api-gateway" }}'
+      repository: '{{ envOr "KODEX_INTERNAL_REGISTRY_HOST" "127.0.0.1:5000" }}/{{ envOr "KODEX_API_GATEWAY_INTERNAL_IMAGE_REPOSITORY" "kodex/api-gateway" }}'
       tagTemplate: '{{ index .Versions "api-gateway" }}'
       dockerfile: services/external/api-gateway/Dockerfile
       context: .
     telegram-interaction-adapter:
       type: build
-      repository: '{{ envOr "CODEXK8S_INTERNAL_REGISTRY_HOST" "127.0.0.1:5000" }}/{{ envOr "CODEXK8S_TELEGRAM_INTERACTION_ADAPTER_INTERNAL_IMAGE_REPOSITORY" "codex-k8s/telegram-interaction-adapter" }}'
+      repository: '{{ envOr "KODEX_INTERNAL_REGISTRY_HOST" "127.0.0.1:5000" }}/{{ envOr "KODEX_TELEGRAM_INTERACTION_ADAPTER_INTERNAL_IMAGE_REPOSITORY" "kodex/telegram-interaction-adapter" }}'
       tagTemplate: '{{ index .Versions "telegram-interaction-adapter" }}'
       dockerfile: services/external/telegram-interaction-adapter/Dockerfile
       context: .
     control-plane:
       type: build
-      repository: '{{ envOr "CODEXK8S_INTERNAL_REGISTRY_HOST" "127.0.0.1:5000" }}/{{ envOr "CODEXK8S_CONTROL_PLANE_INTERNAL_IMAGE_REPOSITORY" "codex-k8s/control-plane" }}'
+      repository: '{{ envOr "KODEX_INTERNAL_REGISTRY_HOST" "127.0.0.1:5000" }}/{{ envOr "KODEX_CONTROL_PLANE_INTERNAL_IMAGE_REPOSITORY" "kodex/control-plane" }}'
       tagTemplate: '{{ index .Versions "control-plane" }}'
       dockerfile: services/internal/control-plane/Dockerfile
       context: .
     worker:
       type: build
-      repository: '{{ envOr "CODEXK8S_INTERNAL_REGISTRY_HOST" "127.0.0.1:5000" }}/{{ envOr "CODEXK8S_WORKER_INTERNAL_IMAGE_REPOSITORY" "codex-k8s/worker" }}'
+      repository: '{{ envOr "KODEX_INTERNAL_REGISTRY_HOST" "127.0.0.1:5000" }}/{{ envOr "KODEX_WORKER_INTERNAL_IMAGE_REPOSITORY" "kodex/worker" }}'
       tagTemplate: '{{ index .Versions "worker" }}'
       dockerfile: services/jobs/worker/Dockerfile
       context: .
     agent-runner:
       type: build
-      repository: '{{ envOr "CODEXK8S_INTERNAL_REGISTRY_HOST" "127.0.0.1:5000" }}/{{ envOr "CODEXK8S_AGENT_RUNNER_INTERNAL_IMAGE_REPOSITORY" "codex-k8s/agent-runner" }}'
+      repository: '{{ envOr "KODEX_INTERNAL_REGISTRY_HOST" "127.0.0.1:5000" }}/{{ envOr "KODEX_AGENT_RUNNER_INTERNAL_IMAGE_REPOSITORY" "kodex/agent-runner" }}'
       tagTemplate: '{{ index .Versions "agent-runner" }}'
       dockerfile: services/jobs/agent-runner/Dockerfile
       context: .
     web-console:
       type: '{{ ternary (eq .Env "ai") "build" "skip" }}'
-      repository: '{{ envOr "CODEXK8S_INTERNAL_REGISTRY_HOST" "127.0.0.1:5000" }}/{{ envOr "CODEXK8S_WEB_CONSOLE_INTERNAL_IMAGE_REPOSITORY" "codex-k8s/web-console" }}'
+      repository: '{{ envOr "KODEX_INTERNAL_REGISTRY_HOST" "127.0.0.1:5000" }}/{{ envOr "KODEX_WEB_CONSOLE_INTERNAL_IMAGE_REPOSITORY" "kodex/web-console" }}'
       tagTemplate: '{{ index .Versions "web-console" }}'
       dockerfile: services/staff/web-console/Dockerfile
       context: services/staff/web-console
@@ -304,11 +304,11 @@ spec:
       dependsOn:
         - namespace
       manifests:
-        - path: deploy/base/codex-k8s/repo-cache-pvc.yaml.tpl
+        - path: deploy/base/kodex/repo-cache-pvc.yaml.tpl
     - name: network-policy-baseline
       dependsOn:
         - namespace
-      when: '{{ and (ne .Env "ai") (eq (envOr "CODEXK8S_NETWORK_POLICY_BASELINE" "true") "true") }}'
+      when: '{{ and (ne .Env "ai") (eq (envOr "KODEX_NETWORK_POLICY_BASELINE" "true") "true") }}'
       manifests:
         - path: deploy/base/network-policies/platform-baseline.yaml.tpl
     - name: postgres
@@ -325,34 +325,34 @@ spec:
     - name: cert-manager-clusterissuer
       # Manage ClusterIssuer only when runtime TLS flow explicitly requests it.
       # Otherwise keep existing issuer (if any) untouched to avoid invalid patches.
-      when: '{{ and (eq (envOr "CODEXK8S_CERT_ISSUER_ENABLED" "false") "true") (ne (envOr "CODEXK8S_LETSENCRYPT_EMAIL" "") "") (ne (envOr "CODEXK8S_LETSENCRYPT_SERVER" "") "") }}'
+      when: '{{ and (eq (envOr "KODEX_CERT_ISSUER_ENABLED" "false") "true") (ne (envOr "KODEX_LETSENCRYPT_EMAIL" "") "") (ne (envOr "KODEX_LETSENCRYPT_SERVER" "") "") }}'
       manifests:
         - path: deploy/base/cert-manager/clusterissuer.yaml.tpl
   services:
-    - name: codex-k8s-migrate
+    - name: kodex-migrate
       use:
         - hot-reload-defaults
       deployGroup: migrations
       dependsOn:
         - postgres
       manifests:
-        - path: deploy/base/codex-k8s/migrate-job.yaml.tpl
-    - name: codex-k8s-app
+        - path: deploy/base/kodex/migrate-job.yaml.tpl
+    - name: kodex-app
       use:
         - hot-reload-defaults
       deployGroup: internal
       dependsOn:
         - postgres
       manifests:
-        - path: deploy/base/codex-k8s/app.yaml.tpl
+        - path: deploy/base/kodex/app.yaml.tpl
     - name: oauth2-proxy
       use:
         - hot-reload-defaults
       scope: infrastructure-singleton
       deployGroup: edge
       dependsOn:
-        - codex-k8s-app
-      when: '{{ eq (envOr "CODEXK8S_OAUTH2_PROXY_ENABLED" "true") "true" }}'
+        - kodex-app
+      when: '{{ eq (envOr "KODEX_OAUTH2_PROXY_ENABLED" "true") "true" }}'
       manifests:
         - path: deploy/base/oauth2-proxy/oauth2-proxy.yaml.tpl
     - name: telegram-interaction-adapter
@@ -360,7 +360,7 @@ spec:
         - hot-reload-defaults
       deployGroup: edge
       dependsOn:
-        - codex-k8s-app
+        - kodex-app
       manifests:
         - path: deploy/base/telegram-interaction-adapter/telegram-interaction-adapter.yaml.tpl
     - name: web-console
@@ -368,7 +368,7 @@ spec:
         - hot-reload-defaults
       deployGroup: frontend
       dependsOn:
-        - codex-k8s-app
+        - kodex-app
       when: '{{ ternary (eq .Env "ai") "true" "false" }}'
       manifests:
         - path: deploy/base/web-console/web-console.yaml.tpl
@@ -378,7 +378,7 @@ spec:
       deployGroup: edge
       dependsOn:
         - registry
-        - codex-k8s-app
+        - kodex-app
       when: '{{ ternary (eq .Env "ai") "false" "true" }}'
       manifests:
         - path: deploy/base/registry/registry-gc.yaml.tpl
@@ -388,6 +388,6 @@ spec:
       deployGroup: edge
       dependsOn:
         - oauth2-proxy
-      when: '{{ eq (envOr "CODEXK8S_INGRESS_ENABLED" "true") "true" }}'
+      when: '{{ eq (envOr "KODEX_INGRESS_ENABLED" "true") "true" }}'
       manifests:
-        - path: deploy/base/codex-k8s/ingress.yaml.tpl
+        - path: deploy/base/kodex/ingress.yaml.tpl

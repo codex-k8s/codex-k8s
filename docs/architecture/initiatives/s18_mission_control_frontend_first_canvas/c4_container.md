@@ -30,7 +30,7 @@ Person(owner, "Owner / operator", "Использует canvas prototype для 
 System_Ext(github, "GitHub", "Provider system; only safe deep links in Sprint S18")
 System_Ext(k8s, "Kubernetes", "Runtime for platform and future execution flows")
 
-System_Boundary(b0, "codex-k8s") {
+System_Boundary(b0, "kodex") {
   Container(web, "Web Console", "Vue 3", "Owns fake-data scenario catalog, canvas projection, drawer/toolbar state and workflow preview UX")
   Container(gw, "API Gateway", "Go HTTP", "Existing auth/session/static delivery and future thin-edge transport seam")
   Container(cp, "Control Plane", "Go", "Existing platform policy source of truth; future owner for persisted Mission Control semantics after #563")

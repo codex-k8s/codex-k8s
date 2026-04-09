@@ -11,9 +11,9 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/codex-k8s/codex-k8s/services/external/api-gateway/internal/auth"
-	"github.com/codex-k8s/codex-k8s/services/external/api-gateway/internal/controlplane"
-	httptransport "github.com/codex-k8s/codex-k8s/services/external/api-gateway/internal/transport/http"
+	"github.com/codex-k8s/kodex/services/external/api-gateway/internal/auth"
+	"github.com/codex-k8s/kodex/services/external/api-gateway/internal/controlplane"
+	httptransport "github.com/codex-k8s/kodex/services/external/api-gateway/internal/transport/http"
 )
 
 // Run starts api-gateway and blocks until shutdown or fatal server error.
@@ -36,7 +36,7 @@ func Run() error {
 
 	jwtTTL, err := time.ParseDuration(cfg.JWTTTL)
 	if err != nil {
-		return fmt.Errorf("parse CODEXK8S_JWT_TTL=%q: %w", cfg.JWTTTL, err)
+		return fmt.Errorf("parse KODEX_JWT_TTL=%q: %w", cfg.JWTTTL, err)
 	}
 	authService, err := auth.NewService(auth.Config{
 		PublicBaseURL:           cfg.PublicBaseURL,

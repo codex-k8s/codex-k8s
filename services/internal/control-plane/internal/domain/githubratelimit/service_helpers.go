@@ -2,7 +2,7 @@ package githubratelimit
 
 import "time"
 
-import valuetypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/value"
+import valuetypes "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/types/value"
 
 func defaultNowUTC() time.Time {
 	return time.Now().UTC()

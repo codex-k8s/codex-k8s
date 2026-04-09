@@ -4,8 +4,8 @@ import (
 	"context"
 	"strings"
 
-	rundomain "github.com/codex-k8s/codex-k8s/libs/go/domain/run"
-	webhookdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/webhook"
+	rundomain "github.com/codex-k8s/kodex/libs/go/domain/run"
+	webhookdomain "github.com/codex-k8s/kodex/libs/go/domain/webhook"
 )
 
 func (s *Service) resolveDiscussionTrigger(issueLabels []githubLabelRecord, fallbackKind webhookdomain.TriggerKind, source string) (issueRunTrigger, triggerConflictResult) {

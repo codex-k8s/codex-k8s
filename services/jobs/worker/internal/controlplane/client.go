@@ -6,9 +6,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/codex-k8s/codex-k8s/libs/go/grpcutil"
-	controlplanev1 "github.com/codex-k8s/codex-k8s/proto/gen/go/codexk8s/controlplane/v1"
-	workerdomain "github.com/codex-k8s/codex-k8s/services/jobs/worker/internal/domain/worker"
+	"github.com/codex-k8s/kodex/libs/go/grpcutil"
+	controlplanev1 "github.com/codex-k8s/kodex/proto/gen/go/kodex/controlplane/v1"
+	workerdomain "github.com/codex-k8s/kodex/services/jobs/worker/internal/domain/worker"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/timestamppb"

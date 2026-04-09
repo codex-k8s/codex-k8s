@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/codex-k8s/codex-k8s/services/jobs/agent-runner/internal/app"
+	"github.com/codex-k8s/kodex/services/jobs/agent-runner/internal/app"
 )
 
 func main() {

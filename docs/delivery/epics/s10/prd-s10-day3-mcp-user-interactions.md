@@ -24,7 +24,7 @@ approvals:
 # PRD: Built-in MCP user interactions
 
 ## TL;DR
-- Что строим: channel-neutral built-in interaction contract для `user.notify` и `user.decision.request` внутри `codex_k8s`.
+- Что строим: channel-neutral built-in interaction contract для `user.notify` и `user.decision.request` внутри `kodex`.
 - Для кого: owner/product lead, конечный пользователь задачи, platform operator и будущий adapter stream.
 - Почему: сегодня user-facing next steps и decision points либо теряются в GitHub comments, либо рискуют смешаться с approval flow.
 - MVP: actionable `user.notify`, typed `user.decision.request`, wait-state discipline, typed response semantics, platform-owned correlation/audit/retry expectations и adapter-neutral boundaries.
@@ -74,7 +74,7 @@ approvals:
   - channel-neutral adapter model и guardrails для будущих integrations.
 
 ### Out of scope
-- Новый runtime server block вместо расширения built-in `codex_k8s`.
+- Новый runtime server block вместо расширения built-in `kodex`.
 - Telegram-specific payloads, UI affordances, delivery preferences, reminders и escalation logic.
 - Voice/STT, richer multi-turn conversation threads и long-lived conversational UX.
 - Storage schema, transport protocol, queueing/runtime implementation details до `run:arch` и `run:design`.
@@ -229,7 +229,7 @@ approvals:
 | risk | `RSK-383-02` | Typed response semantics окажутся слишком размытыми и создадут неоднозначность downstream processing | Зафиксировать minimal meaning-fields и edge cases уже в PRD, а конкретику владения перенести в `run:arch` | open |
 | risk | `RSK-383-03` | Wait-state, retries и correlation могут быть ошибочно распределены между агентом, адаптером и платформой | Сохранить platform-owned lifecycle как non-negotiable guardrail в handover issue `#385` | open |
 | risk | `RSK-383-04` | Notify path станет информационным шумом вместо actionable completion signal | Держать next-step clarity rate и fallback rate как quality-gates | open |
-| assumption | `ASM-383-01` | Existing built-in `codex_k8s` surface можно расширить без отдельного runtime server block | accepted |
+| assumption | `ASM-383-01` | Existing built-in `kodex` surface можно расширить без отдельного runtime server block | accepted |
 | assumption | `ASM-383-02` | Пользователю достаточно typed options/free-text path для core MVP без richer conversation threads | accepted |
 | assumption | `ASM-383-03` | Channel-neutral semantics можно сохранить, даже если первый adapter окажется Telegram | accepted |
 
@@ -242,7 +242,7 @@ approvals:
 ## Handover в `run:arch`
 - Follow-up issue: `#385`.
 - На архитектурном этапе нельзя потерять:
-  - built-in server `codex_k8s` как единственную core точку расширения;
+  - built-in server `kodex` как единственную core точку расширения;
   - `user.notify` как non-blocking path;
   - `user.decision.request` как единственный core wait-state path;
   - separation between interaction flow and approval/control flow;

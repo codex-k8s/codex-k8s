@@ -3,8 +3,8 @@ package worker
 import (
 	"context"
 
-	agentdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/agent"
-	libslauncher "github.com/codex-k8s/codex-k8s/libs/go/k8s/joblauncher"
+	agentdomain "github.com/codex-k8s/kodex/libs/go/domain/agent"
+	libslauncher "github.com/codex-k8s/kodex/libs/go/k8s/joblauncher"
 )
 
 type JobState = libslauncher.JobState

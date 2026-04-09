@@ -1,8 +1,8 @@
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: codex-k8s-postgres-ingress-from-platform
-  namespace: {{ envOr "CODEXK8S_PRODUCTION_NAMESPACE" "" }}
+  name: kodex-postgres-ingress-from-platform
+  namespace: {{ envOr "KODEX_PRODUCTION_NAMESPACE" "" }}
 spec:
   podSelector:
     matchLabels:
@@ -13,7 +13,7 @@ spec:
     - from:
         - podSelector:
             matchLabels:
-              app.kubernetes.io/name: codex-k8s
+              app.kubernetes.io/name: kodex
       ports:
         - protocol: TCP
           port: 5432
@@ -21,25 +21,25 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: codex-k8s-egress-baseline
-  namespace: {{ envOr "CODEXK8S_PRODUCTION_NAMESPACE" "" }}
+  name: kodex-egress-baseline
+  namespace: {{ envOr "KODEX_PRODUCTION_NAMESPACE" "" }}
 spec:
   podSelector:
     matchLabels:
-      app.kubernetes.io/name: codex-k8s
+      app.kubernetes.io/name: kodex
   policyTypes:
     - Egress
   egress:
-    # NOTE: codex-k8s uses Kubernetes API via in-cluster client-go (kubernetes.default.svc).
+    # NOTE: kodex uses Kubernetes API via in-cluster client-go (kubernetes.default.svc).
     # On some setups (e.g. k3s + certain CNI implementations), egress filtering may be evaluated
     # against the API server endpoint (nodeIP:6443) rather than the Service port (443).
-    # Keep this rule restrictive by setting CODEXK8S_K8S_API_CIDR to the node IP /32 in production.
+    # Keep this rule restrictive by setting KODEX_K8S_API_CIDR to the node IP /32 in production.
     - to:
         - ipBlock:
-            cidr: {{ envOr "CODEXK8S_K8S_API_CIDR" "" }}
+            cidr: {{ envOr "KODEX_K8S_API_CIDR" "" }}
       ports:
         - protocol: TCP
-          port: {{ envOr "CODEXK8S_K8S_API_PORT" "" }}
+          port: {{ envOr "KODEX_K8S_API_PORT" "" }}
     - to:
         - podSelector:
             matchLabels:
@@ -51,7 +51,7 @@ spec:
     - to:
         - podSelector:
             matchLabels:
-              app.kubernetes.io/name: codex-k8s
+              app.kubernetes.io/name: kodex
               app.kubernetes.io/component: control-plane
       ports:
         - protocol: TCP
@@ -62,7 +62,7 @@ spec:
     - to:
         - podSelector:
             matchLabels:
-              app.kubernetes.io/name: codex-k8s
+              app.kubernetes.io/name: kodex
               app.kubernetes.io/component: api-gateway
       ports:
         - protocol: TCP
@@ -71,7 +71,7 @@ spec:
     - to:
         - podSelector:
             matchLabels:
-              app.kubernetes.io/name: codex-k8s
+              app.kubernetes.io/name: kodex
               app.kubernetes.io/component: telegram-interaction-adapter
       ports:
         - protocol: TCP
@@ -80,10 +80,10 @@ spec:
     - to:
         - podSelector:
             matchLabels:
-              app.kubernetes.io/name: codex-k8s-registry
+              app.kubernetes.io/name: kodex-registry
       ports:
         - protocol: TCP
-          port: {{ envOr "CODEXK8S_INTERNAL_REGISTRY_PORT" "" }}
+          port: {{ envOr "KODEX_INTERNAL_REGISTRY_PORT" "" }}
     - to:
         - namespaceSelector:
             matchLabels:
@@ -117,7 +117,7 @@ spec:
     - to:
         - podSelector:
             matchLabels:
-              app.kubernetes.io/name: codex-k8s-web-console
+              app.kubernetes.io/name: kodex-web-console
       ports:
         - protocol: TCP
           port: 5173

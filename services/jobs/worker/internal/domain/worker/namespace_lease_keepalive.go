@@ -3,8 +3,8 @@ package worker
 import (
 	"context"
 
-	agentdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/agent"
-	runqueuerepo "github.com/codex-k8s/codex-k8s/services/jobs/worker/internal/domain/repository/runqueue"
+	agentdomain "github.com/codex-k8s/kodex/libs/go/domain/agent"
+	runqueuerepo "github.com/codex-k8s/kodex/services/jobs/worker/internal/domain/repository/runqueue"
 )
 
 // keepRunNamespaceLeaseAlive refreshes managed full-env namespace retention for active runs,

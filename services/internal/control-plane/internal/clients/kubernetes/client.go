@@ -13,9 +13,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/codex-k8s/codex-k8s/libs/go/k8s/clientcfg"
-	mcpdomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/mcp"
-	runtimedeploydomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/runtimedeploy"
+	"github.com/codex-k8s/kodex/libs/go/k8s/clientcfg"
+	mcpdomain "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/mcp"
+	runtimedeploydomain "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/runtimedeploy"
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -65,11 +65,11 @@ const (
 	k8sKindPersistentVolume        = "PersistentVolume"
 	k8sKindStorageClass            = "StorageClass"
 
-	runNamespaceManagedByLabel   = "codex-k8s.dev/managed-by"
-	runNamespaceManagedByValue   = "codex-k8s-worker"
-	runNamespacePurposeLabel     = "codex-k8s.dev/namespace-purpose"
+	runNamespaceManagedByLabel   = "kodex.works/managed-by"
+	runNamespaceManagedByValue   = "kodex-worker"
+	runNamespacePurposeLabel     = "kodex.works/namespace-purpose"
 	runNamespacePurposeValue     = "run"
-	runNamespaceRuntimeModeLabel = "codex-k8s.dev/runtime-mode"
+	runNamespaceRuntimeModeLabel = "kodex.works/runtime-mode"
 )
 
 var nonDNSLabel = regexp.MustCompile(`[^a-z0-9-]`)
@@ -442,7 +442,7 @@ func (c *Client) DeleteManagedRunNamespace(ctx context.Context, namespace string
 	}
 
 	if strings.TrimSpace(ns.Labels[runNamespaceManagedByLabel]) != runNamespaceManagedByValue {
-		return false, fmt.Errorf("namespace %s is not managed by codex-k8s-worker", targetNamespace)
+		return false, fmt.Errorf("namespace %s is not managed by kodex-worker", targetNamespace)
 	}
 	if strings.TrimSpace(ns.Labels[runNamespacePurposeLabel]) != runNamespacePurposeValue {
 		return false, fmt.Errorf("namespace %s is not a run namespace", targetNamespace)
@@ -528,7 +528,7 @@ func (c *Client) FindManagedRunNamespaceByRunID(ctx context.Context, runID strin
 	}
 
 	items, err := c.clientset.CoreV1().Namespaces().List(ctx, metav1.ListOptions{
-		LabelSelector: fmt.Sprintf("codex-k8s.dev/run-id=%s", targetRunID),
+		LabelSelector: fmt.Sprintf("kodex.works/run-id=%s", targetRunID),
 	})
 	if err != nil {
 		return "", false, fmt.Errorf("list namespaces by run id %s: %w", targetRunID, err)
@@ -1005,7 +1005,7 @@ func (c *Client) ApplyManifest(ctx context.Context, manifest []byte, namespaceOv
 	}
 	manager := strings.TrimSpace(fieldManager)
 	if manager == "" {
-		manager = "codex-k8s-control-plane"
+		manager = "kodex-control-plane"
 	}
 	overrideNamespace := strings.TrimSpace(namespaceOverride)
 

@@ -24,7 +24,7 @@ func NewRecipientResolver(defaultChatID string, bindingsJSON string) (*Recipient
 	if value := strings.TrimSpace(defaultChatID); value != "" {
 		parsed, err := parseTelegramChatID(value)
 		if err != nil {
-			return nil, fmt.Errorf("parse CODEXK8S_TELEGRAM_CHAT_ID: %w", err)
+			return nil, fmt.Errorf("parse KODEX_TELEGRAM_CHAT_ID: %w", err)
 		}
 		resolver.defaultChatID = &parsed
 		resolver.allowedChats[parsed] = struct{}{}
@@ -36,7 +36,7 @@ func NewRecipientResolver(defaultChatID string, bindingsJSON string) (*Recipient
 
 	items := map[string]json.RawMessage{}
 	if err := json.Unmarshal([]byte(bindingsJSON), &items); err != nil {
-		return nil, fmt.Errorf("parse CODEXK8S_TELEGRAM_INTERACTION_ADAPTER_RECIPIENT_BINDINGS_JSON: %w", err)
+		return nil, fmt.Errorf("parse KODEX_TELEGRAM_INTERACTION_ADAPTER_RECIPIENT_BINDINGS_JSON: %w", err)
 	}
 	for login, raw := range items {
 		normalizedLogin := strings.TrimSpace(login)

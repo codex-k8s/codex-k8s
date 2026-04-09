@@ -30,7 +30,7 @@ System_Ext(github, "GitHub", "Issues, PR, comments, reviews")
 System_Ext(k8s, "Kubernetes", "Agents and runtime state")
 System_Ext(voice, "Optional voice intake provider", "Candidate stream only")
 
-System_Boundary(b0, "codex-k8s") {
+System_Boundary(b0, "kodex") {
   Container(web, "Web Console", "Vue3", "Mission Control workspace, side panel, degraded/list fallback UX")
   Container(gw, "API Gateway", "Go HTTP + WS", "Thin-edge staff transport, auth, snapshot/delta delivery")
   Container(cp, "Control Plane", "Go", "Projection owner, relation graph, command lifecycle, policy and snapshot semantics")

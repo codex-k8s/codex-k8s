@@ -17,7 +17,7 @@ approvals:
 # Epic S8 Day 3: Existing repository adoption on onboarding (scan -> docs/services.yaml PR)
 
 ## TL;DR
-- Проблема: платформа умеет подключить существующий репозиторий и проверить доступы, но не умеет перевести уже живой кодовый репозиторий в состояние `codex-k8s-ready`.
+- Проблема: платформа умеет подключить существующий репозиторий и проверить доступы, но не умеет перевести уже живой кодовый репозиторий в состояние `kodex-ready`.
 - Цель: сделать guided adoption flow для существующего репозитория с кодом, который ещё не содержит `services.yaml`, role-aware docs baseline и metadata для платформы.
 - Результат: controlled onboarding pipeline `scan -> onboarding plan -> dedicated agent/task -> PR`, чтобы человек принимал результат через review, а не настраивал репозиторий вручную.
 

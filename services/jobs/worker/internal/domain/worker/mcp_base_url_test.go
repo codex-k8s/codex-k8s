@@ -14,13 +14,13 @@ func TestResolveControlPlaneMCPBaseURL(t *testing.T) {
 		{
 			name:        "uses explicit URL as-is",
 			explicitURL: "http://custom-mcp:8081/mcp",
-			grpcTarget:  "codex-k8s-control-plane.ns.svc.cluster.local:9090",
+			grpcTarget:  "kodex-control-plane.ns.svc.cluster.local:9090",
 			want:        "http://custom-mcp:8081/mcp",
 		},
 		{
 			name:       "derives from grpc host and port",
-			grpcTarget: "codex-k8s-control-plane.codex-k8s-prod.svc.cluster.local:9090",
-			want:       "http://codex-k8s-control-plane.codex-k8s-prod.svc.cluster.local:8081/mcp",
+			grpcTarget: "kodex-control-plane.kodex-prod.svc.cluster.local:9090",
+			want:       "http://kodex-control-plane.kodex-prod.svc.cluster.local:8081/mcp",
 		},
 		{
 			name:       "returns empty when grpc target is empty",

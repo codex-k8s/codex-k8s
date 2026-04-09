@@ -28,7 +28,7 @@ func TestLoadWebhookRuntimeNamespaceTTLPolicy_FromServicesConfig(t *testing.T) {
 	tmpDir := t.TempDir()
 	path := filepath.Join(tmpDir, "services.yaml")
 	writePolicyFixture(t, path, `
-apiVersion: codex-k8s.dev/v1alpha1
+apiVersion: kodex.works/v1alpha1
 kind: ServiceStack
 metadata:
   name: demo

@@ -12,7 +12,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"github.com/codex-k8s/codex-k8s/services/external/api-gateway/internal/transport/http/models"
+	"github.com/codex-k8s/kodex/services/external/api-gateway/internal/transport/http/models"
 )
 
 func TestHTTPErrorHandler_GRPCStatusMapping(t *testing.T) {

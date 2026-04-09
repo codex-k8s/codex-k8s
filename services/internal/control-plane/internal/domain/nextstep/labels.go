@@ -3,7 +3,7 @@ package nextstep
 import (
 	"strings"
 
-	webhookdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/webhook"
+	webhookdomain "github.com/codex-k8s/kodex/libs/go/domain/webhook"
 )
 
 type StageDescriptor struct {

@@ -3,7 +3,7 @@ package mcp
 import (
 	"testing"
 
-	querytypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/query"
+	querytypes "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/types/query"
 )
 
 func TestNormalizeSelfImproveLimit(t *testing.T) {
@@ -57,7 +57,7 @@ func TestResolveSelfImproveRepositoryFullName(t *testing.T) {
 	runCtx := resolvedRunContext{
 		Payload: querytypes.RunPayload{
 			Repository: querytypes.RunPayloadRepository{
-				FullName: "codex-k8s/codex-k8s",
+				FullName: "codex-k8s/kodex",
 			},
 		},
 	}
@@ -66,7 +66,7 @@ func TestResolveSelfImproveRepositoryFullName(t *testing.T) {
 		t.Fatalf("explicit repository must win, got %q", got)
 	}
 
-	if got := resolveSelfImproveRepositoryFullName("", runCtx); got != "codex-k8s/codex-k8s" {
+	if got := resolveSelfImproveRepositoryFullName("", runCtx); got != "codex-k8s/kodex" {
 		t.Fatalf("payload repository fallback mismatch, got %q", got)
 	}
 }

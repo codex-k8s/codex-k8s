@@ -9,16 +9,16 @@ import (
 	"testing"
 	"time"
 
-	agentdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/agent"
-	floweventdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/flowevent"
-	webhookdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/webhook"
-	agentrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/agent"
-	agentrunrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/agentrun"
-	floweventrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/flowevent"
-	projectmemberrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/projectmember"
-	repocfgrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/repocfg"
-	userrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/user"
-	runstatusdomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/runstatus"
+	agentdomain "github.com/codex-k8s/kodex/libs/go/domain/agent"
+	floweventdomain "github.com/codex-k8s/kodex/libs/go/domain/flowevent"
+	webhookdomain "github.com/codex-k8s/kodex/libs/go/domain/webhook"
+	agentrepo "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/repository/agent"
+	agentrunrepo "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/repository/agentrun"
+	floweventrepo "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/repository/flowevent"
+	projectmemberrepo "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/repository/projectmember"
+	repocfgrepo "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/repository/repocfg"
+	userrepo "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/repository/user"
+	runstatusdomain "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/runstatus"
 )
 
 func TestIngestGitHubWebhook_Dedup(t *testing.T) {
@@ -61,8 +61,8 @@ func TestIngestGitHubWebhook_Dedup(t *testing.T) {
 	payload := json.RawMessage(`{
 		"action":"labeled",
 		"label":{"name":"run:dev"},
-		"issue":{"id":1001,"number":77,"title":"Implement feature","html_url":"https://github.com/codex-k8s/codex-k8s/issues/77","state":"open"},
-		"repository":{"id":42,"full_name":"codex-k8s/codex-k8s","name":"codex-k8s"},
+		"issue":{"id":1001,"number":77,"title":"Implement feature","html_url":"https://github.com/codex-k8s/kodex/issues/77","state":"open"},
+		"repository":{"id":42,"full_name":"codex-k8s/kodex","name":"kodex"},
 		"sender":{"id":10,"login":"member"}
 	}`)
 	cmd := IngestCommand{
@@ -113,8 +113,8 @@ func TestIngestGitHubWebhook_NonTriggerEventsDoNotCreateRun(t *testing.T) {
 
 	payload := json.RawMessage(`{
 		"action":"created",
-		"issue":{"id":1001,"number":77,"title":"Implement feature","html_url":"https://github.com/codex-k8s/codex-k8s/issues/77","state":"open"},
-		"repository":{"id":42,"full_name":"codex-k8s/codex-k8s","name":"codex-k8s"},
+		"issue":{"id":1001,"number":77,"title":"Implement feature","html_url":"https://github.com/codex-k8s/kodex/issues/77","state":"open"},
+		"repository":{"id":42,"full_name":"codex-k8s/kodex","name":"kodex"},
 		"sender":{"id":10,"login":"member"}
 	}`)
 	cmd := IngestCommand{
@@ -182,8 +182,8 @@ func TestIngestGitHubWebhook_ModeDiscussionLabelCreatesCodeOnlyRun(t *testing.T)
 	payload := json.RawMessage(`{
 		"action":"labeled",
 		"label":{"name":"mode:discussion"},
-		"issue":{"id":1001,"number":77,"title":"Discuss feature","html_url":"https://github.com/codex-k8s/codex-k8s/issues/77","state":"open","labels":[{"name":"mode:discussion"}]},
-		"repository":{"id":42,"full_name":"codex-k8s/codex-k8s","name":"codex-k8s"},
+		"issue":{"id":1001,"number":77,"title":"Discuss feature","html_url":"https://github.com/codex-k8s/kodex/issues/77","state":"open","labels":[{"name":"mode:discussion"}]},
+		"repository":{"id":42,"full_name":"codex-k8s/kodex","name":"kodex"},
 		"sender":{"id":10,"login":"member","type":"User"}
 	}`)
 	cmd := IngestCommand{
@@ -276,7 +276,7 @@ func TestIngestGitHubWebhook_RunLabelWithDiscussionModeStartsStageRunAndCleansDi
 	runs.searchItems = []agentrunrepo.RunLookupItem{{
 		RunID:              "run-discussion",
 		ProjectID:          "project-1",
-		RepositoryFullName: "codex-k8s/codex-k8s",
+		RepositoryFullName: "codex-k8s/kodex",
 		IssueNumber:        77,
 		TriggerKind:        string(webhookdomain.TriggerKindDev),
 		TriggerLabel:       webhookdomain.DefaultModeDiscussionLabel,
@@ -286,8 +286,8 @@ func TestIngestGitHubWebhook_RunLabelWithDiscussionModeStartsStageRunAndCleansDi
 	payload := json.RawMessage(`{
 		"action":"labeled",
 		"label":{"name":"run:dev"},
-		"issue":{"id":1001,"number":77,"title":"Discuss feature","html_url":"https://github.com/codex-k8s/codex-k8s/issues/77","state":"open","labels":[{"name":"mode:discussion"},{"name":"run:dev"}]},
-		"repository":{"id":42,"full_name":"codex-k8s/codex-k8s","name":"codex-k8s"},
+		"issue":{"id":1001,"number":77,"title":"Discuss feature","html_url":"https://github.com/codex-k8s/kodex/issues/77","state":"open","labels":[{"name":"mode:discussion"},{"name":"run:dev"}]},
+		"repository":{"id":42,"full_name":"codex-k8s/kodex","name":"kodex"},
 		"sender":{"id":10,"login":"member","type":"User"}
 	}`)
 	cmd := IngestCommand{
@@ -358,8 +358,8 @@ func TestIngestGitHubWebhook_IssueCommentWithDiscussionModeCreatesRun(t *testing
 
 	payload := json.RawMessage(`{
 		"action":"created",
-		"issue":{"id":1001,"number":77,"title":"Discuss feature","html_url":"https://github.com/codex-k8s/codex-k8s/issues/77","state":"open","labels":[{"name":"mode:discussion"}]},
-		"repository":{"id":42,"full_name":"codex-k8s/codex-k8s","name":"codex-k8s"},
+		"issue":{"id":1001,"number":77,"title":"Discuss feature","html_url":"https://github.com/codex-k8s/kodex/issues/77","state":"open","labels":[{"name":"mode:discussion"}]},
+		"repository":{"id":42,"full_name":"codex-k8s/kodex","name":"kodex"},
 		"sender":{"id":10,"login":"member","type":"User"}
 	}`)
 	cmd := IngestCommand{
@@ -405,8 +405,8 @@ func TestIngestGitHubWebhook_IssueCommentWithDiscussionModeIgnoresBotSender(t *t
 
 	payload := json.RawMessage(`{
 		"action":"created",
-		"issue":{"id":1001,"number":77,"title":"Discuss feature","html_url":"https://github.com/codex-k8s/codex-k8s/issues/77","state":"open","labels":[{"name":"mode:discussion"}]},
-		"repository":{"id":42,"full_name":"codex-k8s/codex-k8s","name":"codex-k8s"},
+		"issue":{"id":1001,"number":77,"title":"Discuss feature","html_url":"https://github.com/codex-k8s/kodex/issues/77","state":"open","labels":[{"name":"mode:discussion"}]},
+		"repository":{"id":42,"full_name":"codex-k8s/kodex","name":"kodex"},
 		"sender":{"id":10,"login":"codex-bot","type":"User"}
 	}`)
 	cmd := IngestCommand{
@@ -436,7 +436,7 @@ func TestIngestGitHubWebhook_IssueCommentWithActiveDiscussionRunDoesNotCreateSec
 		searchItems: []agentrunrepo.RunLookupItem{{
 			RunID:              "run-existing",
 			ProjectID:          "project-1",
-			RepositoryFullName: "codex-k8s/codex-k8s",
+			RepositoryFullName: "codex-k8s/kodex",
 			IssueNumber:        77,
 			TriggerKind:        string(webhookdomain.TriggerKindDev),
 			TriggerLabel:       webhookdomain.DefaultModeDiscussionLabel,
@@ -474,8 +474,8 @@ func TestIngestGitHubWebhook_IssueCommentWithActiveDiscussionRunDoesNotCreateSec
 
 	payload := json.RawMessage(`{
 		"action":"created",
-		"issue":{"id":1001,"number":77,"title":"Discuss feature","html_url":"https://github.com/codex-k8s/codex-k8s/issues/77","state":"open","labels":[{"name":"mode:discussion"}]},
-		"repository":{"id":42,"full_name":"codex-k8s/codex-k8s","name":"codex-k8s"},
+		"issue":{"id":1001,"number":77,"title":"Discuss feature","html_url":"https://github.com/codex-k8s/kodex/issues/77","state":"open","labels":[{"name":"mode:discussion"}]},
+		"repository":{"id":42,"full_name":"codex-k8s/kodex","name":"kodex"},
 		"sender":{"id":10,"login":"member","type":"User"}
 	}`)
 	cmd := IngestCommand{
@@ -514,7 +514,7 @@ func TestIngestGitHubWebhook_ModeDiscussionRemovedCleansDiscussionContext(t *tes
 		searchItems: []agentrunrepo.RunLookupItem{{
 			RunID:              "run-discussion",
 			ProjectID:          "project-1",
-			RepositoryFullName: "codex-k8s/codex-k8s",
+			RepositoryFullName: "codex-k8s/kodex",
 			IssueNumber:        289,
 			TriggerKind:        string(webhookdomain.TriggerKindDev),
 			TriggerLabel:       webhookdomain.DefaultModeDiscussionLabel,
@@ -553,8 +553,8 @@ func TestIngestGitHubWebhook_ModeDiscussionRemovedCleansDiscussionContext(t *tes
 	payload := json.RawMessage(`{
 		"action":"unlabeled",
 		"label":{"name":"mode:discussion"},
-		"issue":{"id":1001,"number":289,"title":"Discuss feature","html_url":"https://github.com/codex-k8s/codex-k8s/issues/289","state":"open","labels":[]},
-		"repository":{"id":42,"full_name":"codex-k8s/codex-k8s","name":"codex-k8s"},
+		"issue":{"id":1001,"number":289,"title":"Discuss feature","html_url":"https://github.com/codex-k8s/kodex/issues/289","state":"open","labels":[]},
+		"repository":{"id":42,"full_name":"codex-k8s/kodex","name":"kodex"},
 		"sender":{"id":10,"login":"member","type":"User"}
 	}`)
 	cmd := IngestCommand{
@@ -604,7 +604,7 @@ func TestIngestGitHubWebhook_ModeDiscussionRemovalDeletesStaleErroredNamespace(t
 			{
 				RunID:              "run-discussion-active",
 				ProjectID:          "project-1",
-				RepositoryFullName: "codex-k8s/codex-k8s",
+				RepositoryFullName: "codex-k8s/kodex",
 				IssueNumber:        289,
 				TriggerKind:        string(webhookdomain.TriggerKindDev),
 				TriggerLabel:       webhookdomain.DefaultModeDiscussionLabel,
@@ -613,7 +613,7 @@ func TestIngestGitHubWebhook_ModeDiscussionRemovalDeletesStaleErroredNamespace(t
 			{
 				RunID:              "run-discussion-stale",
 				ProjectID:          "project-1",
-				RepositoryFullName: "codex-k8s/codex-k8s",
+				RepositoryFullName: "codex-k8s/kodex",
 				IssueNumber:        289,
 				TriggerKind:        string(webhookdomain.TriggerKindDev),
 				TriggerLabel:       webhookdomain.DefaultModeDiscussionLabel,
@@ -653,8 +653,8 @@ func TestIngestGitHubWebhook_ModeDiscussionRemovalDeletesStaleErroredNamespace(t
 	payload := json.RawMessage(`{
 		"action":"unlabeled",
 		"label":{"name":"mode:discussion"},
-		"issue":{"id":1001,"number":289,"title":"Discuss feature","html_url":"https://github.com/codex-k8s/codex-k8s/issues/289","state":"open","labels":[]},
-		"repository":{"id":42,"full_name":"codex-k8s/codex-k8s","name":"codex-k8s"},
+		"issue":{"id":1001,"number":289,"title":"Discuss feature","html_url":"https://github.com/codex-k8s/kodex/issues/289","state":"open","labels":[]},
+		"repository":{"id":42,"full_name":"codex-k8s/kodex","name":"kodex"},
 		"sender":{"id":10,"login":"member","type":"User"}
 	}`)
 	cmd := IngestCommand{
@@ -708,7 +708,7 @@ func TestIngestGitHubWebhook_PushMain_CreatesDeployOnlyProductionRun(t *testing.
 		"ref":"refs/heads/main",
 		"before":"0000000000000000000000000000000000000000",
 		"after":"%s",
-		"repository":{"id":42,"full_name":"codex-k8s/codex-k8s","name":"codex-k8s"},
+		"repository":{"id":42,"full_name":"codex-k8s/kodex","name":"kodex"},
 		"sender":{"id":10,"login":"member"}
 	}`, buildRef))
 	cmd := IngestCommand{
@@ -788,7 +788,7 @@ func TestIngestGitHubWebhook_PushMainFork_CreatesDeployOnlyProductionRun(t *test
 		"ref":"refs/heads/main",
 		"before":"0000000000000000000000000000000000000000",
 		"after":"%s",
-		"repository":{"id":42,"full_name":"codex-k8s/codex-k8s-fork","name":"codex-k8s-fork","fork":true},
+		"repository":{"id":42,"full_name":"codex-k8s/kodex-fork","name":"kodex-fork","fork":true},
 		"sender":{"id":10,"login":"member"}
 	}`, buildRef))
 	cmd := IngestCommand{
@@ -847,10 +847,10 @@ func TestIngestGitHubWebhook_PushMain_AutoBumpsVersionsAndSkipsCurrentRun(t *tes
 	githubMgmt := &inMemoryPushMainVersionBumpClient{
 		filesByRef: map[string][]byte{
 			"services.yaml@0123456789abcdef0123456789abcdef01234567": []byte(strings.TrimSpace(`
-apiVersion: codex-k8s.dev/v1alpha1
+apiVersion: kodex.works/v1alpha1
 kind: ServiceStack
 metadata:
-  name: codex-k8s
+  name: kodex
 spec:
   versions:
     control-plane:
@@ -885,7 +885,7 @@ spec:
 		"ref":"refs/heads/main",
 		"before":"%s",
 		"after":"%s",
-		"repository":{"id":42,"full_name":"codex-k8s/codex-k8s","name":"codex-k8s"},
+		"repository":{"id":42,"full_name":"codex-k8s/kodex","name":"kodex"},
 		"sender":{"id":10,"login":"member"}
 	}`, beforeRef, buildRef))
 	cmd := IngestCommand{
@@ -957,10 +957,10 @@ func TestIngestGitHubWebhook_PushMain_AutoBumpNoMatchesCreatesRun(t *testing.T) 
 	githubMgmt := &inMemoryPushMainVersionBumpClient{
 		filesByRef: map[string][]byte{
 			"services.yaml@89abcdef0123456789abcdef0123456789abcdef": []byte(strings.TrimSpace(`
-apiVersion: codex-k8s.dev/v1alpha1
+apiVersion: kodex.works/v1alpha1
 kind: ServiceStack
 metadata:
-  name: codex-k8s
+  name: kodex
 spec:
   versions:
     control-plane:
@@ -990,7 +990,7 @@ spec:
 		"ref":"refs/heads/main",
 		"before":"1111111111111111111111111111111111111111",
 		"after":"%s",
-		"repository":{"id":42,"full_name":"codex-k8s/codex-k8s","name":"codex-k8s"},
+		"repository":{"id":42,"full_name":"codex-k8s/kodex","name":"kodex"},
 		"sender":{"id":10,"login":"member"}
 	}`, buildRef))
 	cmd := IngestCommand{
@@ -1061,7 +1061,7 @@ func TestIngestGitHubWebhook_ClosedEvents_TriggersNamespaceCleanup(t *testing.T)
 				if runStatus.issueCleanupCalls != 1 {
 					t.Fatalf("expected one issue cleanup call, got %d", runStatus.issueCleanupCalls)
 				}
-				if runStatus.lastIssueCleanup.RepositoryFullName != "codex-k8s/codex-k8s" {
+				if runStatus.lastIssueCleanup.RepositoryFullName != "codex-k8s/kodex" {
 					t.Fatalf("unexpected repository full name: %s", runStatus.lastIssueCleanup.RepositoryFullName)
 				}
 				if runStatus.lastIssueCleanup.IssueNumber != expectedIssueNumber {
@@ -1073,7 +1073,7 @@ func TestIngestGitHubWebhook_ClosedEvents_TriggersNamespaceCleanup(t *testing.T)
 			if runStatus.pullRequestCleanupCalls != 1 {
 				t.Fatalf("expected one pull request cleanup call, got %d", runStatus.pullRequestCleanupCalls)
 			}
-			if runStatus.lastPullRequestCleanup.RepositoryFullName != "codex-k8s/codex-k8s" {
+			if runStatus.lastPullRequestCleanup.RepositoryFullName != "codex-k8s/kodex" {
 				t.Fatalf("unexpected repository full name: %s", runStatus.lastPullRequestCleanup.RepositoryFullName)
 			}
 			if runStatus.lastPullRequestCleanup.PRNumber != expectedPRNumber {
@@ -1085,14 +1085,14 @@ func TestIngestGitHubWebhook_ClosedEvents_TriggersNamespaceCleanup(t *testing.T)
 	runCase(t, "issue_closed", "delivery-issue-close-1", string(webhookdomain.GitHubEventIssues), json.RawMessage(`{
 		"action":"closed",
 		"issue":{"id":1001,"number":77},
-		"repository":{"id":42,"full_name":"codex-k8s/codex-k8s","name":"codex-k8s"},
+		"repository":{"id":42,"full_name":"codex-k8s/kodex","name":"kodex"},
 		"sender":{"id":10,"login":"member"}
 	}`), 77, 0)
 
 	runCase(t, "pull_request_closed", "delivery-pr-close-1", string(webhookdomain.GitHubEventPullRequest), json.RawMessage(`{
 		"action":"closed",
 		"pull_request":{"id":501,"number":200},
-		"repository":{"id":42,"full_name":"codex-k8s/codex-k8s","name":"codex-k8s"},
+		"repository":{"id":42,"full_name":"codex-k8s/kodex","name":"kodex"},
 		"sender":{"id":10,"login":"member"}
 	}`), 0, 200)
 }
@@ -1137,8 +1137,8 @@ func TestIngestGitHubWebhook_LearningMode_DefaultFallback(t *testing.T) {
 	payload := json.RawMessage(`{
 		"action":"labeled",
 		"label":{"name":"run:dev"},
-		"issue":{"id":1001,"number":77,"title":"Implement feature","html_url":"https://github.com/codex-k8s/codex-k8s/issues/77","state":"open"},
-		"repository":{"id":42,"full_name":"codex-k8s/codex-k8s","name":"codex-k8s"},
+		"issue":{"id":1001,"number":77,"title":"Implement feature","html_url":"https://github.com/codex-k8s/kodex/issues/77","state":"open"},
+		"repository":{"id":42,"full_name":"codex-k8s/kodex","name":"kodex"},
 		"sender":{"id":10,"login":"member"}
 	}`)
 	cmd := IngestCommand{
@@ -1197,8 +1197,8 @@ func TestIngestGitHubWebhook_IssueRunDev_CreatesRunForAllowedMember(t *testing.T
 	payload := json.RawMessage(`{
 		"action":"labeled",
 		"label":{"name":"run:dev"},
-		"issue":{"id":1001,"number":77,"title":"Implement feature","html_url":"https://github.com/codex-k8s/codex-k8s/issues/77","state":"open","user":{"id":55,"login":"owner"}},
-		"repository":{"id":42,"full_name":"codex-k8s/codex-k8s","name":"codex-k8s"},
+		"issue":{"id":1001,"number":77,"title":"Implement feature","html_url":"https://github.com/codex-k8s/kodex/issues/77","state":"open","user":{"id":55,"login":"owner"}},
+		"repository":{"id":42,"full_name":"codex-k8s/kodex","name":"kodex"},
 		"sender":{"id":10,"login":"member"}
 	}`)
 	cmd := IngestCommand{
@@ -1291,8 +1291,8 @@ func TestIngestGitHubWebhook_IssueRunDev_PostsPlannedRunStatusImmediately(t *tes
 	payload := json.RawMessage(`{
 		"action":"labeled",
 		"label":{"name":"run:dev"},
-		"issue":{"id":1001,"number":177,"title":"Implement feature","html_url":"https://github.com/codex-k8s/codex-k8s/issues/177","state":"open","user":{"id":55,"login":"owner"}},
-		"repository":{"id":42,"full_name":"codex-k8s/codex-k8s","name":"codex-k8s"},
+		"issue":{"id":1001,"number":177,"title":"Implement feature","html_url":"https://github.com/codex-k8s/kodex/issues/177","state":"open","user":{"id":55,"login":"owner"}},
+		"repository":{"id":42,"full_name":"codex-k8s/kodex","name":"kodex"},
 		"sender":{"id":10,"login":"member"}
 	}`)
 	cmd := IngestCommand{
@@ -1378,8 +1378,8 @@ func TestIngestGitHubWebhook_RuntimePolicyOverrideFromServicesYAML(t *testing.T)
 	payload := json.RawMessage(`{
 		"action":"labeled",
 		"label":{"name":"run:dev"},
-		"issue":{"id":1001,"number":177,"title":"Implement feature","html_url":"https://github.com/codex-k8s/codex-k8s/issues/177","state":"open","user":{"id":55,"login":"owner"}},
-		"repository":{"id":42,"full_name":"codex-k8s/codex-k8s","name":"codex-k8s"},
+		"issue":{"id":1001,"number":177,"title":"Implement feature","html_url":"https://github.com/codex-k8s/kodex/issues/177","state":"open","user":{"id":55,"login":"owner"}},
+		"repository":{"id":42,"full_name":"codex-k8s/kodex","name":"kodex"},
 		"sender":{"id":10,"login":"member"}
 	}`)
 	cmd := IngestCommand{
@@ -1443,14 +1443,14 @@ func TestIngestGitHubWebhook_IssueRunAIRepair_UsesProductionNamespaceAndSREAgent
 		Repos:             repos,
 		Users:             users,
 		Members:           members,
-		PlatformNamespace: "codex-k8s-prod",
+		PlatformNamespace: "kodex-prod",
 	})
 
 	payload := json.RawMessage(`{
 		"action":"labeled",
 		"label":{"name":"run:ai-repair"},
-		"issue":{"id":1001,"number":145,"title":"Repair production infra","html_url":"https://github.com/codex-k8s/codex-k8s/issues/145","state":"open","user":{"id":55,"login":"owner"}},
-		"repository":{"id":42,"full_name":"codex-k8s/codex-k8s","name":"codex-k8s"},
+		"issue":{"id":1001,"number":145,"title":"Repair production infra","html_url":"https://github.com/codex-k8s/kodex/issues/145","state":"open","user":{"id":55,"login":"owner"}},
+		"repository":{"id":42,"full_name":"codex-k8s/kodex","name":"kodex"},
 		"sender":{"id":10,"login":"member"}
 	}`)
 	cmd := IngestCommand{
@@ -1484,7 +1484,7 @@ func TestIngestGitHubWebhook_IssueRunAIRepair_UsesProductionNamespaceAndSREAgent
 	if got, want := runPayload.Runtime.TargetEnv, "production"; got != want {
 		t.Fatalf("unexpected runtime target env: got %q want %q", got, want)
 	}
-	if got, want := runPayload.Runtime.Namespace, "codex-k8s-prod"; got != want {
+	if got, want := runPayload.Runtime.Namespace, "kodex-prod"; got != want {
 		t.Fatalf("unexpected runtime namespace: got %q want %q", got, want)
 	}
 	if got, want := runPayload.Runtime.BuildRef, "main"; got != want {
@@ -1534,8 +1534,8 @@ func TestIngestGitHubWebhook_IssueRunVision_CreatesStageRunForAllowedMember(t *t
 	payload := json.RawMessage(`{
 		"action":"labeled",
 		"label":{"name":"run:vision"},
-		"issue":{"id":1001,"number":78,"title":"Vision stage","html_url":"https://github.com/codex-k8s/codex-k8s/issues/78","state":"open","labels":[{"name":"run:vision"}],"user":{"id":55,"login":"owner"}},
-		"repository":{"id":42,"full_name":"codex-k8s/codex-k8s","name":"codex-k8s"},
+		"issue":{"id":1001,"number":78,"title":"Vision stage","html_url":"https://github.com/codex-k8s/kodex/issues/78","state":"open","labels":[{"name":"run:vision"}],"user":{"id":55,"login":"owner"}},
+		"repository":{"id":42,"full_name":"codex-k8s/kodex","name":"kodex"},
 		"sender":{"id":10,"login":"member"}
 	}`)
 	cmd := IngestCommand{
@@ -1673,8 +1673,8 @@ func TestIngestGitHubWebhook_IssueTriggerConflict_IgnoredWithDiagnosticComment(t
 	payload := json.RawMessage(`{
 		"action":"labeled",
 		"label":{"name":"run:vision"},
-		"issue":{"id":1001,"number":79,"title":"Conflict stage","html_url":"https://github.com/codex-k8s/codex-k8s/issues/79","state":"open","labels":[{"name":"run:dev"},{"name":"run:vision"}],"user":{"id":55,"login":"owner"}},
-		"repository":{"id":42,"full_name":"codex-k8s/codex-k8s","name":"codex-k8s"},
+		"issue":{"id":1001,"number":79,"title":"Conflict stage","html_url":"https://github.com/codex-k8s/kodex/issues/79","state":"open","labels":[{"name":"run:dev"},{"name":"run:vision"}],"user":{"id":55,"login":"owner"}},
+		"repository":{"id":42,"full_name":"codex-k8s/kodex","name":"kodex"},
 		"sender":{"id":10,"login":"member"}
 	}`)
 	cmd := IngestCommand{
@@ -1761,12 +1761,12 @@ func TestIngestGitHubWebhook_PullRequestReviewChangesRequested_WithoutRunLabel_I
 			"id":501,
 			"number":200,
 			"title":"WIP feature",
-			"html_url":"https://github.com/codex-k8s/codex-k8s/pull/200",
+			"html_url":"https://github.com/codex-k8s/kodex/pull/200",
 			"state":"open",
 			"head":{"ref":"codex/issue-13"},
 			"user":{"id":55,"login":"member"}
 		},
-		"repository":{"id":42,"full_name":"codex-k8s/codex-k8s","name":"codex-k8s"},
+		"repository":{"id":42,"full_name":"codex-k8s/kodex","name":"kodex"},
 		"sender":{"id":10,"login":"member"}
 	}`)
 	cmd := IngestCommand{
@@ -1851,12 +1851,12 @@ func TestIngestGitHubWebhook_PullRequestReviewChangesRequested_WhenNeedInputLabe
 			"id":501,
 			"number":200,
 			"title":"WIP feature",
-			"html_url":"https://github.com/codex-k8s/codex-k8s/pull/200",
+			"html_url":"https://github.com/codex-k8s/kodex/pull/200",
 			"state":"open",
 			"head":{"ref":"codex/issue-13"},
 			"user":{"id":55,"login":"member"}
 		},
-		"repository":{"id":42,"full_name":"codex-k8s/codex-k8s","name":"codex-k8s"},
+		"repository":{"id":42,"full_name":"codex-k8s/kodex","name":"kodex"},
 		"sender":{"id":10,"login":"member"}
 	}`)
 	cmd := IngestCommand{
@@ -1933,13 +1933,13 @@ func TestIngestGitHubWebhook_PullRequestLabeledNeedReviewer_CreatesReviewerRun(t
 			"id":501,
 			"number":205,
 			"title":"Need pre-review",
-			"html_url":"https://github.com/codex-k8s/codex-k8s/pull/205",
+			"html_url":"https://github.com/codex-k8s/kodex/pull/205",
 			"state":"open",
 			"labels":[{"name":"state:in-review"},{"name":"need:reviewer"}],
 			"head":{"ref":"codex/issue-175"},
 			"user":{"id":55,"login":"member"}
 		},
-		"repository":{"id":42,"full_name":"codex-k8s/codex-k8s","name":"codex-k8s"},
+		"repository":{"id":42,"full_name":"codex-k8s/kodex","name":"kodex"},
 		"sender":{"id":10,"login":"member"}
 	}`)
 	cmd := IngestCommand{
@@ -2036,14 +2036,14 @@ func TestIngestGitHubWebhook_PullRequestLabeledNeedReviewer_DeduplicatesAcrossDi
 			"id":501,
 			"number":205,
 			"title":"Need pre-review",
-			"html_url":"https://github.com/codex-k8s/codex-k8s/pull/205",
+			"html_url":"https://github.com/codex-k8s/kodex/pull/205",
 			"state":"open",
 			"updated_at":"2026-02-25T11:01:19Z",
 			"labels":[{"name":"state:in-review"},{"name":"need:reviewer"}],
 			"head":{"ref":"codex/issue-175"},
 			"user":{"id":55,"login":"member"}
 		},
-		"repository":{"id":42,"full_name":"codex-k8s/codex-k8s","name":"codex-k8s"},
+		"repository":{"id":42,"full_name":"codex-k8s/kodex","name":"kodex"},
 		"sender":{"id":10,"login":"member"}
 	}`)
 	firstCmd := IngestCommand{
@@ -2145,14 +2145,14 @@ func TestIngestGitHubWebhook_PullRequestLabeledNeedReviewer_AllowsNewRunAfterUpd
 				"id":501,
 				"number":205,
 				"title":"Need pre-review",
-				"html_url":"https://github.com/codex-k8s/codex-k8s/pull/205",
+				"html_url":"https://github.com/codex-k8s/kodex/pull/205",
 				"state":"open",
 				"updated_at":"%s",
 				"labels":[{"name":"state:in-review"},{"name":"need:reviewer"}],
 				"head":{"ref":"codex/issue-175"},
 				"user":{"id":55,"login":"member"}
 			},
-			"repository":{"id":42,"full_name":"codex-k8s/codex-k8s","name":"codex-k8s"},
+			"repository":{"id":42,"full_name":"codex-k8s/kodex","name":"kodex"},
 			"sender":{"id":10,"login":"member"}
 		}`, updatedAt))
 	}
@@ -2225,12 +2225,12 @@ func TestIngestGitHubWebhook_PullRequestLabeledNonReviewerLabel_DoesNotCreateRun
 			"id":501,
 			"number":206,
 			"title":"No trigger",
-			"html_url":"https://github.com/codex-k8s/codex-k8s/pull/206",
+			"html_url":"https://github.com/codex-k8s/kodex/pull/206",
 			"state":"open",
 			"head":{"ref":"codex/issue-206"},
 			"user":{"id":55,"login":"member"}
 		},
-		"repository":{"id":42,"full_name":"codex-k8s/codex-k8s","name":"codex-k8s"},
+		"repository":{"id":42,"full_name":"codex-k8s/kodex","name":"kodex"},
 		"sender":{"id":10,"login":"member"}
 	}`)
 	cmd := IngestCommand{
@@ -2302,13 +2302,13 @@ func TestIngestGitHubWebhook_PullRequestReviewChangesRequested_WithRunDevReviseL
 			"id":501,
 			"number":200,
 			"title":"WIP feature",
-			"html_url":"https://github.com/codex-k8s/codex-k8s/pull/200",
+			"html_url":"https://github.com/codex-k8s/kodex/pull/200",
 			"state":"open",
 			"labels":[{"name":"run:dev:revise"}],
 			"head":{"ref":"codex/issue-13"},
 			"user":{"id":55,"login":"member"}
 		},
-		"repository":{"id":42,"full_name":"codex-k8s/codex-k8s","name":"codex-k8s"},
+		"repository":{"id":42,"full_name":"codex-k8s/kodex","name":"kodex"},
 		"sender":{"id":10,"login":"member"}
 	}`)
 	cmd := IngestCommand{
@@ -2395,13 +2395,13 @@ func TestIngestGitHubWebhook_PullRequestReviewChangesRequested_WithRunQALabel_Cr
 			"id":501,
 			"number":203,
 			"title":"QA artifacts",
-			"html_url":"https://github.com/codex-k8s/codex-k8s/pull/203",
+			"html_url":"https://github.com/codex-k8s/kodex/pull/203",
 			"state":"open",
 			"labels":[{"name":"run:qa"}],
 			"head":{"ref":"codex/issue-255"},
 			"user":{"id":55,"login":"member"}
 		},
-		"repository":{"id":42,"full_name":"codex-k8s/codex-k8s","name":"codex-k8s"},
+		"repository":{"id":42,"full_name":"codex-k8s/kodex","name":"kodex"},
 		"sender":{"id":10,"login":"member"}
 	}`)
 	cmd := IngestCommand{
@@ -2511,13 +2511,13 @@ func TestIngestGitHubWebhook_PullRequestReviewChangesRequested_WithAdditionalSta
 			"id":501,
 			"number":%d,
 			"title":"Docs artifacts",
-			"html_url":"https://github.com/codex-k8s/codex-k8s/pull/%d",
+			"html_url":"https://github.com/codex-k8s/kodex/pull/%d",
 			"state":"open",
 			"labels":[{"name":"%s"}],
 			"head":{"ref":"codex/issue-%d"},
 			"user":{"id":55,"login":"member"}
 		},
-		"repository":{"id":42,"full_name":"codex-k8s/codex-k8s","name":"codex-k8s"},
+		"repository":{"id":42,"full_name":"codex-k8s/kodex","name":"kodex"},
 		"sender":{"id":10,"login":"member"}
 	}`, testCase.prNumber, testCase.prNumber, testCase.runLabel, testCase.prNumber))
 			cmd := IngestCommand{
@@ -2597,13 +2597,13 @@ func TestIngestGitHubWebhook_PullRequestReviewChangesRequested_WithRunIntakeLabe
 			"id":501,
 			"number":201,
 			"title":"Intake artifacts",
-			"html_url":"https://github.com/codex-k8s/codex-k8s/pull/201",
+			"html_url":"https://github.com/codex-k8s/kodex/pull/201",
 			"state":"open",
 			"labels":[{"name":"run:intake"}],
 			"head":{"ref":"codex/issue-201"},
 			"user":{"id":55,"login":"member"}
 		},
-		"repository":{"id":42,"full_name":"codex-k8s/codex-k8s","name":"codex-k8s"},
+		"repository":{"id":42,"full_name":"codex-k8s/kodex","name":"kodex"},
 		"sender":{"id":10,"login":"member"}
 	}`)
 	cmd := IngestCommand{
@@ -2654,7 +2654,7 @@ func TestIngestGitHubWebhook_PullRequestReviewChangesRequested_ResolvesFromIssue
 			{
 				RunID:              "history-run-1",
 				ProjectID:          "project-1",
-				RepositoryFullName: "codex-k8s/codex-k8s",
+				RepositoryFullName: "codex-k8s/kodex",
 				IssueNumber:        95,
 				PullRequestNumber:  203,
 				TriggerKind:        "plan",
@@ -2690,12 +2690,12 @@ func TestIngestGitHubWebhook_PullRequestReviewChangesRequested_ResolvesFromIssue
 			"id":501,
 			"number":203,
 			"title":"Plan fixes",
-			"html_url":"https://github.com/codex-k8s/codex-k8s/pull/203",
+			"html_url":"https://github.com/codex-k8s/kodex/pull/203",
 			"state":"open",
 			"head":{"ref":"codex/issue-95"},
 			"user":{"id":55,"login":"member"}
 		},
-		"repository":{"id":42,"full_name":"codex-k8s/codex-k8s","name":"codex-k8s"},
+		"repository":{"id":42,"full_name":"codex-k8s/kodex","name":"kodex"},
 		"sender":{"id":10,"login":"member"}
 	}`)
 	cmd := IngestCommand{
@@ -2730,7 +2730,7 @@ func TestIngestGitHubWebhook_PullRequestReviewChangesRequested_ResolvesFromIssue
 	if runPayload.Issue == nil || runPayload.Issue.Number != 95 {
 		t.Fatalf("expected resolved issue payload with number=95, got %#v", runPayload.Issue)
 	}
-	if runPayload.Issue.HTMLURL != "https://github.com/codex-k8s/codex-k8s/issues/95" {
+	if runPayload.Issue.HTMLURL != "https://github.com/codex-k8s/kodex/issues/95" {
 		t.Fatalf("unexpected resolved issue url: %q", runPayload.Issue.HTMLURL)
 	}
 	if runPayload.ProfileHints == nil {
@@ -2749,7 +2749,7 @@ func TestIngestGitHubWebhook_PullRequestReviewChangesRequested_ResolvesFromLastR
 			{
 				RunID:              "history-run-2",
 				ProjectID:          "project-1",
-				RepositoryFullName: "codex-k8s/codex-k8s",
+				RepositoryFullName: "codex-k8s/kodex",
 				IssueNumber:        96,
 				PullRequestNumber:  204,
 				TriggerKind:        "design",
@@ -2785,12 +2785,12 @@ func TestIngestGitHubWebhook_PullRequestReviewChangesRequested_ResolvesFromLastR
 			"id":501,
 			"number":204,
 			"title":"Design fixes",
-			"html_url":"https://github.com/codex-k8s/codex-k8s/pull/204",
+			"html_url":"https://github.com/codex-k8s/kodex/pull/204",
 			"state":"open",
 			"head":{"ref":"codex/issue-96"},
 			"user":{"id":55,"login":"member"}
 		},
-		"repository":{"id":42,"full_name":"codex-k8s/codex-k8s","name":"codex-k8s"},
+		"repository":{"id":42,"full_name":"codex-k8s/kodex","name":"kodex"},
 		"sender":{"id":10,"login":"member"}
 	}`)
 	cmd := IngestCommand{
@@ -2825,7 +2825,7 @@ func TestIngestGitHubWebhook_PullRequestReviewChangesRequested_ResolvesFromLastR
 	if runPayload.Issue == nil || runPayload.Issue.Number != 96 {
 		t.Fatalf("expected resolved issue payload with number=96, got %#v", runPayload.Issue)
 	}
-	if runPayload.Issue.HTMLURL != "https://github.com/codex-k8s/codex-k8s/issues/96" {
+	if runPayload.Issue.HTMLURL != "https://github.com/codex-k8s/kodex/issues/96" {
 		t.Fatalf("unexpected resolved issue url: %q", runPayload.Issue.HTMLURL)
 	}
 }
@@ -2870,13 +2870,13 @@ func TestIngestGitHubWebhook_PullRequestReviewChangesRequested_WithMultipleStage
 			"id":501,
 			"number":202,
 			"title":"Conflicting stage labels",
-			"html_url":"https://github.com/codex-k8s/codex-k8s/pull/202",
+			"html_url":"https://github.com/codex-k8s/kodex/pull/202",
 			"state":"open",
 			"labels":[{"name":"run:dev"},{"name":"run:plan"}],
 			"head":{"ref":"codex/issue-202"},
 			"user":{"id":55,"login":"member"}
 		},
-		"repository":{"id":42,"full_name":"codex-k8s/codex-k8s","name":"codex-k8s"},
+		"repository":{"id":42,"full_name":"codex-k8s/kodex","name":"kodex"},
 		"sender":{"id":10,"login":"member"}
 	}`)
 	cmd := IngestCommand{
@@ -2942,8 +2942,8 @@ func TestIngestGitHubWebhook_IssueRunDev_DeniesUnknownSender(t *testing.T) {
 	payload := json.RawMessage(`{
 		"action":"labeled",
 		"label":{"name":"run:dev"},
-		"issue":{"id":1001,"number":77,"title":"Implement feature","html_url":"https://github.com/codex-k8s/codex-k8s/issues/77","state":"open"},
-		"repository":{"id":42,"full_name":"codex-k8s/codex-k8s","name":"codex-k8s"},
+		"issue":{"id":1001,"number":77,"title":"Implement feature","html_url":"https://github.com/codex-k8s/kodex/issues/77","state":"open"},
+		"repository":{"id":42,"full_name":"codex-k8s/kodex","name":"kodex"},
 		"sender":{"id":10,"login":"unknown"}
 	}`)
 	cmd := IngestCommand{
@@ -3019,8 +3019,8 @@ func TestIngestGitHubWebhook_IssueRunDev_DeniesBotSenderEvenWhenUserIsProjectMem
 	payload := json.RawMessage(`{
 		"action":"labeled",
 		"label":{"name":"run:dev"},
-		"issue":{"id":1001,"number":177,"title":"Implement feature","html_url":"https://github.com/codex-k8s/codex-k8s/issues/177","state":"open"},
-		"repository":{"id":42,"full_name":"codex-k8s/codex-k8s","name":"codex-k8s"},
+		"issue":{"id":1001,"number":177,"title":"Implement feature","html_url":"https://github.com/codex-k8s/kodex/issues/177","state":"open"},
+		"repository":{"id":42,"full_name":"codex-k8s/kodex","name":"kodex"},
 		"sender":{"id":10,"login":"member","type":"Bot"}
 	}`)
 	cmd := IngestCommand{
@@ -3070,7 +3070,7 @@ func TestIngestGitHubWebhook_IssueNonTriggerLabelIgnored(t *testing.T) {
 		"action":"labeled",
 		"label":{"name":"bug"},
 		"issue":{"id":1001,"number":77},
-		"repository":{"id":42,"full_name":"codex-k8s/codex-k8s","name":"codex-k8s"},
+		"repository":{"id":42,"full_name":"codex-k8s/kodex","name":"kodex"},
 		"sender":{"id":10,"login":"member"}
 	}`)
 	cmd := IngestCommand{
@@ -3324,8 +3324,8 @@ func (r *inMemoryRepoCfgRepo) GetByID(_ context.Context, repositoryID string) (r
 				ID:               item.RepositoryID,
 				ProjectID:        item.ProjectID,
 				Provider:         "github",
-				Owner:            "codex-k8s",
-				Name:             "codex-k8s",
+				Owner:            "kodex",
+				Name:             "kodex",
 				ServicesYAMLPath: item.ServicesYAMLPath,
 			}, true, nil
 		}

@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/codex-k8s/codex-k8s/libs/go/mcp/userinteraction"
+	"github.com/codex-k8s/kodex/libs/go/mcp/userinteraction"
 )
 
 func TestBuildInteractionResumePromptBlock_ValidatesResumeContext(t *testing.T) {
@@ -26,7 +26,7 @@ func TestBuildPrompt_PrependsInteractionResumePromptBlock(t *testing.T) {
 	service := &Service{
 		cfg: Config{
 			RunID:                    "run-resume",
-			RepositoryFullName:       "codex-k8s/codex-k8s",
+			RepositoryFullName:       "codex-k8s/kodex",
 			AgentKey:                 "dev",
 			IssueNumber:              394,
 			RuntimeMode:              runtimeModeFullEnv,

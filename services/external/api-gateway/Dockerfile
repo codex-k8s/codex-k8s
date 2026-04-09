@@ -1,5 +1,5 @@
-ARG NODE_IMAGE=127.0.0.1:5000/codex-k8s/mirror/node:22-alpine
-ARG GOLANG_IMAGE=127.0.0.1:5000/codex-k8s/mirror/golang:1.25.8-alpine
+ARG NODE_IMAGE=127.0.0.1:5000/kodex/mirror/node:22-alpine
+ARG GOLANG_IMAGE=127.0.0.1:5000/kodex/mirror/golang:1.25.8-alpine
 
 FROM ${NODE_IMAGE} AS web
 
@@ -22,7 +22,7 @@ COPY services/external/api-gateway/ services/external/api-gateway/
 
 RUN go mod download
 RUN go install github.com/githubnemo/CompileDaemon@v1.4.0
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -trimpath -ldflags="-s -w" -o /out/codex-k8s ./services/external/api-gateway/cmd/api-gateway
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -trimpath -ldflags="-s -w" -o /out/kodex ./services/external/api-gateway/cmd/api-gateway
 
 FROM ${GOLANG_IMAGE}
 
@@ -32,7 +32,7 @@ WORKDIR /workspace
 
 COPY --from=builder /go/pkg/mod /go/pkg/mod
 COPY --from=builder /go/bin/CompileDaemon /usr/local/bin/CompileDaemon
-COPY --from=builder /out/codex-k8s /usr/local/bin/codex-k8s
+COPY --from=builder /out/kodex /usr/local/bin/kodex
 COPY --from=builder /root/.cache/go-build /tmp/.cache/go-build
 COPY --from=web /web/dist /app/web
 COPY services/external/api-gateway/api/server/api.yaml /app/api/server/api.yaml
@@ -45,11 +45,11 @@ COPY --from=builder /workspace/proto/ proto/
 COPY --from=builder /workspace/services/external/api-gateway/ services/external/api-gateway/
 RUN chown -R app:app /tmp/.cache
 
-ENV CODEXK8S_HOT_RELOAD="true"
+ENV KODEX_HOT_RELOAD="true"
 ENV GOCACHE="/tmp/.cache/go-build"
 
 USER app
 
 EXPOSE 8080
 
-ENTRYPOINT ["sh", "-ec", "if [ \"${CODEXK8S_ENV:-production}\" = \"production\" ] || [ \"${CODEXK8S_HOT_RELOAD:-true}\" = \"false\" ]; then exec /usr/local/bin/codex-k8s; fi; exec CompileDaemon --build='go -C /workspace build -mod=readonly -o /tmp/codex-k8s ./services/external/api-gateway/cmd/api-gateway' --command='/tmp/codex-k8s' --polling --graceful-kill"]
+ENTRYPOINT ["sh", "-ec", "if [ \"${KODEX_ENV:-production}\" = \"production\" ] || [ \"${KODEX_HOT_RELOAD:-true}\" = \"false\" ]; then exec /usr/local/bin/kodex; fi; exec CompileDaemon --build='go -C /workspace build -mod=readonly -o /tmp/kodex ./services/external/api-gateway/cmd/api-gateway' --command='/tmp/kodex' --polling --graceful-kill"]

@@ -6,7 +6,7 @@ const (
 )
 
 const (
-	commentMarkerPrefix = "<!-- codex-k8s:run-status "
+	commentMarkerPrefix = "<!-- kodex:run-status "
 	commentMarkerSuffix = " -->"
 )
 

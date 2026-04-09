@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/codex-k8s/codex-k8s/libs/go/errs"
+	"github.com/codex-k8s/kodex/libs/go/errs"
 )
 
 func readRequestBody(body io.ReadCloser, maxBodyBytes int64) ([]byte, error) {

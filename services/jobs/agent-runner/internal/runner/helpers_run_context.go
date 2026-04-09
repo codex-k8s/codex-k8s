@@ -5,9 +5,9 @@ import (
 	"path/filepath"
 	"strings"
 
-	sharedgithubratelimit "github.com/codex-k8s/codex-k8s/libs/go/domain/githubratelimit"
-	webhookdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/webhook"
-	"github.com/codex-k8s/codex-k8s/libs/go/mcp/userinteraction"
+	sharedgithubratelimit "github.com/codex-k8s/kodex/libs/go/domain/githubratelimit"
+	webhookdomain "github.com/codex-k8s/kodex/libs/go/domain/webhook"
+	"github.com/codex-k8s/kodex/libs/go/mcp/userinteraction"
 )
 
 func normalizeTriggerKind(value string) string {

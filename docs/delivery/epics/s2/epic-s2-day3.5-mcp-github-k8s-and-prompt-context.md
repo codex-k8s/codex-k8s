@@ -90,14 +90,14 @@ approvals:
   - `mcp.tool.called|succeeded|failed|approval_pending`.
 - В `control-plane` gRPC контракт добавлен RPC `IssueRunMCPToken`; worker получает run-bound MCP токен перед запуском job.
 - В job env run pod теперь передаются только:
-  - `CODEXK8S_MCP_BASE_URL`,
-  - `CODEXK8S_MCP_BEARER_TOKEN`,
+  - `KODEX_MCP_BASE_URL`,
+  - `KODEX_MCP_BEARER_TOKEN`,
   без прямых GitHub/Kubernetes write-секретов.
 - Добавлен MCP prompt context resource `codex://prompt/context` и одноимённый tool для рендера final prompt в Day4.
 - Обновлены deploy/bootstrap/workflow переменные и секреты:
-  - `CODEXK8S_CONTROL_PLANE_MCP_BASE_URL`,
-  - `CODEXK8S_MCP_TOKEN_SIGNING_KEY`,
-  - `CODEXK8S_MCP_TOKEN_TTL` (default `24h`, не меньше baseline lifetime агентного контейнера).
+  - `KODEX_CONTROL_PLANE_MCP_BASE_URL`,
+  - `KODEX_MCP_TOKEN_SIGNING_KEY`,
+  - `KODEX_MCP_TOKEN_TTL` (default `24h`, не меньше baseline lifetime агентного контейнера).
 
 ### Актуализация после S2 Day4 hardening (2026-02-12)
 - Текущий runtime baseline упрощён: из MCP удалены все non-label ручки.

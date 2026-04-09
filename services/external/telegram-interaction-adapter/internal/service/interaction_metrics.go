@@ -19,21 +19,21 @@ const (
 var (
 	telegramInteractionDispatchAttemptsTotal = promauto.NewCounterVec(
 		prometheus.CounterOpts{
-			Name: "codexk8s_telegram_interaction_dispatch_attempt_total",
+			Name: "kodex_telegram_interaction_dispatch_attempt_total",
 			Help: "Total number of Telegram interaction delivery attempts handled by the adapter.",
 		},
 		[]string{"delivery_role", "status"},
 	)
 	telegramInteractionCallbackTotal = promauto.NewCounterVec(
 		prometheus.CounterOpts{
-			Name: "codexk8s_telegram_interaction_callback_total",
+			Name: "kodex_telegram_interaction_callback_total",
 			Help: "Total number of Telegram callback and free-text webhook events handled by the adapter.",
 		},
 		[]string{"callback_kind", "classification"},
 	)
 	telegramInteractionContinuationTotal = promauto.NewCounterVec(
 		prometheus.CounterOpts{
-			Name: "codexk8s_telegram_interaction_continuation_total",
+			Name: "kodex_telegram_interaction_continuation_total",
 			Help: "Total number of Telegram continuation actions processed by the adapter.",
 		},
 		[]string{"action_kind", "status"},

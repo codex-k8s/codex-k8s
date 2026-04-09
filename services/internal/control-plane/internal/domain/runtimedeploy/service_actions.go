@@ -7,10 +7,10 @@ import (
 	"strings"
 	"time"
 
-	floweventdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/flowevent"
-	"github.com/codex-k8s/codex-k8s/libs/go/errs"
-	floweventrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/flowevent"
-	runtimedeploytaskrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/runtimedeploytask"
+	floweventdomain "github.com/codex-k8s/kodex/libs/go/domain/flowevent"
+	"github.com/codex-k8s/kodex/libs/go/errs"
+	floweventrepo "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/repository/flowevent"
+	runtimedeploytaskrepo "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/repository/runtimedeploytask"
 )
 
 type taskActionAuditPayload struct {

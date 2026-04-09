@@ -1,62 +1,62 @@
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: {{ envOr "CODEXK8S_INTERNAL_REGISTRY_SERVICE" "" }}-data
-  namespace: {{ envOr "CODEXK8S_PRODUCTION_NAMESPACE" "" }}
+  name: {{ envOr "KODEX_INTERNAL_REGISTRY_SERVICE" "" }}-data
+  namespace: {{ envOr "KODEX_PRODUCTION_NAMESPACE" "" }}
   labels:
-    app.kubernetes.io/name: codex-k8s-registry
+    app.kubernetes.io/name: kodex-registry
 spec:
   accessModes: ["ReadWriteOnce"]
   resources:
     requests:
-      storage: {{ envOr "CODEXK8S_INTERNAL_REGISTRY_STORAGE_SIZE" "" }}
+      storage: {{ envOr "KODEX_INTERNAL_REGISTRY_STORAGE_SIZE" "" }}
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ envOr "CODEXK8S_INTERNAL_REGISTRY_SERVICE" "" }}
-  namespace: {{ envOr "CODEXK8S_PRODUCTION_NAMESPACE" "" }}
+  name: {{ envOr "KODEX_INTERNAL_REGISTRY_SERVICE" "" }}
+  namespace: {{ envOr "KODEX_PRODUCTION_NAMESPACE" "" }}
   labels:
-    app.kubernetes.io/name: codex-k8s-registry
+    app.kubernetes.io/name: kodex-registry
 spec:
   selector:
-    app.kubernetes.io/name: codex-k8s-registry
+    app.kubernetes.io/name: kodex-registry
   ports:
     - name: registry
-      port: {{ envOr "CODEXK8S_INTERNAL_REGISTRY_PORT" "" }}
+      port: {{ envOr "KODEX_INTERNAL_REGISTRY_PORT" "" }}
       targetPort: registry
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ envOr "CODEXK8S_INTERNAL_REGISTRY_SERVICE" "" }}
-  namespace: {{ envOr "CODEXK8S_PRODUCTION_NAMESPACE" "" }}
+  name: {{ envOr "KODEX_INTERNAL_REGISTRY_SERVICE" "" }}
+  namespace: {{ envOr "KODEX_PRODUCTION_NAMESPACE" "" }}
   labels:
-    app.kubernetes.io/name: codex-k8s-registry
+    app.kubernetes.io/name: kodex-registry
 spec:
   replicas: 1
   strategy:
     type: Recreate
   selector:
     matchLabels:
-      app.kubernetes.io/name: codex-k8s-registry
+      app.kubernetes.io/name: kodex-registry
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: codex-k8s-registry
+        app.kubernetes.io/name: kodex-registry
     spec:
       containers:
         - name: registry
-          image: {{ envOr "CODEXK8S_REGISTRY_IMAGE" "registry:2" }}
+          image: {{ envOr "KODEX_REGISTRY_IMAGE" "registry:2" }}
           imagePullPolicy: IfNotPresent
           ports:
             - name: registry
-              containerPort: {{ envOr "CODEXK8S_INTERNAL_REGISTRY_PORT" "" }}
-              hostPort: {{ envOr "CODEXK8S_INTERNAL_REGISTRY_PORT" "" }}
+              containerPort: {{ envOr "KODEX_INTERNAL_REGISTRY_PORT" "" }}
+              hostPort: {{ envOr "KODEX_INTERNAL_REGISTRY_PORT" "" }}
               hostIP: 127.0.0.1
           env:
             - name: REGISTRY_HTTP_ADDR
-              value: ':{{ envOr "CODEXK8S_INTERNAL_REGISTRY_PORT" "" }}'
+              value: ':{{ envOr "KODEX_INTERNAL_REGISTRY_PORT" "" }}'
             - name: REGISTRY_STORAGE_DELETE_ENABLED
               value: "true"
           readinessProbe:
@@ -77,4 +77,4 @@ spec:
       volumes:
         - name: data
           persistentVolumeClaim:
-            claimName: {{ envOr "CODEXK8S_INTERNAL_REGISTRY_SERVICE" "" }}-data
+            claimName: {{ envOr "KODEX_INTERNAL_REGISTRY_SERVICE" "" }}-data

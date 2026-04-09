@@ -4,7 +4,7 @@ import (
 	"context"
 	"strings"
 
-	runqueuerepo "github.com/codex-k8s/codex-k8s/services/jobs/worker/internal/domain/repository/runqueue"
+	runqueuerepo "github.com/codex-k8s/kodex/services/jobs/worker/internal/domain/repository/runqueue"
 )
 
 // keepRunSlotLeaseAlive extends slot lease for active full-env runs to prevent accidental re-claim.

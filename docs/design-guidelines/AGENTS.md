@@ -13,7 +13,7 @@
   - `docs/design-guidelines/go/check_list.md`
   - `docs/design-guidelines/vue/check_list.md`
 
-Специфика `codex-k8s`, которую нельзя нарушать:
+Специфика `kodex`, которую нельзя нарушать:
 - только Kubernetes как оркестратор;
 - webhook-driven процессы (без workflow-first оркестрации);
 - PostgreSQL + JSONB + pgvector как источник синхронизации состояния;

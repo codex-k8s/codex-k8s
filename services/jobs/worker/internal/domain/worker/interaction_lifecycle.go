@@ -7,8 +7,8 @@ import (
 	"strings"
 	"time"
 
-	floweventdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/flowevent"
-	floweventrepo "github.com/codex-k8s/codex-k8s/services/jobs/worker/internal/domain/repository/flowevent"
+	floweventdomain "github.com/codex-k8s/kodex/libs/go/domain/flowevent"
+	floweventrepo "github.com/codex-k8s/kodex/services/jobs/worker/internal/domain/repository/flowevent"
 )
 
 const (

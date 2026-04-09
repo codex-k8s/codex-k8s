@@ -6,8 +6,8 @@ import (
 	"strings"
 	"time"
 
-	floweventdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/flowevent"
-	valuetypes "github.com/codex-k8s/codex-k8s/services/jobs/worker/internal/domain/types/value"
+	floweventdomain "github.com/codex-k8s/kodex/libs/go/domain/flowevent"
+	valuetypes "github.com/codex-k8s/kodex/services/jobs/worker/internal/domain/types/value"
 )
 
 type namespaceCleanupSource string

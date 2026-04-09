@@ -25,7 +25,7 @@ approvals:
 - Что строим: unified owner feedback loop и long-lived wait contract, где pending request живёт в одном platform-owned контуре, а owner отвечает в Telegram или staff-console.
 - Для кого: owner / product lead, live runtime path агента и staff/operator fallback.
 - Почему: текущие built-in user interactions и Telegram path уже существуют, но ещё не дают проверяемую гарантию, что агент действительно ждёт пользователя в той же задаче и прозрачно проходит lifecycle `delivery -> wait -> response -> continuation`.
-- MVP: same-session continuation как primary happy-path, max timeout/TTL built-in `codex_k8s` MCP wait path не ниже owner wait window, snapshot-resume только как recovery fallback, dual-channel inbox, delivery-before-wait lifecycle transparency и deterministic text/voice/callback binding.
+- MVP: same-session continuation как primary happy-path, max timeout/TTL built-in `kodex` MCP wait path не ниже owner wait window, snapshot-resume только как recovery fallback, dual-channel inbox, delivery-before-wait lifecycle transparency и deterministic text/voice/callback binding.
 - Критерии успеха: owner видит pending request, отвечает из разрешённого канала без GitHub-comment detour, система сохраняет long wait `>=24h`, не путает delivery с user response и либо продолжает ту же live session, либо явно классифицирует recovery fallback.
 
 ## Проблема и цель
@@ -46,7 +46,7 @@ approvals:
 ## Зафиксированные продуктовые решения
 - `D-557-01`: unified owner feedback loop остаётся platform capability поверх Sprint S10/S11 baseline, а не Telegram-first или GitHub-comment-driven workaround.
 - `D-557-02`: same live pod / same `codex` session остаётся primary happy-path для response-required сценариев.
-- `D-557-03`: built-in `codex_k8s` MCP wait path обязан иметь effective max timeout/TTL не ниже owner wait window, чтобы happy-path оставался реальным live wait, а не synthetic resume.
+- `D-557-03`: built-in `kodex` MCP wait path обязан иметь effective max timeout/TTL не ниже owner wait window, чтобы happy-path оставался реальным live wait, а не synthetic resume.
 - `D-557-04`: persisted session snapshot и resume разрешены только как recovery/degradation fallback при потере live runtime.
 - `D-557-05`: обязательный lifecycle для core сценариев: `created -> delivery pending -> delivery accepted -> waiting -> response -> continuation`.
 - `D-557-06`: delivery accepted и waiting for user response остаются разными lifecycle состояниями; “сообщение доставлено” не означает “пользователь уже ответил”.
@@ -65,7 +65,7 @@ approvals:
 - Wait/continuation contract:
   - same-session continuation как primary happy-path;
   - long human-wait target `>=24h`;
-  - max timeout/TTL built-in `codex_k8s` MCP wait path не ниже owner wait window;
+  - max timeout/TTL built-in `kodex` MCP wait path не ниже owner wait window;
   - snapshot-resume как recovery-only fallback;
   - явная классификация overdue / expired / manual-fallback / recovery paths.
 - Deterministic response binding:
@@ -107,7 +107,7 @@ approvals:
   - owner inbox через Telegram + staff-console fallback;
   - same-session continuation как primary happy-path;
   - delivery-before-wait lifecycle;
-  - max timeout/TTL baseline built-in `codex_k8s` MCP wait path.
+  - max timeout/TTL baseline built-in `kodex` MCP wait path.
 - Wave 2 (`platform evidence`, `P0`):
   - deterministic text/voice/callback binding;
   - overdue / expired / manual-fallback visibility;
@@ -129,7 +129,7 @@ approvals:
 | `FR-557-02` | Для response-required сценариев owner должен видеть pending request с достаточным контекстом и разрешённым path ответа без обязательного ухода в GitHub comments. |
 | `FR-557-03` | Telegram pending inbox и staff-console fallback должны отображать один и тот же persisted request state и не расходиться по lifecycle semantics. |
 | `FR-557-04` | Same live pod / same `codex` session должны оставаться primary happy-path для continuation response-required run-сценариев. |
-| `FR-557-05` | Effective timeout/TTL built-in `codex_k8s` MCP wait path должен быть не ниже owner wait window и не должен обрывать happy-path раньше long human-wait target. |
+| `FR-557-05` | Effective timeout/TTL built-in `kodex` MCP wait path должен быть не ниже owner wait window и не должен обрывать happy-path раньше long human-wait target. |
 | `FR-557-06` | Persisted session snapshot и resume могут использоваться только как recovery/degradation fallback и должны классифицироваться отдельно от happy-path same-session continuation. |
 | `FR-557-07` | Product contract должен явно фиксировать lifecycle `created -> delivery pending -> delivery accepted -> waiting -> response -> continuation` и distinction между delivery accepted и user response received. |
 | `FR-557-08` | Overdue, expired, manual-fallback и recovery scenarios должны быть видимыми состояниями для owner/operator, а не скрытыми runtime side effects. |
@@ -163,7 +163,7 @@ approvals:
 
 ### `AC-557-04` Same-session happy-path и TTL baseline
 - Given response-required scenario должен ждать owner до long human-wait window,
-- When built-in `codex_k8s` MCP wait path остаётся активным,
+- When built-in `kodex` MCP wait path остаётся активным,
 - Then live session остаётся primary happy-path, а effective max timeout/TTL не короче owner wait window и не вынуждает system normalise synthetic resume как основной UX.
 - Expected evidence: runtime/session evidence, подтверждающий max timeout/TTL baseline и same-session continuation classification.
 
@@ -227,7 +227,7 @@ approvals:
 | ID | Требование | Как измеряем / проверяем |
 |---|---|---|
 | `NFR-557-01` | `PM-554-01` Delivery-before-wait consistency должна оставаться `100%` | lifecycle audit + acceptance walkthrough |
-| `NFR-557-02` | `REL-554-03` Live MCP wait coverage должна оставаться `100%` | runtime config/session evidence по effective timeout/TTL built-in `codex_k8s` path |
+| `NFR-557-02` | `REL-554-03` Live MCP wait coverage должна оставаться `100%` | runtime config/session evidence по effective timeout/TTL built-in `kodex` path |
 | `NFR-557-03` | `REL-554-01` Same-session continuation rate должна целиться в `>= 80%` | run/session audit + continuation classification |
 | `NFR-557-04` | `UX-554-01` Owner inbox visibility rate должна целиться в `>= 99%` | inbox projection audit + scenario review |
 | `NFR-557-05` | `REL-554-02` Deterministic reply binding correctness должна целиться в `>= 99.5%` | callback/text/voice audit + incident review |
@@ -279,7 +279,7 @@ approvals:
 ## Открытые вопросы для `run:arch`
 - Как разделить ownership между `control-plane`, `worker`, `agent-runner`, `api-gateway`, `staff web-console` и `telegram-interaction-adapter`, не потеряв product invariants Day1/Day2/Day3?
 - Где проходит граница между live wait lifetime, delivery/retry orchestration, persisted request truth и response ingestion/correlation?
-- Как обеспечить max timeout/TTL baseline built-in `codex_k8s` MCP wait path и не нормализовать recovery resume как основной UX?
+- Как обеспечить max timeout/TTL baseline built-in `kodex` MCP wait path и не нормализовать recovery resume как основной UX?
 - Какие архитектурные alternatives и ADR нужны, чтобы `run:design` не переоткрывал решения о same-session happy-path, recovery fallback и dual-channel semantics?
 
 ## Handover в `run:arch`
@@ -287,7 +287,7 @@ approvals:
 - На архитектурном этапе нельзя потерять:
   - unified owner feedback loop как platform capability поверх Sprint S10/S11 baseline;
   - same live pod / same `codex` session как primary happy-path;
-  - built-in `codex_k8s` MCP wait path с max timeout/TTL не ниже owner wait window;
+  - built-in `kodex` MCP wait path с max timeout/TTL не ниже owner wait window;
   - snapshot-resume только как recovery fallback;
   - lifecycle `created -> delivery pending -> delivery accepted -> waiting -> response -> continuation`;
   - Telegram pending inbox + staff-console fallback поверх одного persisted backend contract;

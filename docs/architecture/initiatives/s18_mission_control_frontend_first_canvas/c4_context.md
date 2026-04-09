@@ -17,7 +17,7 @@ approvals:
 # C4 Context: Sprint S18 Day 4 frontend-first Mission Control canvas
 
 ## TL;DR
-- Sprint S18 моделирует Mission Control как isolated fake-data UX slice внутри `codex-k8s`, а не как live GitHub/control-plane read model.
+- Sprint S18 моделирует Mission Control как isolated fake-data UX slice внутри `kodex`, а не как live GitHub/control-plane read model.
 - Пользователи взаимодействуют с owner-approved canvas UX, тогда как GitHub и backend rebuild `#563` остаются внешними или downstream dependencies, но не текущим runtime prerequisite.
 - Диаграмма подчёркивает separation: текущий prototype доказывает UX и safe action semantics, а persisted provider/data truth остаётся отдельной будущей задачей.
 

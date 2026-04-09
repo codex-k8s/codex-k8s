@@ -18,7 +18,7 @@ func TestTickReconcilesGitHubRateLimitWaitsBeforeMissionControl(t *testing.T) {
 	}
 	missionControl := &fakeMissionControlClient{
 		warmupProjects: []MissionControlWarmupProject{
-			{ProjectID: "project-1", ProjectName: "Project 1", RepositoryFullName: "codex-k8s/codex-k8s"},
+			{ProjectID: "project-1", ProjectName: "Project 1", RepositoryFullName: "codex-k8s/kodex"},
 		},
 	}
 

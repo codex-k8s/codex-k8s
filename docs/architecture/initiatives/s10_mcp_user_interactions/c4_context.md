@@ -19,7 +19,7 @@ approvals:
 # C4 Context: Sprint S10 Day 4 built-in MCP user interactions
 
 ## TL;DR
-- Built-in MCP user interactions остаются capability slice внутри `codex-k8s`, а не отдельной внешней системы.
+- Built-in MCP user interactions остаются capability slice внутри `kodex`, а не отдельной внешней системы.
 - Human-facing delivery и responses идут через channel-neutral adapter layer; GitHub comments остаются fallback/context channel, а не primary interaction path.
 
 ## Диаграмма (Mermaid C4Context)
@@ -31,7 +31,7 @@ Person(agent, "System agent", "Вызывает built-in tools через MCP")
 Person(owner, "Owner / Product lead", "Получает actionable notify и отвечает на decision request")
 Person(user, "End user / requester", "Даёт typed option или free-text response")
 
-System(system, "codex-k8s interaction slice", "Channel-neutral user interaction capability поверх built-in server codex_k8s")
+System(system, "kodex interaction slice", "Channel-neutral user interaction capability поверх built-in server kodex")
 
 System_Ext(adapters, "Interaction adapters", "Telegram/Slack/Web/HTTP adapters, future channel-specific UX")
 System_Ext(github, "GitHub", "Issue/PR context and fallback links")

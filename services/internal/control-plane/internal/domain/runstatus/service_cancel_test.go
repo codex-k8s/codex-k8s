@@ -6,18 +6,18 @@ import (
 	"testing"
 	"time"
 
-	"github.com/codex-k8s/codex-k8s/libs/go/crypto/tokencrypt"
-	floweventdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/flowevent"
-	mcpdomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/mcp"
-	agentrunrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/agentrun"
-	agentsessionrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/agentsession"
-	githubratelimitwaitrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/githubratelimitwait"
-	platformtokenrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/platformtoken"
-	runtimedeploydomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/runtimedeploy"
-	entitytypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/entity"
-	enumtypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/enum"
-	querytypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/query"
-	valuetypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/value"
+	"github.com/codex-k8s/kodex/libs/go/crypto/tokencrypt"
+	floweventdomain "github.com/codex-k8s/kodex/libs/go/domain/flowevent"
+	mcpdomain "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/mcp"
+	agentrunrepo "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/repository/agentrun"
+	agentsessionrepo "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/repository/agentsession"
+	githubratelimitwaitrepo "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/repository/githubratelimitwait"
+	platformtokenrepo "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/repository/platformtoken"
+	runtimedeploydomain "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/runtimedeploy"
+	entitytypes "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/types/entity"
+	enumtypes "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/types/enum"
+	querytypes "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/types/query"
+	valuetypes "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/types/value"
 )
 
 func TestCancelRun_CancelsArtifactsAndUpdatesComment(t *testing.T) {
@@ -34,8 +34,8 @@ func TestCancelRun_CancelsArtifactsAndUpdatesComment(t *testing.T) {
 	}
 
 	runPayload, err := json.Marshal(querytypes.RunPayload{
-		Repository: querytypes.RunPayloadRepository{FullName: "codex-k8s/codex-k8s"},
-		Issue:      &querytypes.RunPayloadIssue{Number: 514, HTMLURL: "https://github.com/codex-k8s/codex-k8s/issues/514"},
+		Repository: querytypes.RunPayloadRepository{FullName: "codex-k8s/kodex"},
+		Issue:      &querytypes.RunPayloadIssue{Number: 514, HTMLURL: "https://github.com/codex-k8s/kodex/issues/514"},
 		Trigger: &querytypes.RunPayloadTrigger{
 			Kind:  triggerKindDev,
 			Label: "run:dev",
@@ -95,20 +95,20 @@ func TestCancelRun_CancelsArtifactsAndUpdatesComment(t *testing.T) {
 			return []mcpdomain.GitHubIssueComment{{
 				ID:   99,
 				Body: commentBody,
-				URL:  "https://github.com/codex-k8s/codex-k8s/issues/514#issuecomment-99",
+				URL:  "https://github.com/codex-k8s/kodex/issues/514#issuecomment-99",
 			}}, nil
 		},
 		editIssueCommentFunc: func(_ context.Context, params mcpdomain.GitHubEditIssueCommentParams) (mcpdomain.GitHubIssueComment, error) {
 			return mcpdomain.GitHubIssueComment{
 				ID:   params.CommentID,
 				Body: params.Body,
-				URL:  "https://github.com/codex-k8s/codex-k8s/issues/514#issuecomment-99",
+				URL:  "https://github.com/codex-k8s/kodex/issues/514#issuecomment-99",
 			}, nil
 		},
 	}
 
 	service, err := NewService(Config{
-		PublicBaseURL: "https://platform.codex-k8s.dev",
+		PublicBaseURL: "https://platform.kodex.works",
 		DefaultLocale: localeRU,
 	}, Dependencies{
 		Runs:                 runs,

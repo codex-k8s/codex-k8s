@@ -9,21 +9,21 @@ import (
 	"testing"
 	"time"
 
-	floweventdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/flowevent"
-	cpclient "github.com/codex-k8s/codex-k8s/services/jobs/agent-runner/internal/controlplane"
+	floweventdomain "github.com/codex-k8s/kodex/libs/go/domain/flowevent"
+	cpclient "github.com/codex-k8s/kodex/services/jobs/agent-runner/internal/controlplane"
 )
 
 func TestResolveCodexReport_RecoversPRMetadataFromControlPlane(t *testing.T) {
 	service := NewService(Config{
 		RunID:                  "run-1",
 		ProjectID:              "project-1",
-		RepositoryFullName:     "codex-k8s/codex-k8s",
+		RepositoryFullName:     "codex-k8s/kodex",
 		PromptConfig:           PromptConfig{PromptTemplateLocale: promptLocaleRU},
 		ExistingPRNumber:       354,
 		RunTargetBranch:        "codex/issue-347",
 		IssueNumber:            347,
 		AgentKey:               "dev",
-		ControlPlaneGRPCTarget: "codex-k8s-control-plane:9090",
+		ControlPlaneGRPCTarget: "kodex-control-plane:9090",
 	}, &fakeOutputRecoveryControlPlane{
 		lookupResult: cpclient.RunPullRequestLookupResult{
 			PRNumber: 354,
@@ -64,7 +64,7 @@ func TestResolveCodexReport_RepairsStructuredOutputWhenRequiredFieldsMissing(t *
 	service := NewService(Config{
 		RunID:              "run-2",
 		ProjectID:          "project-1",
-		RepositoryFullName: "codex-k8s/codex-k8s",
+		RepositoryFullName: "codex-k8s/kodex",
 		PromptConfig:       PromptConfig{PromptTemplateLocale: promptLocaleRU},
 		ExistingPRNumber:   354,
 		RunTargetBranch:    "codex/issue-347",

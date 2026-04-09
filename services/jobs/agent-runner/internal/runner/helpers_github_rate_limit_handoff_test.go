@@ -10,9 +10,9 @@ import (
 	"testing"
 	"time"
 
-	floweventdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/flowevent"
-	sharedgithubratelimit "github.com/codex-k8s/codex-k8s/libs/go/domain/githubratelimit"
-	cpclient "github.com/codex-k8s/codex-k8s/services/jobs/agent-runner/internal/controlplane"
+	floweventdomain "github.com/codex-k8s/kodex/libs/go/domain/flowevent"
+	sharedgithubratelimit "github.com/codex-k8s/kodex/libs/go/domain/githubratelimit"
+	cpclient "github.com/codex-k8s/kodex/services/jobs/agent-runner/internal/controlplane"
 )
 
 func TestDetectGitHubRateLimitSignal_ParsesHeaders(t *testing.T) {
@@ -71,7 +71,7 @@ func TestRunCodexExecWithAuthRecovery_GitHubRateLimitAcceptedPersistsWaitingSnap
 	service := NewService(Config{
 		RunID:              "run-428",
 		CorrelationID:      "corr-428",
-		RepositoryFullName: "codex-k8s/codex-k8s",
+		RepositoryFullName: "codex-k8s/kodex",
 		AgentKey:           "dev",
 	}, controlPlane, nil)
 
@@ -131,7 +131,7 @@ func TestRunCodexExecWithAuthRecovery_GitHubRateLimitAcceptedWhenWaitingSnapshot
 	service := NewService(Config{
 		RunID:              "run-428",
 		CorrelationID:      "corr-428",
-		RepositoryFullName: "codex-k8s/codex-k8s",
+		RepositoryFullName: "codex-k8s/kodex",
 		AgentKey:           "dev",
 	}, controlPlane, nil)
 

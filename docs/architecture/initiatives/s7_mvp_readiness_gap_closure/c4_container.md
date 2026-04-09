@@ -30,7 +30,7 @@ Person(owner, "Owner", "Final review and stage decisions")
 System_Ext(github, "GitHub", "Issues, PR, labels")
 System_Ext(k8s, "Kubernetes", "Runtime namespace/jobs")
 
-System_Boundary(b0, "codex-k8s") {
+System_Boundary(b0, "kodex") {
   Container(web, "Web Console", "Vue3", "UI cleanup and MVP scope hardening")
   Container(gw, "API Gateway", "Go HTTP", "Thin-edge typed staff/external transport")
   Container(cp, "Control Plane", "Go", "Domain rules, stage policy, run status")

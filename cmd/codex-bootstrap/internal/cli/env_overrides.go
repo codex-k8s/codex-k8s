@@ -3,7 +3,7 @@ package cli
 import (
 	"strings"
 
-	"github.com/codex-k8s/codex-k8s/libs/go/servicescfg"
+	"github.com/codex-k8s/kodex/libs/go/servicescfg"
 )
 
 func cloneStringMap(values map[string]string) map[string]string {

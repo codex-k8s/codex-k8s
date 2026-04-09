@@ -1,8 +1,8 @@
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: codexk8s-default-deny-all
-  namespace: {{ envOr "CODEXK8S_TARGET_NAMESPACE" "" }}
+  name: kodex-default-deny-all
+  namespace: {{ envOr "KODEX_TARGET_NAMESPACE" "" }}
 spec:
   podSelector: {}
   policyTypes:
@@ -12,8 +12,8 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: codexk8s-allow-ingress-from-platform-and-system
-  namespace: {{ envOr "CODEXK8S_TARGET_NAMESPACE" "" }}
+  name: kodex-allow-ingress-from-platform-and-system
+  namespace: {{ envOr "KODEX_TARGET_NAMESPACE" "" }}
 spec:
   podSelector: {}
   policyTypes:
@@ -22,7 +22,7 @@ spec:
     - from:
         - namespaceSelector:
             matchExpressions:
-              - key: codexk8s.io/network-zone
+              - key: kodex.io/network-zone
                 operator: In
                 values:
                   - platform
@@ -31,8 +31,8 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: codexk8s-allow-egress-dns
-  namespace: {{ envOr "CODEXK8S_TARGET_NAMESPACE" "" }}
+  name: kodex-allow-egress-dns
+  namespace: {{ envOr "KODEX_TARGET_NAMESPACE" "" }}
 spec:
   podSelector: {}
   policyTypes:
@@ -54,8 +54,8 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: codexk8s-allow-egress-to-platform-mcp
-  namespace: {{ envOr "CODEXK8S_TARGET_NAMESPACE" "" }}
+  name: kodex-allow-egress-to-platform-mcp
+  namespace: {{ envOr "KODEX_TARGET_NAMESPACE" "" }}
 spec:
   podSelector: {}
   policyTypes:
@@ -64,19 +64,19 @@ spec:
     - to:
         - namespaceSelector:
             matchLabels:
-              codexk8s.io/network-zone: platform
+              kodex.io/network-zone: platform
           podSelector:
             matchLabels:
-              app.kubernetes.io/name: codex-k8s
+              app.kubernetes.io/name: kodex
       ports:
         - protocol: TCP
-          port: {{ envOr "CODEXK8S_PLATFORM_MCP_PORT" "" }}
+          port: {{ envOr "KODEX_PLATFORM_MCP_PORT" "" }}
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: codexk8s-allow-egress-web
-  namespace: {{ envOr "CODEXK8S_TARGET_NAMESPACE" "" }}
+  name: kodex-allow-egress-web
+  namespace: {{ envOr "KODEX_TARGET_NAMESPACE" "" }}
 spec:
   podSelector: {}
   policyTypes:

@@ -99,9 +99,9 @@ webhookRuntime:
 - В Kubernetes нет built-in TTL для namespace (TTL-after-finished работает только для Job).
 - Cleanup реализуется sweeper-контуром по managed namespace:
   - in-band sweep в worker reconcile tick;
-  - отдельный production `CronJob` `codex-k8s-worker-namespace-cleanup` как backstop при сбоях/простоях worker;
-  - отбор по `codex-k8s.dev/namespace-purpose=run`;
-  - guardrails: ownership-label + allowlist platform runtime namespace names (issue-run prefix + slot namespaces `codex-k8s-dev-*`) + отсутствие non-terminal run в БД + отсутствие active workload в namespace, включая unsuspended `CronJob`;
+  - отдельный production `CronJob` `kodex-worker-namespace-cleanup` как backstop при сбоях/простоях worker;
+  - отбор по `kodex.works/namespace-purpose=run`;
+  - guardrails: ownership-label + allowlist platform runtime namespace names (issue-run prefix + slot namespaces `kodex-dev-*`) + отсутствие non-terminal run в БД + отсутствие active workload в namespace, включая unsuspended `CronJob`;
   - удаление по достижении lease expiry;
   - write-audit на каждое действие.
 
@@ -151,7 +151,7 @@ webhookRuntime:
    - extend lease на revise reuse;
    - sweep-cleanup по expiry.
 3. Обновить сообщения в issue/run status (TTL lease, `expires_at`, факт reuse при revise).
-4. Обновить `services.yaml` проекта `codex-k8s`:
+4. Обновить `services.yaml` проекта `kodex`:
    - выставить `24h` для всех системных ролей.
 
 ## План миграции runtime

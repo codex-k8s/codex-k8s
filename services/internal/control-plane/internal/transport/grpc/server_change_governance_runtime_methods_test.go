@@ -6,11 +6,11 @@ import (
 	"testing"
 	"time"
 
-	controlplanev1 "github.com/codex-k8s/codex-k8s/proto/gen/go/codexk8s/controlplane/v1"
-	changegovernancedomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/changegovernance"
-	mcpdomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/mcp"
-	agentrunrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/agentrun"
-	querytypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/query"
+	controlplanev1 "github.com/codex-k8s/kodex/proto/gen/go/kodex/controlplane/v1"
+	changegovernancedomain "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/changegovernance"
+	mcpdomain "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/mcp"
+	agentrunrepo "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/repository/agentrun"
+	querytypes "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/types/query"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
@@ -34,7 +34,7 @@ func TestReportChangeGovernanceDraftSignal_RejectsProjectScopeMismatch(t *testin
 				ProjectID:     "project-from-token",
 				CorrelationID: "corr-1",
 				RunPayload: mustMarshalRunPayload(t, querytypes.RunPayload{
-					Repository: querytypes.RunPayloadRepository{FullName: "codex-k8s/codex-k8s"},
+					Repository: querytypes.RunPayloadRepository{FullName: "codex-k8s/kodex"},
 					Issue:      &querytypes.RunPayloadIssue{Number: 521},
 				}),
 			},
@@ -46,7 +46,7 @@ func TestReportChangeGovernanceDraftSignal_RejectsProjectScopeMismatch(t *testin
 	_, err := srv.ReportChangeGovernanceDraftSignal(ctx, &controlplanev1.ReportChangeGovernanceDraftSignalRequest{
 		RunId:              "run-1",
 		ProjectId:          "project-from-request",
-		RepositoryFullName: "codex-k8s/codex-k8s",
+		RepositoryFullName: "codex-k8s/kodex",
 		IssueNumber:        521,
 		SignalId:           "signal-1",
 		CorrelationId:      "corr-1",
@@ -82,7 +82,7 @@ func TestReportChangeGovernanceDraftSignal_RejectsRepositoryLineageMismatch(t *t
 				ProjectID:     "project-1",
 				CorrelationID: "corr-1",
 				RunPayload: mustMarshalRunPayload(t, querytypes.RunPayload{
-					Repository: querytypes.RunPayloadRepository{FullName: "codex-k8s/codex-k8s"},
+					Repository: querytypes.RunPayloadRepository{FullName: "codex-k8s/kodex"},
 					Issue:      &querytypes.RunPayloadIssue{Number: 521},
 				}),
 			},

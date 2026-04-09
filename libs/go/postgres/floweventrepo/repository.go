@@ -4,8 +4,8 @@ import (
 	"context"
 	_ "embed"
 
-	flowdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/flowevent"
-	"github.com/codex-k8s/codex-k8s/libs/go/postgres"
+	flowdomain "github.com/codex-k8s/kodex/libs/go/domain/flowevent"
+	"github.com/codex-k8s/kodex/libs/go/postgres"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 

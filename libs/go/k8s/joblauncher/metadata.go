@@ -1,15 +1,15 @@
 package joblauncher
 
 const (
-	metadataLabelManagedBy          = "codex-k8s.dev/managed-by"
-	metadataLabelNamespacePurpose   = "codex-k8s.dev/namespace-purpose"
-	metadataLabelRuntimeMode        = "codex-k8s.dev/runtime-mode"
-	metadataLabelProjectID          = "codex-k8s.dev/project-id"
-	metadataLabelRunID              = "codex-k8s.dev/run-id"
-	metadataLabelIssueNumber        = "codex-k8s.dev/issue-number"
-	metadataLabelAgentKey           = "codex-k8s.dev/agent-key"
-	metadataAnnotationCorrelationID = "codex-k8s.dev/correlation-id"
-	metadataAnnotationNamespaceTTL  = "codex-k8s.dev/namespace-lease-ttl"
-	metadataAnnotationNamespaceExp  = "codex-k8s.dev/namespace-lease-expires-at"
-	metadataAnnotationNamespaceUpd  = "codex-k8s.dev/namespace-lease-updated-at"
+	metadataLabelManagedBy          = "kodex.works/managed-by"
+	metadataLabelNamespacePurpose   = "kodex.works/namespace-purpose"
+	metadataLabelRuntimeMode        = "kodex.works/runtime-mode"
+	metadataLabelProjectID          = "kodex.works/project-id"
+	metadataLabelRunID              = "kodex.works/run-id"
+	metadataLabelIssueNumber        = "kodex.works/issue-number"
+	metadataLabelAgentKey           = "kodex.works/agent-key"
+	metadataAnnotationCorrelationID = "kodex.works/correlation-id"
+	metadataAnnotationNamespaceTTL  = "kodex.works/namespace-lease-ttl"
+	metadataAnnotationNamespaceExp  = "kodex.works/namespace-lease-expires-at"
+	metadataAnnotationNamespaceUpd  = "kodex.works/namespace-lease-updated-at"
 )

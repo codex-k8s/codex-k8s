@@ -114,11 +114,11 @@ approvals:
 - Dev stage выполнен в Issue `#458`; реализованы code/runtime changes в:
   - `services/internal/control-plane` для additive schema foundation `interaction_channel_bindings` / `interaction_callback_handles`, operator projections, Telegram callback classification и typed delivery envelope;
   - `services/jobs/worker` для HTTP bridge к внешнему Telegram adapter contour, provider message ref/edit-capability persistence и callback-token propagation;
-  - `services/external/api-gateway` + `proto/codexk8s/controlplane/v1/controlplane.proto` для contract-first callback DTO/gRPC bridge и regenerated artifacts.
+  - `services/external/api-gateway` + `proto/kodex/controlplane/v1/controlplane.proto` для contract-first callback DTO/gRPC bridge и regenerated artifacts.
 - Dev package зафиксировал:
   - normalized callback family `delivery_receipt|option_selected|free_text_received|transport_failure` без возврата к ad-hoc `decision_response`;
   - platform-owned resolution semantics в `control-plane`, включая duplicate/stale/expired/invalid classification, continuation action selection и operator visibility fields;
-  - внешний Telegram contour как configurable runtime bridge: проверка `kubectl -n codex-k8s-dev-3 get svc,deploy` показала, что в candidate namespace отсутствует отдельный Telegram сервис, поэтому runtime baseline закреплён как external adapter path, а не in-cluster ownership drift;
+  - внешний Telegram contour как configurable runtime bridge: проверка `kubectl -n kodex-dev-3 get svc,deploy` показала, что в candidate namespace отсутствует отдельный Telegram сервис, поэтому runtime baseline закреплён как external adapter path, а не in-cluster ownership drift;
   - синхронный codegen/transport update для OpenAPI/proto и worker/api-gateway/control-plane без разрыва continuity цепочки `#361 -> #447 -> #448 -> #452 -> #454 -> #456 -> #458`.
 - Проверки dev-итерации:
   - `make gen-proto-go`;
@@ -132,10 +132,10 @@ approvals:
 - Follow-up dev stage выполнен в Issue `#473`; materialized missing in-repo Telegram adapter contour, который в Issue `#458` оставался внешним configurable bridge.
 - Реализованы code/runtime changes в:
   - `services/external/telegram-interaction-adapter` для raw Telegram webhook intake, `X-Telegram-Bot-Api-Secret-Token` verification, callback query acknowledgement, telego-based Bot API mediation, encrypted adapter-local session state и contract-first HTTP transport;
-  - `services/internal/control-plane` для runtime secret generation (`CODEXK8S_TELEGRAM_INTERACTION_ADAPTER_WEBHOOK_SECRET`, bearer token, internal callback base URL) и adapter-facing callback URL override;
+  - `services/internal/control-plane` для runtime secret generation (`KODEX_TELEGRAM_INTERACTION_ADAPTER_WEBHOOK_SECRET`, bearer token, internal callback base URL) и adapter-facing callback URL override;
   - `deploy/base/**`, `services.yaml`, `Makefile` и codegen-check wiring для deployable image/service/PVC/ingress/network-policy/codegen coverage.
 - Follow-up package зафиксировал:
-  - в candidate baseline raw webhook path больше не зависит от внешнего неопределённого contour: Telegram webhook ingress routed directly to `codex-k8s-telegram-interaction-adapter`, а normalized callbacks идут в `api-gateway` по internal callback URL;
+  - в candidate baseline raw webhook path больше не зависит от внешнего неопределённого contour: Telegram webhook ingress routed directly to `kodex-telegram-interaction-adapter`, а normalized callbacks идут в `api-gateway` по internal callback URL;
   - generated webhook secret теперь сохраняется в runtime secrets как base64url string длиной `43` символа, что укладывается в требование `42..64`;
   - encrypted adapter state устраняет plaintext leakage raw free-text handle при сохранении restart continuity для decision/free-text flows.
 - Проверки follow-up итерации:
@@ -144,4 +144,4 @@ approvals:
   - `npm --prefix services/staff/web-console ci && make gen-openapi`;
   - `git diff --check`;
   - `go test ./services/internal/control-plane/... ./services/jobs/worker/... ./services/external/api-gateway/... ./services/external/telegram-interaction-adapter/...`;
-  - `kubectl -n codex-k8s-dev-2 get deploy,svc,pvc | rg 'telegram|NAME'` для фиксации текущего candidate runtime baseline перед rollout PR.
+  - `kubectl -n kodex-dev-2 get deploy,svc,pvc | rg 'telegram|NAME'` для фиксации текущего candidate runtime baseline перед rollout PR.

@@ -17,7 +17,7 @@ approvals:
 # C4 Context: Sprint S9 Day 4 Mission Control Dashboard
 
 ## TL;DR
-- Mission Control Dashboard остаётся product slice внутри `codex-k8s`, а не отдельной внешней системой.
+- Mission Control Dashboard остаётся product slice внутри `kodex`, а не отдельной внешней системой.
 - GitHub остаётся provider source-of-truth для review/collaboration, Kubernetes остаётся источником runtime состояния, voice intake — только optional candidate stream.
 
 ## Диаграмма (Mermaid C4Context)
@@ -29,7 +29,7 @@ Person(owner, "Owner / Product lead", "Получает situational awareness п
 Person(operator, "Engineer / Operator", "Управляет work items, PR, агентами и sync state")
 Person(discussion, "Discussion-first user", "Начинает с discussion и формализует её в task")
 
-System(system, "codex-k8s Mission Control Dashboard slice", "Active-set control plane для work items, discussion, PR и agents")
+System(system, "kodex Mission Control Dashboard slice", "Active-set control plane для work items, discussion, PR и agents")
 
 System_Ext(github, "GitHub", "Issues, PR, comments, reviews, webhooks")
 System_Ext(k8s, "Kubernetes", "Agent/runtime state")

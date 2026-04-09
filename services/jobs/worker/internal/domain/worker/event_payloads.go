@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"time"
 
-	agentdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/agent"
-	rundomain "github.com/codex-k8s/codex-k8s/libs/go/domain/run"
+	agentdomain "github.com/codex-k8s/kodex/libs/go/domain/agent"
+	rundomain "github.com/codex-k8s/kodex/libs/go/domain/run"
 )
 
 const payloadMarshalFailedError = "payload_marshal_failed"

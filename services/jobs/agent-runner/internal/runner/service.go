@@ -11,10 +11,10 @@ import (
 	"strings"
 	"time"
 
-	agentdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/agent"
-	floweventdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/flowevent"
-	webhookdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/webhook"
-	cpclient "github.com/codex-k8s/codex-k8s/services/jobs/agent-runner/internal/controlplane"
+	agentdomain "github.com/codex-k8s/kodex/libs/go/domain/agent"
+	floweventdomain "github.com/codex-k8s/kodex/libs/go/domain/flowevent"
+	webhookdomain "github.com/codex-k8s/kodex/libs/go/domain/webhook"
+	cpclient "github.com/codex-k8s/kodex/services/jobs/agent-runner/internal/controlplane"
 )
 
 // Run executes full runner flow and returns nil on successful completion.
@@ -41,7 +41,7 @@ func (s *Service) Run(ctx context.Context) (err error) {
 	if mkErr := os.MkdirAll(state.sessionsDir, 0o755); mkErr != nil {
 		return fmt.Errorf("create sessions dir: %w", mkErr)
 	}
-	gitAuthDir := filepath.Join(os.TempDir(), "codex-k8s-agent-runner-auth")
+	gitAuthDir := filepath.Join(os.TempDir(), "kodex-agent-runner-auth")
 	if mkErr := os.MkdirAll(gitAuthDir, 0o755); mkErr != nil {
 		return fmt.Errorf("create git auth dir: %w", mkErr)
 	}

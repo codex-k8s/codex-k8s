@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"testing"
 
-	mcpdomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/mcp"
-	querytypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/query"
+	mcpdomain "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/mcp"
+	querytypes "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/types/query"
 )
 
 func TestResolveCommentTarget(t *testing.T) {
@@ -190,7 +190,7 @@ func TestFindRunStatusComment_PrefersSucceededTerminalStatusOverLaterFailedDupli
 func TestFindRunStatusComment_IgnoresMalformedMarkerAndFindsValid(t *testing.T) {
 	t.Parallel()
 
-	malformed := "<!-- codex-k8s:run-status {not-valid-json} -->"
+	malformed := "<!-- kodex:run-status {not-valid-json} -->"
 	valid := testRunStatusCommentBody(t, commentState{RunID: "run-2", Phase: PhaseFinished})
 
 	comments := []mcpdomain.GitHubIssueComment{

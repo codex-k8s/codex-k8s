@@ -74,7 +74,7 @@ approvals:
   - Добавлены role templates `work/revise` для поддержанных ролей (`dev/pm/sa/em/reviewer/qa/sre/km`) в локалях `ru/en`.
 - Story-4: выполнено.
   - `runstatus` переведен на v2 lifecycle phases (`created`, `started`, `auth_required`, `auth_resolved`, `finished`, `namespace_deleted`).
-  - В run-сообщения добавлен `Slot URL` для full-env run (по runtime host или расчету из namespace + `CODEXK8S_AI_DOMAIN`/`CODEXK8S_PRODUCTION_DOMAIN`).
+  - В run-сообщения добавлен `Slot URL` для full-env run (по runtime host или расчету из namespace + `KODEX_AI_DOMAIN`/`KODEX_PRODUCTION_DOMAIN`).
 - Story-5: выполнено.
   - Обновлены sprint/traceability/policy связанные документы и статусы выполнения Day15.
 

@@ -128,8 +128,8 @@ approvals:
   - открыть candidate `web-console` через browser;
   - сохранить route query после переключения preset/view и после открытия drawer node.
 - Logs:
-  - `kubectl -n <candidate-namespace> logs deploy/codex-k8s-api-gateway --tail=200 | rg 'mission_control.api.workspace|mission_control.api.node_details|mission_control.api.launch_preview'`
-  - `kubectl -n <candidate-namespace> logs deploy/codex-k8s-control-plane --tail=200 | rg 'mission_control.workspace.(snapshot_loaded|preview_generated|preview_blocked|gap_detected|watermark_updated)'`
+  - `kubectl -n <candidate-namespace> logs deploy/kodex-api-gateway --tail=200 | rg 'mission_control.api.workspace|mission_control.api.node_details|mission_control.api.launch_preview'`
+  - `kubectl -n <candidate-namespace> logs deploy/kodex-control-plane --tail=200 | rg 'mission_control.workspace.(snapshot_loaded|preview_generated|preview_blocked|gap_detected|watermark_updated)'`
 
 ## Failure signals
 - UI возвращается к dashboard/board-first представлению как primary path.

@@ -1,8 +1,8 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: codex-k8s-postgres-init
-  namespace: {{ envOr "CODEXK8S_PRODUCTION_NAMESPACE" "" }}
+  name: kodex-postgres-init
+  namespace: {{ envOr "KODEX_PRODUCTION_NAMESPACE" "" }}
 data:
   01-pgvector.sql: |
     CREATE EXTENSION IF NOT EXISTS vector;
@@ -11,7 +11,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: postgres
-  namespace: {{ envOr "CODEXK8S_PRODUCTION_NAMESPACE" "" }}
+  namespace: {{ envOr "KODEX_PRODUCTION_NAMESPACE" "" }}
   labels:
     app.kubernetes.io/name: postgres
 spec:
@@ -26,7 +26,7 @@ apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: postgres
-  namespace: {{ envOr "CODEXK8S_PRODUCTION_NAMESPACE" "" }}
+  namespace: {{ envOr "KODEX_PRODUCTION_NAMESPACE" "" }}
 spec:
   serviceName: postgres
   replicas: 1
@@ -40,7 +40,7 @@ spec:
     spec:
       containers:
         - name: postgres
-          image: {{ envOr "CODEXK8S_POSTGRES_IMAGE" "pgvector/pgvector:pg16" }}
+          image: {{ envOr "KODEX_POSTGRES_IMAGE" "pgvector/pgvector:pg16" }}
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 5432
@@ -49,18 +49,18 @@ spec:
             - name: POSTGRES_DB
               valueFrom:
                 secretKeyRef:
-                  name: codex-k8s-postgres
-                  key: CODEXK8S_POSTGRES_DB
+                  name: kodex-postgres
+                  key: KODEX_POSTGRES_DB
             - name: POSTGRES_USER
               valueFrom:
                 secretKeyRef:
-                  name: codex-k8s-postgres
-                  key: CODEXK8S_POSTGRES_USER
+                  name: kodex-postgres
+                  key: KODEX_POSTGRES_USER
             - name: POSTGRES_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: codex-k8s-postgres
-                  key: CODEXK8S_POSTGRES_PASSWORD
+                  name: kodex-postgres
+                  key: KODEX_POSTGRES_PASSWORD
           volumeMounts:
             - name: data
               mountPath: /var/lib/postgresql/data
@@ -75,7 +75,7 @@ spec:
       volumes:
         - name: init-sql
           configMap:
-            name: codex-k8s-postgres-init
+            name: kodex-postgres-init
   volumeClaimTemplates:
     - metadata:
         name: data

@@ -3,8 +3,8 @@ package agentrun
 import (
 	"encoding/json"
 
-	domainrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/agentrun"
-	"github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/agentrun/dbmodel"
+	domainrepo "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/repository/agentrun"
+	"github.com/codex-k8s/kodex/services/internal/control-plane/internal/repository/postgres/agentrun/dbmodel"
 )
 
 func runFromDBModel(row dbmodel.RunRow) domainrepo.Run {

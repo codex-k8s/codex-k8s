@@ -3,9 +3,9 @@ package changegovernance
 import (
 	"encoding/json"
 
-	domainrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/changegovernance"
-	enumtypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/enum"
-	"github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/changegovernance/dbmodel"
+	domainrepo "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/repository/changegovernance"
+	enumtypes "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/types/enum"
+	"github.com/codex-k8s/kodex/services/internal/control-plane/internal/repository/postgres/changegovernance/dbmodel"
 )
 
 func fromPackageRow(row dbmodel.PackageRow) domainrepo.Package {

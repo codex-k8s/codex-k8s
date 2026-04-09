@@ -1,13 +1,13 @@
 apiVersion: cert-manager.io/v1
 kind: ClusterIssuer
 metadata:
-  name: codex-k8s-letsencrypt
+  name: kodex-letsencrypt
 spec:
   acme:
-    email: '{{ envOr "CODEXK8S_LETSENCRYPT_EMAIL" "" }}'
-    server: '{{ envOr "CODEXK8S_LETSENCRYPT_SERVER" "" }}'
+    email: '{{ envOr "KODEX_LETSENCRYPT_EMAIL" "" }}'
+    server: '{{ envOr "KODEX_LETSENCRYPT_SERVER" "" }}'
     privateKeySecretRef:
-      name: codex-k8s-letsencrypt-account-key
+      name: kodex-letsencrypt-account-key
     solvers:
       - http01:
           ingress:

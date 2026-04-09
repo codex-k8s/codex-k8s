@@ -3,7 +3,7 @@ import { getCookie, setCookie } from "../shared/lib/cookies";
 export const supportedLocales = ["en", "ru"] as const;
 export type Locale = (typeof supportedLocales)[number];
 
-const cookieKey = "codexk8s_locale";
+const cookieKey = "kodex_locale";
 
 export function readInitialLocale(): Locale {
   const v = (getCookie(cookieKey) || "").toLowerCase();

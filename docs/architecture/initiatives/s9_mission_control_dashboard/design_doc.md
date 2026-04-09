@@ -216,7 +216,7 @@ sequenceDiagram
   - `docs/architecture/initiatives/s9_mission_control_dashboard/api_contract.md`
 - Source of truth для будущего `run:dev`:
   - OpenAPI: `services/external/api-gateway/api/server/api.yaml`
-  - gRPC: `proto/codexk8s/controlplane/v1/controlplane.proto`
+  - gRPC: `proto/kodex/controlplane/v1/controlplane.proto`
 - Contract discipline:
   - HTTP/staff DTO only typed models;
   - gRPC request/response only typed models;

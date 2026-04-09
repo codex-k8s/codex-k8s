@@ -1,7 +1,7 @@
 ---
 doc_id: LBL-CK8S-0001
 type: labels-policy
-title: "codex-k8s — Labels and Trigger Policy"
+title: "kodex — Labels and Trigger Policy"
 status: active
 owner_role: PM
 created_at: 2026-02-11
@@ -308,15 +308,15 @@ approvals:
 
 ## Каталог label-имен
 
-- Источник правды для label-имен — `bootstrap/host/config.env`, `bootstrap/host/config.env.example` и runtime env `CODEXK8S_*`.
+- Источник правды для label-имен — `bootstrap/host/config.env`, `bootstrap/host/config.env.example` и runtime env `KODEX_*`.
 - `github-sync` создает/обновляет только GitHub webhook и сами label-объекты в репозиториях.
 - GitHub Variables для каталога labels больше не используются и не являются частью runtime-контура.
 - Полный каталог по-прежнему задается через:
-  - `CODEXK8S_RUN_<STAGE>_LABEL` и `CODEXK8S_RUN_<STAGE>_REVISE_LABEL` (где применимо),
-  - `CODEXK8S_STATE_*_LABEL`,
-  - `CODEXK8S_NEED_*_LABEL`,
-  - `CODEXK8S_AI_MODEL_*_LABEL`,
-  - `CODEXK8S_AI_REASONING_*_LABEL`.
+  - `KODEX_RUN_<STAGE>_LABEL` и `KODEX_RUN_<STAGE>_REVISE_LABEL` (где применимо),
+  - `KODEX_STATE_*_LABEL`,
+  - `KODEX_NEED_*_LABEL`,
+  - `KODEX_AI_MODEL_*_LABEL`,
+  - `KODEX_AI_REASONING_*_LABEL`.
 
 ## Аудит и наблюдаемость
 

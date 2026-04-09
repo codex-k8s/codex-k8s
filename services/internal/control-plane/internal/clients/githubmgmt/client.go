@@ -10,7 +10,7 @@ import (
 
 	gh "github.com/google/go-github/v82/github"
 
-	valuetypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/value"
+	valuetypes "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/types/value"
 )
 
 // Client provides GitHub management operations used by staff/control-plane (preflight, repo mutations).
@@ -58,8 +58,8 @@ func (c *Client) Preflight(ctx context.Context, params valuetypes.GitHubPrefligh
 
 	now := time.Now().UTC()
 	suffix := now.Format("20060102-150405")
-	labelName := "codex-k8s-preflight-" + suffix
-	branchName := "codex-k8s-preflight/" + suffix
+	labelName := "kodex-preflight-" + suffix
+	branchName := "kodex-preflight/" + suffix
 
 	platformClient := c.clientWithToken(platformToken)
 	botClient := c.clientWithToken(botToken)
@@ -136,7 +136,7 @@ func (c *Client) Preflight(ctx context.Context, params valuetypes.GitHubPrefligh
 		_, _, err := platformClient.Issues.CreateLabel(stepCtx, owner, repo, &gh.Label{
 			Name:        gh.Ptr(labelName),
 			Color:       gh.Ptr("1f6feb"),
-			Description: gh.Ptr("codex-k8s preflight label"),
+			Description: gh.Ptr("kodex preflight label"),
 		})
 		return err
 	}); err != nil {
@@ -170,12 +170,12 @@ func (c *Client) Preflight(ctx context.Context, params valuetypes.GitHubPrefligh
 	}
 
 	// 4) Bot token: issue + comment + close.
-	issueTitle := "codex-k8s-preflight issue " + suffix
+	issueTitle := "kodex-preflight issue " + suffix
 	issue := (*gh.Issue)(nil)
 	err = withTimeout(stepTimeout, func(stepCtx context.Context) error {
 		res, _, err := botClient.Issues.Create(stepCtx, owner, repo, &gh.IssueRequest{
 			Title: gh.Ptr(issueTitle),
-			Body:  gh.Ptr("codex-k8s preflight issue (auto-cleanup)"),
+			Body:  gh.Ptr("kodex preflight issue (auto-cleanup)"),
 		})
 		issue = res
 		return err
@@ -195,7 +195,7 @@ func (c *Client) Preflight(ctx context.Context, params valuetypes.GitHubPrefligh
 		})
 
 		if err := withTimeout(stepTimeout, func(stepCtx context.Context) error {
-			_, _, err := botClient.Issues.CreateComment(stepCtx, owner, repo, issueNumber, &gh.IssueComment{Body: gh.Ptr("codex-k8s preflight comment")})
+			_, _, err := botClient.Issues.CreateComment(stepCtx, owner, repo, issueNumber, &gh.IssueComment{Body: gh.Ptr("kodex preflight comment")})
 			return err
 		}); err != nil {
 			failed = true
@@ -266,7 +266,7 @@ func (c *Client) Preflight(ctx context.Context, params valuetypes.GitHubPrefligh
 				})
 
 				// Create one commit with a trivial file.
-				content := "codex-k8s preflight " + suffix + "\n"
+				content := "kodex preflight " + suffix + "\n"
 				blob := (*gh.Blob)(nil)
 				err := withTimeout(stepTimeout, func(stepCtx context.Context) error {
 					res, _, err := botClient.Git.CreateBlob(stepCtx, owner, repo, gh.Blob{
@@ -294,7 +294,7 @@ func (c *Client) Preflight(ctx context.Context, params valuetypes.GitHubPrefligh
 						tree := (*gh.Tree)(nil)
 						err := withTimeout(stepTimeout, func(stepCtx context.Context) error {
 							res, _, err := botClient.Git.CreateTree(stepCtx, owner, repo, baseTree, []*gh.TreeEntry{{
-								Path: gh.Ptr(".codex-k8s-preflight.txt"),
+								Path: gh.Ptr(".kodex-preflight.txt"),
 								Mode: gh.Ptr("100644"),
 								Type: gh.Ptr("blob"),
 								SHA:  blob.SHA,
@@ -306,7 +306,7 @@ func (c *Client) Preflight(ctx context.Context, params valuetypes.GitHubPrefligh
 							failed = true
 							report.Checks = append(report.Checks, valuetypes.GitHubPreflightCheck{Name: "github:bot:tree_create", Status: "failed", Details: err.Error()})
 						} else {
-							commitMsg := "chore: codex-k8s preflight " + suffix
+							commitMsg := "chore: kodex preflight " + suffix
 							newCommit := (*gh.Commit)(nil)
 							err := withTimeout(stepTimeout, func(stepCtx context.Context) error {
 								res, _, err := botClient.Git.CreateCommit(stepCtx, owner, repo, gh.Commit{
@@ -333,14 +333,14 @@ func (c *Client) Preflight(ctx context.Context, params valuetypes.GitHubPrefligh
 								} else {
 									report.Checks = append(report.Checks, valuetypes.GitHubPreflightCheck{Name: "github:bot:commit_push", Status: "ok"})
 
-									prTitle := "codex-k8s preflight " + suffix
+									prTitle := "kodex preflight " + suffix
 									pr := (*gh.PullRequest)(nil)
 									err := withTimeout(stepTimeout, func(stepCtx context.Context) error {
 										res, _, err := botClient.PullRequests.Create(stepCtx, owner, repo, &gh.NewPullRequest{
 											Title: gh.Ptr(prTitle),
 											Head:  gh.Ptr(branchName),
 											Base:  gh.Ptr(defaultBranch),
-											Body:  gh.Ptr("codex-k8s preflight PR (auto-cleanup)"),
+											Body:  gh.Ptr("kodex preflight PR (auto-cleanup)"),
 										})
 										pr = res
 										return err
@@ -359,7 +359,7 @@ func (c *Client) Preflight(ctx context.Context, params valuetypes.GitHubPrefligh
 										})
 
 										if err := withTimeout(stepTimeout, func(stepCtx context.Context) error {
-											_, _, err := botClient.Issues.CreateComment(stepCtx, owner, repo, pr.GetNumber(), &gh.IssueComment{Body: gh.Ptr("codex-k8s preflight PR comment")})
+											_, _, err := botClient.Issues.CreateComment(stepCtx, owner, repo, pr.GetNumber(), &gh.IssueComment{Body: gh.Ptr("kodex preflight PR comment")})
 											return err
 										}); err != nil {
 											failed = true

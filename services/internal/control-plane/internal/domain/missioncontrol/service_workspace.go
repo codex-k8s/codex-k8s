@@ -6,11 +6,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/codex-k8s/codex-k8s/libs/go/errs"
-	nextstepdomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/nextstep"
-	missioncontrolrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/missioncontrol"
-	enumtypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/enum"
-	valuetypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/value"
+	"github.com/codex-k8s/kodex/libs/go/errs"
+	nextstepdomain "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/nextstep"
+	missioncontrolrepo "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/repository/missioncontrol"
+	enumtypes "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/types/enum"
+	valuetypes "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/types/value"
 )
 
 // RefreshWorkspaceProjection recalculates continuity gaps and effective watermarks under control-plane ownership.

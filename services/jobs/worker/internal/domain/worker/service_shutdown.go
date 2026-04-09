@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	floweventdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/flowevent"
-	runqueuerepo "github.com/codex-k8s/codex-k8s/services/jobs/worker/internal/domain/repository/runqueue"
+	floweventdomain "github.com/codex-k8s/kodex/libs/go/domain/flowevent"
+	runqueuerepo "github.com/codex-k8s/kodex/services/jobs/worker/internal/domain/repository/runqueue"
 )
 
 // ReleaseOwnedRunLeasesOnShutdown releases running-run leases held by current worker before pod termination.

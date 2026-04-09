@@ -30,7 +30,7 @@ approvals:
 ## Контекст (важное противоречие, решение зафиксировано)
 В монорепо миграции должны находиться *внутри держателя схемы*.
 Ранее формулировка `cmd/cli/migrations/*.sql` в гайдах была написана в предположении “репозиторий = один сервис”.
-Для `codex-k8s` стандарт уточняется:
+Для `kodex` стандарт уточняется:
 - миграции лежат в `services/<zone>/<db-owner-service>/cmd/cli/migrations/*.sql`;
 - владелец схемы обязан быть один (shared DB без владельца запрещён).
 
@@ -85,7 +85,7 @@ approvals:
   - Общая цель: `make gen-openapi`
 - Frontend API переведён на generated client (`services/staff/web-console/src/shared/api/generated/**`), ручные endpoint-строки в feature API-слое удалены.
 - CI-проверка актуальности codegen добавлена:
-  - `deploy/base/codex-k8s/codegen-check-job.yaml.tpl`.
+  - `deploy/base/kodex/codegen-check-job.yaml.tpl`.
 
 ## Апрув
 - request_id: owner-2026-02-11-s2-day1

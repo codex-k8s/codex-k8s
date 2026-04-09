@@ -6,7 +6,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/codex-k8s/codex-k8s/libs/go/errs"
+	"github.com/codex-k8s/kodex/libs/go/errs"
 	"github.com/labstack/echo/v5"
 )
 

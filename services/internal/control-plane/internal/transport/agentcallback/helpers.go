@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	floweventdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/flowevent"
+	floweventdomain "github.com/codex-k8s/kodex/libs/go/domain/flowevent"
 )
 
 // ParseBearerToken extracts bearer token from Authorization header value.

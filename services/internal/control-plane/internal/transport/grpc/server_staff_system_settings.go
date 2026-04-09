@@ -5,9 +5,9 @@ import (
 	"reflect"
 	"strings"
 
-	controlplanev1 "github.com/codex-k8s/codex-k8s/proto/gen/go/codexk8s/controlplane/v1"
-	"github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/staff"
-	entitytypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/entity"
+	controlplanev1 "github.com/codex-k8s/kodex/proto/gen/go/kodex/controlplane/v1"
+	"github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/staff"
+	entitytypes "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/types/entity"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"

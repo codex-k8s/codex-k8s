@@ -9,7 +9,7 @@ import (
 
 	gh "github.com/google/go-github/v82/github"
 
-	mcpdomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/mcp"
+	mcpdomain "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/mcp"
 )
 
 const (

@@ -24,7 +24,7 @@ approvals:
 ## Контекст
 - Какие ограничения/требования влияют:
   - same live pod / same `codex` session как primary happy-path;
-  - max timeout/TTL built-in `codex_k8s` MCP wait path не ниже owner wait window;
+  - max timeout/TTL built-in `kodex` MCP wait path не ниже owner wait window;
   - snapshot-resume только как recovery fallback;
   - Telegram inbox и staff-console fallback поверх одного persisted backend truth;
   - visibility для overdue / expired / manual-fallback states;

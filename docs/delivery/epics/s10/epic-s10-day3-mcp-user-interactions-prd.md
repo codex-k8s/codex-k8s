@@ -45,7 +45,7 @@ approvals:
 - Кодовая реализация, storage/schema decisions и transport/runtime lock-in.
 - Telegram-first UX, voice/STT, richer multi-turn conversation threads и advanced delivery policies.
 - Попытка использовать approval flow как shortcut для user interactions.
-- Отдельный runtime server block вместо расширения built-in `codex_k8s`.
+- Отдельный runtime server block вместо расширения built-in `kodex`.
 
 ## PRD package
 - `docs/delivery/epics/s10/epic-s10-day3-mcp-user-interactions-prd.md`
@@ -64,7 +64,7 @@ approvals:
 - [x] Подготовлен PRD-артефакт built-in MCP user interactions и синхронизирован в traceability-документах.
 - [x] Для core flows зафиксированы user stories, FR/AC/NFR, edge cases и expected evidence.
 - [x] Wave priorities сформулированы без смешения core MVP и adapter-specific follow-up streams.
-- [x] Сохранены неподвижные ограничения инициативы: built-in server `codex_k8s`, separation from approval flow, non-blocking `user.notify`, wait-state только для `user.decision.request`, platform-owned audit/correlation semantics.
+- [x] Сохранены неподвижные ограничения инициативы: built-in server `kodex`, separation from approval flow, non-blocking `user.notify`, wait-state только для `user.decision.request`, platform-owned audit/correlation semantics.
 - [x] Создана follow-up issue `#385` для stage `run:arch` без trigger-лейбла.
 
 ## Quality gates
@@ -92,5 +92,5 @@ approvals:
 | risk | RSK-383-01 | Инициатива может расползтись в Telegram-first или approval-first решение вместо platform-owned interaction domain | open |
 | risk | RSK-383-02 | Typed response model окажется слишком свободной и даст неоднозначную интерпретацию callback data | open |
 | risk | RSK-383-03 | Ownership wait-state, retries и correlation останется размытым между сервисами до `run:arch` | open |
-| assumption | ASM-383-01 | Existing built-in server `codex_k8s` достаточно расширяем для новых interaction tools без отдельного runtime server block | accepted |
+| assumption | ASM-383-01 | Existing built-in server `kodex` достаточно расширяем для новых interaction tools без отдельного runtime server block | accepted |
 | assumption | ASM-383-02 | Пользовательская ценность достигается быстрее через typed options/free-text path, чем через GitHub comments и ручные follow-up | accepted |

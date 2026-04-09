@@ -17,7 +17,7 @@ approvals:
 # C4 Context: Sprint S7 Day 4 MVP readiness streams
 
 ## TL;DR
-- Система в контуре: `codex-k8s` stage/governance runtime.
+- Система в контуре: `kodex` stage/governance runtime.
 - Фокус overlay: потоки `S7-E01..S7-E18`, которые закрывают MVP readiness gaps.
 - Ключевые внешние системы: GitHub, Kubernetes, OpenAI.
 
@@ -30,7 +30,7 @@ Person(owner, "Owner", "Финальный апрув stage/transition и go-no-
 Person(pm_em, "PM/EM", "Управление backlog, parity-gate и continuity")
 Person(dev_qa_sre_km, "Dev/QA/SRE/KM", "Исполнение, QA evidence, ops и документация")
 
-System(system, "codex-k8s", "Webhook-driven orchestration и stage process")
+System(system, "kodex", "Webhook-driven orchestration и stage process")
 
 System_Ext(github, "GitHub", "Issues/PR/labels/reviews")
 System_Ext(k8s, "Kubernetes", "Runtime execution environment")

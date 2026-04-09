@@ -111,7 +111,7 @@ approvals:
 |---|---|---|---|---|
 | risk | `RSK-447-01` | Telegram stream может расползтись в channel-first продукт и начать диктовать core interaction semantics | Держать sequencing gate S10 и purity guardrail обязательными до `run:design` | open |
 | risk | `RSK-447-02` | Scope может вырасти в voice/STT и richer conversation flows раньше подтверждения базовой ценности канала | Жёстко отделить MVP от deferred scope уже на vision/PRD | open |
-| risk | `RSK-447-03` | Прямое копирование reference repositories принесёт чужие service boundaries и governance assumptions | Использовать reference stack только как baseline и зафиксировать product/domain ownership внутри `codex-k8s` | open |
+| risk | `RSK-447-03` | Прямое копирование reference repositories принесёт чужие service boundaries и governance assumptions | Использовать reference stack только как baseline и зафиксировать product/domain ownership внутри `kodex` | open |
 | risk | `RSK-447-04` | Callback path окажется user-friendly, но операционно хрупким из-за duplicate/replay/expired сценариев | Держать callback safety metrics и guardrails как blocking criteria для следующих stage | open |
 | assumption | `ASM-447-01` | Notify + decision request + inline callbacks + optional free-text достаточно, чтобы подтвердить ценность первого внешнего канала | Проверить user stories и expected evidence на `run:prd` | accepted |
 | assumption | `ASM-447-02` | Пользовательская ценность Telegram возникает быстрее, чем у GitHub comment-only path, но без потери platform control | Подтвердить turnaround/fallback metrics и product guardrails на `run:prd` | accepted |

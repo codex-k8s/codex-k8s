@@ -1,6 +1,6 @@
 export const en = {
   app: {
-    title: "codex-k8s",
+    title: "kodex",
     subtitle: "staff console",
   },
   nav: {
@@ -302,12 +302,12 @@ export const en = {
     false: "false",
   },
   placeholders: {
-    projectSlug: "codex-k8s",
-    projectName: "codex-k8s",
+    projectSlug: "kodex",
+    projectName: "kodex",
     // vue-i18n treats `@` as a linked-message marker, so we must use literal interpolation.
     userEmail: "user{'@'}example.com",
-    repoOwner: "codex-k8s",
-    repoName: "codex-k8s",
+    repoOwner: "kodex",
+    repoName: "kodex",
     servicesYamlPath: "services.yaml",
     repoToken: "ghp_... / fine-grained token",
   },

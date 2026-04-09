@@ -3,7 +3,7 @@ package missioncontrol
 import (
 	"context"
 
-	floweventdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/flowevent"
+	floweventdomain "github.com/codex-k8s/kodex/libs/go/domain/flowevent"
 )
 
 // RunWarmup returns current warmup summary once rollout guards allow owner-owned writes.

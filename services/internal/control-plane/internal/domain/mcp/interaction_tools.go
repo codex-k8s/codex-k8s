@@ -6,11 +6,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/codex-k8s/codex-k8s/libs/go/errs"
-	agentrunrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/agentrun"
-	agentsessionrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/agentsession"
-	interactionrequestrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/interactionrequest"
-	enumtypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/enum"
+	"github.com/codex-k8s/kodex/libs/go/errs"
+	agentrunrepo "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/repository/agentrun"
+	agentsessionrepo "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/repository/agentsession"
+	interactionrequestrepo "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/repository/interactionrequest"
+	enumtypes "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/types/enum"
 )
 
 func (s *Service) MCPUserNotify(ctx context.Context, session SessionContext, input UserNotifyInput) (UserNotifyResult, error) {

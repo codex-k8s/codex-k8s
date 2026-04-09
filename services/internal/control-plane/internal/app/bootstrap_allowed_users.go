@@ -6,15 +6,15 @@ import (
 	"log/slog"
 	"strings"
 
-	userrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/user"
+	userrepo "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/repository/user"
 )
 
 func ensureBootstrapAllowedUsers(ctx context.Context, users userrepo.Repository, ownerEmail string, allowedEmails []string, logger *slog.Logger) error {
-	return ensureBootstrapUsers(ctx, users, ownerEmail, allowedEmails, false, "allowed user", "CODEXK8S_BOOTSTRAP_ALLOWED_EMAILS", logger)
+	return ensureBootstrapUsers(ctx, users, ownerEmail, allowedEmails, false, "allowed user", "KODEX_BOOTSTRAP_ALLOWED_EMAILS", logger)
 }
 
 func ensureBootstrapPlatformAdmins(ctx context.Context, users userrepo.Repository, ownerEmail string, adminEmails []string, logger *slog.Logger) error {
-	return ensureBootstrapUsers(ctx, users, ownerEmail, adminEmails, true, "platform admin", "CODEXK8S_BOOTSTRAP_PLATFORM_ADMIN_EMAILS", logger)
+	return ensureBootstrapUsers(ctx, users, ownerEmail, adminEmails, true, "platform admin", "KODEX_BOOTSTRAP_PLATFORM_ADMIN_EMAILS", logger)
 }
 
 func ensureBootstrapUsers(ctx context.Context, users userrepo.Repository, ownerEmail string, emails []string, isPlatformAdmin bool, label string, envVarName string, logger *slog.Logger) error {

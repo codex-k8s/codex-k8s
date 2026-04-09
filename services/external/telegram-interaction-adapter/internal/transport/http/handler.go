@@ -10,9 +10,9 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/codex-k8s/codex-k8s/services/external/telegram-interaction-adapter/internal/service"
-	"github.com/codex-k8s/codex-k8s/services/external/telegram-interaction-adapter/internal/transport/http/casters"
-	"github.com/codex-k8s/codex-k8s/services/external/telegram-interaction-adapter/internal/transport/http/models"
+	"github.com/codex-k8s/kodex/services/external/telegram-interaction-adapter/internal/service"
+	"github.com/codex-k8s/kodex/services/external/telegram-interaction-adapter/internal/transport/http/casters"
+	"github.com/codex-k8s/kodex/services/external/telegram-interaction-adapter/internal/transport/http/models"
 )
 
 const (

@@ -17,7 +17,7 @@ test("normalizeMissionControlRouteQuery applies graph defaults and accepts node 
     filter: "blocked",
     q: "review",
     node_kind: "pull_request",
-    node_id: "codex-k8s/codex-k8s/pull/1",
+    node_id: "codex-k8s/kodex/pull/1",
   });
 
   assert.deepEqual(state, {
@@ -25,7 +25,7 @@ test("normalizeMissionControlRouteQuery applies graph defaults and accepts node 
     statePreset: "blocked",
     search: "review",
     nodeKind: "pull_request",
-    nodePublicId: "codex-k8s/codex-k8s/pull/1",
+    nodePublicId: "codex-k8s/kodex/pull/1",
   });
 });
 

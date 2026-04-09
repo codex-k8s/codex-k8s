@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
-	runtimedeploytaskrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/runtimedeploytask"
-	entitytypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/entity"
+	runtimedeploytaskrepo "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/repository/runtimedeploytask"
+	entitytypes "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/types/entity"
 )
 
 func TestPrepareRunEnvironment_ReturnsCanceledError(t *testing.T) {

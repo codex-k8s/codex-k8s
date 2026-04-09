@@ -1,7 +1,7 @@
 ---
 doc_id: CST-CK8S-0001
 type: constraints
-title: "codex-k8s — Constraints"
+title: "kodex — Constraints"
 status: active
 owner_role: PM
 created_at: 2026-02-06
@@ -16,7 +16,7 @@ approvals:
   approved_at: 2026-02-19
 ---
 
-# Constraints: codex-k8s
+# Constraints: kodex
 
 ## TL;DR
 Критические ограничения: Kubernetes-only, webhook-driven продуктовые процессы, PostgreSQL (`JSONB` + `pgvector`), GitHub OAuth без self-signup, production bootstrap по SSH root на Ubuntu 24.04.
@@ -49,14 +49,14 @@ approvals:
 - Для MVP обязательна активация полного stage-каталога (`run:intake..run:ops`, `run:*:revise`, `run:rethink`) и `run:self-improve`.
 - Базовый системный штат агентов включает `dev` и `reviewer` как обязательные роли review-контура: для всех `run:*` pre-review обязателен перед финальным Owner review.
 - Шаблоны агентных промптов в MVP обязаны поддерживать repo-only схему: role-specific repo seeds для `work` и `revise`, без DB override.
-- Шаблоны промптов в MVP используют platform default locale (`CODEXK8S_AGENT_DEFAULT_LOCALE`, fallback `ru`); unsupported locale нормализуется к `en`.
+- Шаблоны промптов в MVP используют platform default locale (`KODEX_AGENT_DEFAULT_LOCALE`, fallback `ru`); unsupported locale нормализуется к `en`.
 - Для системных агентов обязательно наличие seed-шаблонов минимум для `ru` и `en`.
 - Для external/staff HTTP API обязателен contract-first подход по OpenAPI (spec + runtime validation + codegen backend/frontend).
-- В окружениях `production` и `prod` платформенные Kubernetes ресурсы помечаются label `app.kubernetes.io/part-of=codex-k8s` (канонический критерий для UI/guardrails и backend policy).
-- В `ai` окружениях (ai-slots) при dogfooding платформа может разворачиваться без label `app.kubernetes.io/part-of=codex-k8s`, чтобы UI позволял тестировать действия над ресурсами самой платформы (в т.ч. destructive через dry-run) и не применял platform guardrails по label.
+- В окружениях `production` и `prod` платформенные Kubernetes ресурсы помечаются label `app.kubernetes.io/part-of=kodex` (канонический критерий для UI/guardrails и backend policy).
+- В `ai` окружениях (ai-slots) при dogfooding платформа может разворачиваться без label `app.kubernetes.io/part-of=kodex`, чтобы UI позволял тестировать действия над ресурсами самой платформы (в т.ч. destructive через dry-run) и не применял platform guardrails по label.
 - Для будущего admin/cluster контура staff-консоли обязательны guardrails:
-  - ресурсы, помеченные `app.kubernetes.io/part-of=codex-k8s`, нельзя удалять (UI и backend policy);
-  - `production` и `prod` — строго view-only для ресурсов с `app.kubernetes.io/part-of=codex-k8s`;
+  - ресурсы, помеченные `app.kubernetes.io/part-of=kodex`, нельзя удалять (UI и backend policy);
+  - `production` и `prod` — строго view-only для ресурсов с `app.kubernetes.io/part-of=kodex`;
   - ai-slots — destructive действия только dry-run (кнопки есть для dogfooding/debug, реальное действие не выполняется);
   - значения `Secret` по умолчанию не показывать (только метаданные); reveal/редактирование только как отдельное осознанное действие под RBAC и аудитом.
 - Интеграции approver/executor должны реализовываться через универсальные HTTP-контракты MCP, без вендорной привязки к конкретному мессенджеру.

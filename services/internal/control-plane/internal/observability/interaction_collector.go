@@ -8,7 +8,7 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 
-	interactionrequestrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/interactionrequest"
+	interactionrequestrepo "github.com/codex-k8s/kodex/services/internal/control-plane/internal/repository/postgres/interactionrequest"
 )
 
 const defaultCollectorQueryTimeout = 3 * time.Second
@@ -41,31 +41,31 @@ func NewInteractionCollector(reader interactionMetricsSnapshotReader, logger *sl
 		logger:       logger,
 		queryTimeout: defaultCollectorQueryTimeout,
 		requestsStateDesc: prometheus.NewDesc(
-			"codexk8s_interaction_requests_state",
+			"kodex_interaction_requests_state",
 			"Current number of interaction requests by interaction kind and state.",
 			[]string{"interaction_kind", "state"},
 			nil,
 		),
 		pendingBacklogDesc: prometheus.NewDesc(
-			"codexk8s_interaction_pending_dispatch_backlog",
+			"kodex_interaction_pending_dispatch_backlog",
 			"Current number of pending interaction dispatch items split into initial and retry backlog.",
 			[]string{"interaction_kind", "queue_kind"},
 			nil,
 		),
 		overdueWaitDesc: prometheus.NewDesc(
-			"codexk8s_interaction_wait_deadline_overdue",
+			"kodex_interaction_wait_deadline_overdue",
 			"Current number of interaction waits past deadline without terminal outcome.",
 			[]string{"interaction_kind"},
 			nil,
 		),
 		callbackEventsDesc: prometheus.NewDesc(
-			"codexk8s_interaction_callback_events_total",
+			"kodex_interaction_callback_events_total",
 			"Persisted interaction callback evidence counts by callback kind and classification.",
 			[]string{"callback_kind", "classification"},
 			nil,
 		),
 		dispatchAttemptsDesc: prometheus.NewDesc(
-			"codexk8s_interaction_dispatch_attempts_total",
+			"kodex_interaction_dispatch_attempts_total",
 			"Persisted interaction dispatch attempt counts by interaction kind, adapter kind and status.",
 			[]string{"interaction_kind", "adapter_kind", "status"},
 			nil,

@@ -17,55 +17,55 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"google.golang.org/grpc"
 
-	"github.com/codex-k8s/codex-k8s/libs/go/crypto/tokencrypt"
-	"github.com/codex-k8s/codex-k8s/libs/go/postgres"
-	"github.com/codex-k8s/codex-k8s/libs/go/registry"
-	repoprovider "github.com/codex-k8s/codex-k8s/libs/go/repo/provider"
-	githubprovider "github.com/codex-k8s/codex-k8s/libs/go/repo/provider/github"
-	sharedsystemsettings "github.com/codex-k8s/codex-k8s/libs/go/systemsettings"
-	controlplanev1 "github.com/codex-k8s/codex-k8s/proto/gen/go/codexk8s/controlplane/v1"
-	githubclient "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/clients/github"
-	githubmgmtclient "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/clients/githubmgmt"
-	kubernetesclient "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/clients/kubernetes"
-	postgresadminclient "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/clients/postgresadmin"
-	agentcallbackdomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/agentcallback"
-	changegovernancedomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/changegovernance"
-	codexauthdomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/codexauth"
-	githubratelimitdomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/githubratelimit"
-	mcpdomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/mcp"
-	missioncontroldomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/missioncontrol"
-	missioncontrolworkerdomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/missioncontrolworker"
-	runstatusdomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/runstatus"
-	runtimedeploydomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/runtimedeploy"
-	runtimeerrordomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/runtimeerror"
-	"github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/staff"
-	systemsettingsdomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/systemsettings"
-	valuetypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/value"
-	"github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/webhook"
-	"github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/observability"
-	agentrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/agent"
-	agentrunrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/agentrun"
-	agentsessionrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/agentsession"
-	changegovernancerepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/changegovernance"
-	floweventrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/flowevent"
-	githubratelimitwaitrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/githubratelimitwait"
-	interactionrequestrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/interactionrequest"
-	learningfeedbackrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/learningfeedback"
-	mcpactionrequestrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/mcpactionrequest"
-	missioncontrolrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/missioncontrol"
-	platformtokenrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/platformtoken"
-	projectrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/project"
-	projectdatabaserepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/projectdatabase"
-	projectmemberrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/projectmember"
-	projecttokenrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/projecttoken"
-	repocfgrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/repocfg"
-	runtimedeploytaskrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/runtimedeploytask"
-	runtimeerrorrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/runtimeerror"
-	staffrunrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/staffrun"
-	systemsettingrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/systemsetting"
-	userrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/user"
-	grpctransport "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/transport/grpc"
-	mcptransport "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/transport/mcp"
+	"github.com/codex-k8s/kodex/libs/go/crypto/tokencrypt"
+	"github.com/codex-k8s/kodex/libs/go/postgres"
+	"github.com/codex-k8s/kodex/libs/go/registry"
+	repoprovider "github.com/codex-k8s/kodex/libs/go/repo/provider"
+	githubprovider "github.com/codex-k8s/kodex/libs/go/repo/provider/github"
+	sharedsystemsettings "github.com/codex-k8s/kodex/libs/go/systemsettings"
+	controlplanev1 "github.com/codex-k8s/kodex/proto/gen/go/kodex/controlplane/v1"
+	githubclient "github.com/codex-k8s/kodex/services/internal/control-plane/internal/clients/github"
+	githubmgmtclient "github.com/codex-k8s/kodex/services/internal/control-plane/internal/clients/githubmgmt"
+	kubernetesclient "github.com/codex-k8s/kodex/services/internal/control-plane/internal/clients/kubernetes"
+	postgresadminclient "github.com/codex-k8s/kodex/services/internal/control-plane/internal/clients/postgresadmin"
+	agentcallbackdomain "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/agentcallback"
+	changegovernancedomain "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/changegovernance"
+	codexauthdomain "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/codexauth"
+	githubratelimitdomain "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/githubratelimit"
+	mcpdomain "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/mcp"
+	missioncontroldomain "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/missioncontrol"
+	missioncontrolworkerdomain "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/missioncontrolworker"
+	runstatusdomain "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/runstatus"
+	runtimedeploydomain "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/runtimedeploy"
+	runtimeerrordomain "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/runtimeerror"
+	"github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/staff"
+	systemsettingsdomain "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/systemsettings"
+	valuetypes "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/types/value"
+	"github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/webhook"
+	"github.com/codex-k8s/kodex/services/internal/control-plane/internal/observability"
+	agentrepo "github.com/codex-k8s/kodex/services/internal/control-plane/internal/repository/postgres/agent"
+	agentrunrepo "github.com/codex-k8s/kodex/services/internal/control-plane/internal/repository/postgres/agentrun"
+	agentsessionrepo "github.com/codex-k8s/kodex/services/internal/control-plane/internal/repository/postgres/agentsession"
+	changegovernancerepo "github.com/codex-k8s/kodex/services/internal/control-plane/internal/repository/postgres/changegovernance"
+	floweventrepo "github.com/codex-k8s/kodex/services/internal/control-plane/internal/repository/postgres/flowevent"
+	githubratelimitwaitrepo "github.com/codex-k8s/kodex/services/internal/control-plane/internal/repository/postgres/githubratelimitwait"
+	interactionrequestrepo "github.com/codex-k8s/kodex/services/internal/control-plane/internal/repository/postgres/interactionrequest"
+	learningfeedbackrepo "github.com/codex-k8s/kodex/services/internal/control-plane/internal/repository/postgres/learningfeedback"
+	mcpactionrequestrepo "github.com/codex-k8s/kodex/services/internal/control-plane/internal/repository/postgres/mcpactionrequest"
+	missioncontrolrepo "github.com/codex-k8s/kodex/services/internal/control-plane/internal/repository/postgres/missioncontrol"
+	platformtokenrepo "github.com/codex-k8s/kodex/services/internal/control-plane/internal/repository/postgres/platformtoken"
+	projectrepo "github.com/codex-k8s/kodex/services/internal/control-plane/internal/repository/postgres/project"
+	projectdatabaserepo "github.com/codex-k8s/kodex/services/internal/control-plane/internal/repository/postgres/projectdatabase"
+	projectmemberrepo "github.com/codex-k8s/kodex/services/internal/control-plane/internal/repository/postgres/projectmember"
+	projecttokenrepo "github.com/codex-k8s/kodex/services/internal/control-plane/internal/repository/postgres/projecttoken"
+	repocfgrepo "github.com/codex-k8s/kodex/services/internal/control-plane/internal/repository/postgres/repocfg"
+	runtimedeploytaskrepo "github.com/codex-k8s/kodex/services/internal/control-plane/internal/repository/postgres/runtimedeploytask"
+	runtimeerrorrepo "github.com/codex-k8s/kodex/services/internal/control-plane/internal/repository/postgres/runtimeerror"
+	staffrunrepo "github.com/codex-k8s/kodex/services/internal/control-plane/internal/repository/postgres/staffrun"
+	systemsettingrepo "github.com/codex-k8s/kodex/services/internal/control-plane/internal/repository/postgres/systemsetting"
+	userrepo "github.com/codex-k8s/kodex/services/internal/control-plane/internal/repository/postgres/user"
+	grpctransport "github.com/codex-k8s/kodex/services/internal/control-plane/internal/transport/grpc"
+	mcptransport "github.com/codex-k8s/kodex/services/internal/control-plane/internal/transport/mcp"
 )
 
 // Run starts control-plane servers and blocks until shutdown or fatal error.
@@ -162,7 +162,7 @@ func Run() error {
 
 	mcpTokenTTL, err := time.ParseDuration(cfg.MCPTokenTTL)
 	if err != nil {
-		return fmt.Errorf("parse CODEXK8S_MCP_TOKEN_TTL=%q: %w", cfg.MCPTokenTTL, err)
+		return fmt.Errorf("parse KODEX_MCP_TOKEN_TTL=%q: %w", cfg.MCPTokenTTL, err)
 	}
 	mcpSigningKey := strings.TrimSpace(cfg.MCPTokenSigningKey)
 	if mcpSigningKey == "" {
@@ -250,27 +250,27 @@ func Run() error {
 	}
 	runtimeDeployRolloutTimeout, err := time.ParseDuration(cfg.RuntimeDeployRolloutTimeout)
 	if err != nil {
-		return fmt.Errorf("parse CODEXK8S_RUNTIME_DEPLOY_ROLLOUT_TIMEOUT=%q: %w", cfg.RuntimeDeployRolloutTimeout, err)
+		return fmt.Errorf("parse KODEX_RUNTIME_DEPLOY_ROLLOUT_TIMEOUT=%q: %w", cfg.RuntimeDeployRolloutTimeout, err)
 	}
 	runtimeDeployKanikoTimeout, err := time.ParseDuration(cfg.RuntimeDeployKanikoTimeout)
 	if err != nil {
-		return fmt.Errorf("parse CODEXK8S_RUNTIME_DEPLOY_KANIKO_TIMEOUT=%q: %w", cfg.RuntimeDeployKanikoTimeout, err)
+		return fmt.Errorf("parse KODEX_RUNTIME_DEPLOY_KANIKO_TIMEOUT=%q: %w", cfg.RuntimeDeployKanikoTimeout, err)
 	}
 	runtimeDeployWaitPollInterval, err := time.ParseDuration(cfg.RuntimeDeployWaitPollInterval)
 	if err != nil {
-		return fmt.Errorf("parse CODEXK8S_RUNTIME_DEPLOY_WAIT_POLL_INTERVAL=%q: %w", cfg.RuntimeDeployWaitPollInterval, err)
+		return fmt.Errorf("parse KODEX_RUNTIME_DEPLOY_WAIT_POLL_INTERVAL=%q: %w", cfg.RuntimeDeployWaitPollInterval, err)
 	}
 	registryHTTPTimeout, err := time.ParseDuration(cfg.RegistryHTTPTimeout)
 	if err != nil {
-		return fmt.Errorf("parse CODEXK8S_REGISTRY_HTTP_TIMEOUT=%q: %w", cfg.RegistryHTTPTimeout, err)
+		return fmt.Errorf("parse KODEX_REGISTRY_HTTP_TIMEOUT=%q: %w", cfg.RegistryHTTPTimeout, err)
 	}
 	runtimeDeployReconcileInterval, err := time.ParseDuration(cfg.RuntimeDeployReconcileInterval)
 	if err != nil {
-		return fmt.Errorf("parse CODEXK8S_RUNTIME_DEPLOY_RECONCILE_INTERVAL=%q: %w", cfg.RuntimeDeployReconcileInterval, err)
+		return fmt.Errorf("parse KODEX_RUNTIME_DEPLOY_RECONCILE_INTERVAL=%q: %w", cfg.RuntimeDeployReconcileInterval, err)
 	}
 	runtimeDeployLeaseTTL, err := time.ParseDuration(cfg.RuntimeDeployLeaseTTL)
 	if err != nil {
-		return fmt.Errorf("parse CODEXK8S_RUNTIME_DEPLOY_LEASE_TTL=%q: %w", cfg.RuntimeDeployLeaseTTL, err)
+		return fmt.Errorf("parse KODEX_RUNTIME_DEPLOY_LEASE_TTL=%q: %w", cfg.RuntimeDeployLeaseTTL, err)
 	}
 	runtimeDeployWorkerID := strings.TrimSpace(cfg.RuntimeDeployWorkerID)
 	if runtimeDeployWorkerID == "" {
@@ -283,7 +283,7 @@ func Run() error {
 	}
 	runtimeDeployWorkersPerPod := cfg.RuntimeDeployWorkersPerPod
 	if runtimeDeployWorkersPerPod <= 0 {
-		return fmt.Errorf("parse CODEXK8S_RUNTIME_DEPLOY_WORKERS_PER_POD=%d: value must be > 0", cfg.RuntimeDeployWorkersPerPod)
+		return fmt.Errorf("parse KODEX_RUNTIME_DEPLOY_WORKERS_PER_POD=%d: value must be > 0", cfg.RuntimeDeployWorkersPerPod)
 	}
 	registryScheme := strings.TrimSpace(cfg.InternalRegistryScheme)
 	if registryScheme == "" {

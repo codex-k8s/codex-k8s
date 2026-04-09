@@ -1,4 +1,4 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-exec /usr/local/bin/codex-k8s-agent-runner "$@"
+exec /usr/local/bin/kodex-agent-runner "$@"

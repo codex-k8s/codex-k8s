@@ -19,36 +19,36 @@ else
     --disable servicelb" sh -
 fi
 
-CODEXK8S_INTERNAL_REGISTRY_PORT="${CODEXK8S_INTERNAL_REGISTRY_PORT:-5000}"
-CODEXK8S_INTERNAL_REGISTRY_HOST="${CODEXK8S_INTERNAL_REGISTRY_HOST:-127.0.0.1:${CODEXK8S_INTERNAL_REGISTRY_PORT}}"
+KODEX_INTERNAL_REGISTRY_PORT="${KODEX_INTERNAL_REGISTRY_PORT:-5000}"
+KODEX_INTERNAL_REGISTRY_HOST="${KODEX_INTERNAL_REGISTRY_HOST:-127.0.0.1:${KODEX_INTERNAL_REGISTRY_PORT}}"
 K3S_REGISTRIES_FILE="/etc/rancher/k3s/registries.yaml"
 tmp_registries="$(mktemp)"
 cat > "${tmp_registries}" <<EOF
 mirrors:
-  "${CODEXK8S_INTERNAL_REGISTRY_HOST}":
+  "${KODEX_INTERNAL_REGISTRY_HOST}":
     endpoint:
-      - "http://${CODEXK8S_INTERNAL_REGISTRY_HOST}"
+      - "http://${KODEX_INTERNAL_REGISTRY_HOST}"
 configs:
-  "${CODEXK8S_INTERNAL_REGISTRY_HOST}":
+  "${KODEX_INTERNAL_REGISTRY_HOST}":
     tls:
       insecure_skip_verify: true
 EOF
 
 if [ ! -f "${K3S_REGISTRIES_FILE}" ] || ! cmp -s "${tmp_registries}" "${K3S_REGISTRIES_FILE}"; then
-  log "Configure k3s registry mirror for ${CODEXK8S_INTERNAL_REGISTRY_HOST}"
+  log "Configure k3s registry mirror for ${KODEX_INTERNAL_REGISTRY_HOST}"
   mkdir -p "$(dirname "${K3S_REGISTRIES_FILE}")"
   install -m 600 "${tmp_registries}" "${K3S_REGISTRIES_FILE}"
   systemctl restart k3s
 fi
 rm -f "${tmp_registries}"
 
-CODEXK8S_NODE_DISCOVERY_TIMEOUT="${CODEXK8S_NODE_DISCOVERY_TIMEOUT:-300}"
+KODEX_NODE_DISCOVERY_TIMEOUT="${KODEX_NODE_DISCOVERY_TIMEOUT:-300}"
 
-case "$CODEXK8S_NODE_DISCOVERY_TIMEOUT" in
-  ''|*[!0-9]*) die "CODEXK8S_NODE_DISCOVERY_TIMEOUT must be integer seconds";;
+case "$KODEX_NODE_DISCOVERY_TIMEOUT" in
+  ''|*[!0-9]*) die "KODEX_NODE_DISCOVERY_TIMEOUT must be integer seconds";;
 esac
 
-deadline=$((SECONDS + CODEXK8S_NODE_DISCOVERY_TIMEOUT))
+deadline=$((SECONDS + KODEX_NODE_DISCOVERY_TIMEOUT))
 while [ "$SECONDS" -lt "$deadline" ]; do
   if systemctl is-active --quiet k3s && [ -s /etc/rancher/k3s/k3s.yaml ]; then
     break
@@ -57,7 +57,7 @@ while [ "$SECONDS" -lt "$deadline" ]; do
 done
 
 if ! systemctl is-active --quiet k3s; then
-  die "k3s service is not active after ${CODEXK8S_NODE_DISCOVERY_TIMEOUT}s"
+  die "k3s service is not active after ${KODEX_NODE_DISCOVERY_TIMEOUT}s"
 fi
 if [ ! -s /etc/rancher/k3s/k3s.yaml ]; then
   die "k3s kubeconfig is missing: /etc/rancher/k3s/k3s.yaml"

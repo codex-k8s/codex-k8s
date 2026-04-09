@@ -21,7 +21,7 @@ approvals:
 ## TL;DR
 - `control-plane` остаётся владельцем interaction aggregate, typed response validation, audit/correlation и wait-state transitions; `worker` закреплён за outbound dispatch, retries и timeout/expiry reconciliation; `api-gateway` остаётся thin-edge ingress для adapter callbacks.
 - Interaction flow остаётся отдельным bounded context относительно approval/control flow: `owner.feedback.request` и approval-specific state vocabulary не становятся source-of-truth для обычных user interactions.
-- Built-in сервер `codex_k8s` расширяется новыми interaction tools без отдельного runtime server block, а channel-specific UX остаётся во внешнем adapter слое.
+- Built-in сервер `kodex` расширяется новыми interaction tools без отдельного runtime server block, а channel-specific UX остаётся во внешнем adapter слое.
 
 ## Контекст и входные артефакты
 - Delivery-цепочка: `#360 (intake) -> #378 (vision) -> #383 (prd) -> #385 (arch)`.
@@ -52,7 +52,7 @@ approvals:
 - Не включаем Telegram-first UX, reminders, richer conversation threads и voice/STT в core MVP path.
 
 ## Неподвижные guardrails из PRD
-- Built-in сервер `codex_k8s` остаётся единственной core точкой расширения для interaction tools.
+- Built-in сервер `kodex` остаётся единственной core точкой расширения для interaction tools.
 - `user.notify` остаётся non-blocking path и не переводит run в wait-state.
 - `user.decision.request` остаётся единственным core wait-state path для user interaction.
 - Approval flow и user interaction flow не смешиваются ни по semantics, ни по source-of-truth моделям.

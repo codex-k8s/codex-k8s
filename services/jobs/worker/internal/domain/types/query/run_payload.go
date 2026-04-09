@@ -1,6 +1,6 @@
 package query
 
-import webhookdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/webhook"
+import webhookdomain "github.com/codex-k8s/kodex/libs/go/domain/webhook"
 
 // RunRuntimePayload keeps only fields that influence worker runtime decisions.
 type RunRuntimePayload struct {

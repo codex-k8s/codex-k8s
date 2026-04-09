@@ -1,7 +1,7 @@
 ---
 doc_id: STG-CK8S-0001
 type: process-model
-title: "codex-k8s — Stage Process Model"
+title: "kodex — Stage Process Model"
 status: active
 owner_role: EM
 created_at: 2026-02-11

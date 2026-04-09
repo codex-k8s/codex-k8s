@@ -1,47 +1,47 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: codex-k8s-migrate
-  namespace: {{ envOr "CODEXK8S_PRODUCTION_NAMESPACE" "" }}
+  name: kodex-migrate
+  namespace: {{ envOr "KODEX_PRODUCTION_NAMESPACE" "" }}
   labels:
-    app.kubernetes.io/name: codex-k8s
+    app.kubernetes.io/name: kodex
     app.kubernetes.io/component: migrate
 spec:
   backoffLimit: 0
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: codex-k8s
+        app.kubernetes.io/name: kodex
         app.kubernetes.io/component: migrate
     spec:
       restartPolicy: Never
       containers:
         - name: migrate
-          image: {{ envOr "CODEXK8S_CONTROL_PLANE_IMAGE" "" }}
+          image: {{ envOr "KODEX_CONTROL_PLANE_IMAGE" "" }}
           imagePullPolicy: Always
           env:
-            - name: CODEXK8S_POSTGRES_DB
+            - name: KODEX_POSTGRES_DB
               valueFrom:
                 secretKeyRef:
-                  name: codex-k8s-postgres
-                  key: CODEXK8S_POSTGRES_DB
-            - name: CODEXK8S_POSTGRES_USER
+                  name: kodex-postgres
+                  key: KODEX_POSTGRES_DB
+            - name: KODEX_POSTGRES_USER
               valueFrom:
                 secretKeyRef:
-                  name: codex-k8s-postgres
-                  key: CODEXK8S_POSTGRES_USER
-            - name: CODEXK8S_POSTGRES_PASSWORD
+                  name: kodex-postgres
+                  key: KODEX_POSTGRES_USER
+            - name: KODEX_POSTGRES_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: codex-k8s-postgres
-                  key: CODEXK8S_POSTGRES_PASSWORD
+                  name: kodex-postgres
+                  key: KODEX_POSTGRES_PASSWORD
           command:
             - sh
             - -ec
             - |
               export GOOSE_DRIVER=postgres
               # Use shell runtime variables from container env (set above via secret refs).
-              export GOOSE_DBSTRING="postgres://$CODEXK8S_POSTGRES_USER:$CODEXK8S_POSTGRES_PASSWORD@postgres:5432/$CODEXK8S_POSTGRES_DB?sslmode=disable"
+              export GOOSE_DBSTRING="postgres://$KODEX_POSTGRES_USER:$KODEX_POSTGRES_PASSWORD@postgres:5432/$KODEX_POSTGRES_DB?sslmode=disable"
               # Postgres Service can be routable slightly before the actual server
               # accepts connections. Keep this step resilient to short transient failures,
               # but fail fast after 60s total timeout.
@@ -68,4 +68,4 @@ spec:
       volumes:
         - name: migrations
           configMap:
-            name: codex-k8s-migrations
+            name: kodex-migrations

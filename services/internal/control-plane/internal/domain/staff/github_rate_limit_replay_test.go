@@ -4,13 +4,13 @@ import (
 	"context"
 	"testing"
 
-	"github.com/codex-k8s/codex-k8s/libs/go/crypto/tokencrypt"
-	nextstepdomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/nextstep"
-	projecttokenrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/projecttoken"
-	repocfgrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/repocfg"
-	enumtypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/enum"
-	querytypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/query"
-	valuetypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/value"
+	"github.com/codex-k8s/kodex/libs/go/crypto/tokencrypt"
+	nextstepdomain "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/nextstep"
+	projecttokenrepo "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/repository/projecttoken"
+	repocfgrepo "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/repository/repocfg"
+	enumtypes "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/types/enum"
+	querytypes "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/types/query"
+	valuetypes "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/types/value"
 )
 
 const replayTestTokenCryptKey = "00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff"
@@ -102,7 +102,7 @@ func TestReplayGitHubRateLimitPlatformCallRequiresExpectedRunLabels(t *testing.T
 
 	err := service.ReplayGitHubRateLimitPlatformCall(context.Background(), valuetypes.GitHubRateLimitPlatformCallReplayPayload{
 		OperationKind:      enumtypes.GitHubRateLimitPlatformReplayOperationKindIssueStageTransition,
-		RepositoryFullName: "codex-k8s/codex-k8s",
+		RepositoryFullName: "codex-k8s/kodex",
 		IssueNumber:        427,
 		TargetLabel:        "run:qa",
 	})
@@ -118,7 +118,7 @@ func TestReplayGitHubRateLimitPlatformCallAppliesOnlyMatchingCASSnapshot(t *test
 
 	err := service.ReplayGitHubRateLimitPlatformCall(context.Background(), valuetypes.GitHubRateLimitPlatformCallReplayPayload{
 		OperationKind:            enumtypes.GitHubRateLimitPlatformReplayOperationKindIssueStageTransition,
-		RepositoryFullName:       "codex-k8s/codex-k8s",
+		RepositoryFullName:       "codex-k8s/kodex",
 		IssueNumber:              427,
 		TargetLabel:              "run:qa",
 		RequestFingerprint:       "issue:427:run:dev:revise->run:qa",
@@ -148,7 +148,7 @@ func TestReplayGitHubRateLimitPlatformCallRejectsDriftedRunLabels(t *testing.T) 
 
 	err := service.ReplayGitHubRateLimitPlatformCall(context.Background(), valuetypes.GitHubRateLimitPlatformCallReplayPayload{
 		OperationKind:            enumtypes.GitHubRateLimitPlatformReplayOperationKindIssueStageTransition,
-		RepositoryFullName:       "codex-k8s/codex-k8s",
+		RepositoryFullName:       "codex-k8s/kodex",
 		IssueNumber:              427,
 		TargetLabel:              "run:qa",
 		RequestFingerprint:       "issue:427:run:dev:revise->run:qa",

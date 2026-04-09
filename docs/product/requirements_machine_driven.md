@@ -1,7 +1,7 @@
 ---
 doc_id: REQ-CK8S-0001
 type: requirements
-title: "codex-k8s — Machine-Driven Requirements Baseline"
+title: "kodex — Machine-Driven Requirements Baseline"
 status: active
 owner_role: PM
 created_at: 2026-02-06
@@ -16,10 +16,10 @@ approvals:
   approved_at: 2026-02-19
 ---
 
-# Requirements Baseline: codex-k8s
+# Requirements Baseline: kodex
 
 ## TL;DR
-- Этот документ фиксирует канонический набор требований для `codex-k8s` на основе решений Owner.
+- Этот документ фиксирует канонический набор требований для `kodex` на основе решений Owner.
 - Приоритет: требования здесь + обязательные стандарты `docs/design-guidelines/**`.
 - При расхождениях другие продуктовые документы приводятся в соответствие с этим файлом.
 
@@ -36,15 +36,15 @@ approvals:
 | FR-002 | Интеграции с репозиториями реализуются через provider interface (`RepositoryProvider`): MVP с GitHub, с заделом на GitLab без перелома доменной логики. |
 | FR-003 | Продуктовые процессы webhook-driven: бизнес-процессы запускаются webhook-событиями, а не workflow-first подходом. |
 | FR-004 | Основное хранилище платформы: PostgreSQL с `JSONB` и `pgvector` для chunk-хранилища и векторного поиска. |
-| FR-005 | `codex-k8s` и его PostgreSQL разворачиваются в Kubernetes. |
-| FR-006 | Служебные MCP ручки платформы реализуются в Go внутри `codex-k8s`; `github.com/codex-k8s/yaml-mcp-server` остаётся пользовательским расширяемым слоем для кастомных ручек. |
+| FR-005 | `kodex` и его PostgreSQL разворачиваются в Kubernetes. |
+| FR-006 | Служебные MCP ручки платформы реализуются в Go внутри `kodex`; `github.com/codex-k8s/yaml-mcp-server` остаётся пользовательским расширяемым слоем для кастомных ручек. |
 | FR-007 | Staff frontend защищён GitHub OAuth. |
-| FR-008 | Пользовательские настройки платформы хранятся в БД и редактируются через frontend; системные секреты и deploy-настройки `codex-k8s` берутся из env. |
+| FR-008 | Пользовательские настройки платформы хранятся в БД и редактируются через frontend; системные секреты и deploy-настройки `kodex` берутся из env. |
 | FR-009 | Сессии агентов, журналы действий и run-observability хранятся в БД и доступны через MVP staff UI/API; prompt templates в текущем MVP поставляются из repo seeds и не редактируются через UI. |
 | FR-010 | Набор агентов на MVP фиксирован штатной моделью из `machine_driven_company_requirements` с архитектурным заделом на будущие пользовательские агенты и процессы. |
 | FR-011 | У агента есть `name`, `github_nick`, `email`, `token`; токены генерируются через API provider с нужными scope, ротируются платформой и хранятся в БД в зашифрованном виде. |
 | FR-012 | Состояние запусков агентов, жизненный цикл pod/namespace и runtime-переходы хранятся в БД и отображаются в минимальном UI/API; для `full-env` namespace сохраняется по role-based TTL из `services.yaml` (default `24h`) с продлением lease при `run:*:revise`. |
-| FR-013 | Поддерживается многоподовость `codex-k8s`; синхронизация между pod выполняется через БД; архитектура сразу разделяется на сервисы и jobs по зонам (`services/external|staff|internal|jobs|dev`). |
+| FR-013 | Поддерживается многоподовость `kodex`; синхронизация между pod выполняется через БД; архитектура сразу разделяется на сервисы и jobs по зонам (`services/external|staff|internal|jobs|dev`). |
 | FR-014 | Система слотов реализуется через БД. |
 | FR-015 | Шаблоны документов (по `codexctl/docs/templates/**.md`) хранятся в БД и редактируются через markdown editor в staff UI (Monaco Editor). |
 | FR-016 | Bootstrap поддерживает 2 режима: (a) deploy в уже существующий Kubernetes по kubeconfig; (b) установка k3s при отсутствии кластера (включая создание отдельного пользователя и базовый hardening). |
@@ -53,9 +53,9 @@ approvals:
 | FR-019 | Добавление новых пользователей выполняется через staff UI по email и назначению доступов к проектам. |
 | FR-020 | Каждый проект поддерживает несколько репозиториев; в каждом репозитории может быть свой `services.yaml`. |
 | FR-021 | Доступ к каждому репозиторию задаётся отдельным токеном, который хранится в БД в зашифрованном виде; интеграция проектируется через интерфейсы для будущего перехода на Vault/JWT/KMS-подход без хранения токен-материала в БД. |
-| FR-022 | Сам `codex-k8s` ведётся как проект с монорепозиторием и собственным `services.yaml`. |
+| FR-022 | Сам `kodex` ведётся как проект с монорепозиторием и собственным `services.yaml`. |
 | FR-023 | Learning mode: при user-initiated задачах в инструкции подмешивается блок объяснений (`почему так`, `что это даёт`, `какие альтернативы и почему хуже`), плюс после PR возможны образовательные комментарии по ключевым файлам/строкам. |
-| FR-024 | Имена env/secrets/CI variables платформы используют префикс `CODEXK8S_` (исключения только для внешних контрактов). |
+| FR-024 | Имена env/secrets/CI variables платформы используют префикс `KODEX_` (исключения только для внешних контрактов). |
 | FR-025 | На MVP public API ограничен webhook ingress; staff/private API используется для управления платформой. |
 | FR-026 | В платформе фиксируется канонический каталог лейблов классов `run:*`, `state:*`, `need:*`, с поддержкой label-driven stage pipeline и PR-driven pre-review триггера `need:reviewer`. |
 | FR-027 | Для агент-инициированных trigger/deploy лейблов (`run:*`) обязателен апрув Owner до применения; `state:*` и `need:*` допускают автоустановку по политике проекта, при этом `need:reviewer` на PR может запускать pre-review ран роли `reviewer`. |
@@ -66,7 +66,7 @@ approvals:
 | FR-032 | В БД как обязательный контур аудита и учета включены сущности `agent_sessions`, `token_usage`, `links` (в дополнение к `agent_runs` и `flow_events`). |
 | FR-033 | Traceability поддерживается для всех этапов: связи Issue/PR ↔ docs ↔ stage status обновляются синхронно с выполнением этапов. |
 | FR-034 | Шаблоны промптов рендерятся с runtime-контекстом (env/namespace/slot, project context, MCP servers/tools, issue/pr/run context). |
-| FR-035 | Шаблоны промптов поддерживают локали; в текущем MVP effective locale берется из platform default `CODEXK8S_AGENT_DEFAULT_LOCALE` (fallback `ru`), а unsupported locale нормализуется к `en`; базовая загрузка seed-локалей — `ru` и `en`. |
+| FR-035 | Шаблоны промптов поддерживают локали; в текущем MVP effective locale берется из platform default `KODEX_AGENT_DEFAULT_LOCALE` (fallback `ru`), а unsupported locale нормализуется к `en`; базовая загрузка seed-локалей — `ru` и `en`. |
 | FR-036 | Для каждой agent session сохраняется JSON-снимок `codex-cli` сессии, чтобы возобновлять выполнение с того же места после паузы/перезапуска. |
 | FR-037 | Сущность `agent` в MVP хранит реестр системных профилей и identity-метаданные; runtime mode, locale и prompt policy определяются platform defaults, label policy и repo seeds, а не пользовательским settings UI. |
 | FR-038 | Для внешнего/staff HTTP API применяется contract-first OpenAPI: единая спецификация, runtime валидация запросов/ответов, codegen server DTO/backend stubs и frontend API client. |
@@ -92,7 +92,7 @@ approvals:
 | ID | Требование |
 |---|---|
 | NFR-001 | Безопасность: секреты не логируются, repo токены хранятся в шифрованном виде, регистрация отключена, доступы через OAuth + RBAC. |
-| NFR-002 | Масштабируемость: многоподовость `codex-k8s` с синхронизацией через PostgreSQL без конфликтов исполнения. |
+| NFR-002 | Масштабируемость: многоподовость `kodex` с синхронизацией через PostgreSQL без конфликтов исполнения. |
 | NFR-003 | Надёжность данных: `agent_runs` + `flow_events` являются базовым event/state контуром на MVP (без отдельного event_outbox). |
 | NFR-004 | Производительность поиска знаний: базовый размер эмбеддинга `vector(3072)` в `pgvector`. |
 | NFR-005 | Готовность к росту чтения: минимум одна asynchronous streaming read replica на MVP, с архитектурным заделом на 2+ replica и sync/quorum без изменений приложения. |
@@ -101,7 +101,7 @@ approvals:
 | NFR-008 | Storage профиль MVP: `local-path`; переход на Longhorn отложен на следующий этап. |
 | NFR-009 | Для agent-runs применяются управляемые лимиты параллелизма по ролям/проектам, чтобы избежать деградации кластера и гонок ресурсов. |
 | NFR-010 | Любое stage/label действие трассируется с actor/correlation/approval state и доступно для аудита через БД и staff UI/API. |
-| NFR-011 | Каталог label/trigger параметров хранится в repository variables (`CODEXK8S_*`) и синхронизируется в runtime orchestration без строковых литералов в коде. |
+| NFR-011 | Каталог label/trigger параметров хранится в repository variables (`KODEX_*`) и синхронизируется в runtime orchestration без строковых литералов в коде. |
 | NFR-012 | Пока агент ожидает ответ от MCP-сервера, timeout-kill pod/run не применяется; таймер выполнения должен быть paused для этого wait-state. |
 | NFR-013 | Снимок `codex-cli` сессии для resumable run должен храниться надёжно и быть доступен для восстановления после перезапуска worker/pod. |
 | NFR-014 | OpenAPI codegen должен быть воспроизводимым в CI: изменения спецификаций сопровождаются регенерацией backend/frontend артефактов и проверкой их актуальности. |
@@ -143,10 +143,10 @@ approvals:
     - ресурсы: namespaces/configmaps/secrets/deployments/pods+logs/jobs+logs/pvc;
     - YAML view/edit через Monaco Editor;
     - safety guardrails:
-      - в `production`/`prod` платформенные ресурсы помечаются `app.kubernetes.io/part-of=codex-k8s` (критерий для UI/guardrails и backend policy);
-      - в `ai` (ai-slots) при dogfooding платформа может разворачиваться без `app.kubernetes.io/part-of=codex-k8s`, чтобы UI позволял тестировать действия над ресурсами самой платформы (в т.ч. destructive через dry-run);
-      - ресурсы с `app.kubernetes.io/part-of=codex-k8s` нельзя удалять (UI и backend policy);
-      - `production`/`prod` — строго view-only для ресурсов с `app.kubernetes.io/part-of=codex-k8s`;
+      - в `production`/`prod` платформенные ресурсы помечаются `app.kubernetes.io/part-of=kodex` (критерий для UI/guardrails и backend policy);
+      - в `ai` (ai-slots) при dogfooding платформа может разворачиваться без `app.kubernetes.io/part-of=kodex`, чтобы UI позволял тестировать действия над ресурсами самой платформы (в т.ч. destructive через dry-run);
+      - ресурсы с `app.kubernetes.io/part-of=kodex` нельзя удалять (UI и backend policy);
+      - `production`/`prod` — строго view-only для ресурсов с `app.kubernetes.io/part-of=kodex`;
       - ai-slots — destructive действия только dry-run (кнопки есть для dogfooding/debug, реальное действие не выполняется).
   - Agents + prompt templates:
     - UI lifecycle для agent settings и prompt templates;

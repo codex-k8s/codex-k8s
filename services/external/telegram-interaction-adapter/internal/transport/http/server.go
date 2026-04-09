@@ -8,7 +8,7 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 
-	"github.com/codex-k8s/codex-k8s/services/external/telegram-interaction-adapter/internal/transport/http/generated"
+	"github.com/codex-k8s/kodex/services/external/telegram-interaction-adapter/internal/transport/http/generated"
 )
 
 const defaultMaxBodyBytes int64 = 1 << 20

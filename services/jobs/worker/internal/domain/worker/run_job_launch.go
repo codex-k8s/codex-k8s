@@ -5,12 +5,12 @@ import (
 	"fmt"
 	"strings"
 
-	agentdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/agent"
-	floweventdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/flowevent"
-	rundomain "github.com/codex-k8s/codex-k8s/libs/go/domain/run"
-	floweventrepo "github.com/codex-k8s/codex-k8s/services/jobs/worker/internal/domain/repository/flowevent"
-	runqueuerepo "github.com/codex-k8s/codex-k8s/services/jobs/worker/internal/domain/repository/runqueue"
-	valuetypes "github.com/codex-k8s/codex-k8s/services/jobs/worker/internal/domain/types/value"
+	agentdomain "github.com/codex-k8s/kodex/libs/go/domain/agent"
+	floweventdomain "github.com/codex-k8s/kodex/libs/go/domain/flowevent"
+	rundomain "github.com/codex-k8s/kodex/libs/go/domain/run"
+	floweventrepo "github.com/codex-k8s/kodex/services/jobs/worker/internal/domain/repository/flowevent"
+	runqueuerepo "github.com/codex-k8s/kodex/services/jobs/worker/internal/domain/repository/runqueue"
+	valuetypes "github.com/codex-k8s/kodex/services/jobs/worker/internal/domain/types/value"
 )
 
 func (s *Service) launchPreparedRunWorkload(ctx context.Context, run runqueuerepo.RunningRun, execution valuetypes.RunExecutionContext, agentCtx runAgentContext, lease namespaceLeaseSpec, options runLaunchOptions) error {

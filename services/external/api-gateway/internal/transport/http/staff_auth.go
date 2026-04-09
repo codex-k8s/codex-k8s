@@ -5,15 +5,15 @@ import (
 	"net/http"
 	"strings"
 
-	jwtlib "github.com/codex-k8s/codex-k8s/libs/go/auth/jwt"
-	"github.com/codex-k8s/codex-k8s/libs/go/errs"
-	controlplanev1 "github.com/codex-k8s/codex-k8s/proto/gen/go/codexk8s/controlplane/v1"
+	jwtlib "github.com/codex-k8s/kodex/libs/go/auth/jwt"
+	"github.com/codex-k8s/kodex/libs/go/errs"
+	controlplanev1 "github.com/codex-k8s/kodex/proto/gen/go/kodex/controlplane/v1"
 	"github.com/labstack/echo/v5"
 )
 
 const (
-	cookieAuthToken = "codexk8s_staff_jwt"
-	ctxPrincipalKey = "codexk8s_principal"
+	cookieAuthToken = "kodex_staff_jwt"
+	ctxPrincipalKey = "kodex_principal"
 )
 
 type jwtVerifier interface {

@@ -31,7 +31,7 @@ approvals:
   - channel-neutral adapter model;
   - platform-owned retry/idempotency/correlation/audit.
 - Нельзя нарушить:
-  - built-in server `codex_k8s` как единственную core точку расширения;
+  - built-in server `kodex` как единственную core точку расширения;
   - thin-edge для `api-gateway`;
   - markdown-only scope для `run:arch`.
 

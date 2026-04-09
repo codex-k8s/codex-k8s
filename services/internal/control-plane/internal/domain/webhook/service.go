@@ -7,20 +7,20 @@ import (
 	"strings"
 	"time"
 
-	agentdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/agent"
-	floweventdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/flowevent"
+	agentdomain "github.com/codex-k8s/kodex/libs/go/domain/agent"
+	floweventdomain "github.com/codex-k8s/kodex/libs/go/domain/flowevent"
 
-	webhookdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/webhook"
-	"github.com/codex-k8s/codex-k8s/libs/go/errs"
-	agentrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/agent"
-	agentrunrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/agentrun"
-	floweventrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/flowevent"
-	projectrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/project"
-	projectmemberrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/projectmember"
-	repocfgrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/repocfg"
-	userrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/user"
-	runstatusdomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/runstatus"
-	querytypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/query"
+	webhookdomain "github.com/codex-k8s/kodex/libs/go/domain/webhook"
+	"github.com/codex-k8s/kodex/libs/go/errs"
+	agentrepo "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/repository/agent"
+	agentrunrepo "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/repository/agentrun"
+	floweventrepo "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/repository/flowevent"
+	projectrepo "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/repository/project"
+	projectmemberrepo "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/repository/projectmember"
+	repocfgrepo "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/repository/repocfg"
+	userrepo "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/repository/user"
+	runstatusdomain "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/runstatus"
+	querytypes "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/types/query"
 )
 
 const githubWebhookActorID = floweventdomain.ActorIDGitHubWebhook

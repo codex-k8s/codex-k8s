@@ -5,7 +5,7 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/codex-k8s/codex-k8s/libs/go/servicescfg"
+	"github.com/codex-k8s/kodex/libs/go/servicescfg"
 )
 
 func applyStackImageVars(vars map[string]string, stack *servicescfg.Stack) {
@@ -70,5 +70,5 @@ func imageEnvVar(name string) string {
 	if normalized == "" {
 		return ""
 	}
-	return "CODEXK8S_" + normalized + "_IMAGE"
+	return "KODEX_" + normalized + "_IMAGE"
 }

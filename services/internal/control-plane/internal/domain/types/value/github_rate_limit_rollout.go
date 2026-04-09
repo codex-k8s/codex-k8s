@@ -1,6 +1,6 @@
 package value
 
-import sharedsystemsettings "github.com/codex-k8s/codex-k8s/libs/go/systemsettings"
+import sharedsystemsettings "github.com/codex-k8s/kodex/libs/go/systemsettings"
 
 // GitHubRateLimitCoreSettingKey gates persisted rate-limit wait creation and worker orchestration.
 const GitHubRateLimitCoreSettingKey = sharedsystemsettings.GitHubRateLimitWaitEnabledKey

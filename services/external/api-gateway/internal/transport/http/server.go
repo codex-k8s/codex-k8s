@@ -17,7 +17,7 @@ import (
 	"github.com/labstack/echo/v5/middleware"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 
-	"github.com/codex-k8s/codex-k8s/services/external/api-gateway/internal/controlplane"
+	"github.com/codex-k8s/kodex/services/external/api-gateway/internal/controlplane"
 )
 
 // ServerConfig defines HTTP transport runtime options.
@@ -122,7 +122,7 @@ func NewServer(initCtx context.Context, cfg ServerConfig, cp *controlplane.Clien
 	staffGroup.GET("/runtime-deploy/tasks/:run_id", staffH.GetRuntimeDeployTask)
 	staffGroup.POST("/runtime-deploy/tasks/:run_id/cancel", staffH.CancelRuntimeDeployTask)
 	staffGroup.POST("/runtime-deploy/tasks/:run_id/stop", staffH.StopRuntimeDeployTask)
-	// TODO(codex-k8s#81): Staff UI no longer renders "platform error" alerts.
+	// TODO(kodex#81): Staff UI no longer renders "platform error" alerts.
 	// Revisit runtime-errors endpoints usage and decide whether to keep, repurpose, or remove them.
 	staffGroup.GET("/runtime-errors", staffH.ListRuntimeErrors)
 	staffGroup.POST("/runtime-errors/:runtime_error_id/viewed", staffH.MarkRuntimeErrorViewed)
@@ -260,7 +260,7 @@ func registerViteDevUI(e *echo.Echo, upstream string) {
 	origDirector := rp.Director
 	rp.Director = func(r *http.Request) {
 		// Preserve original Host for Vite's host allowlist check.
-		// In production/dev we allow the public domain (e.g. platform.codex-k8s.dev),
+		// In production/dev we allow the public domain (e.g. platform.kodex.works),
 		// and the UI is accessed through the gateway reverse proxy.
 		origHost := r.Header.Get("X-Forwarded-Host")
 		if origHost == "" {

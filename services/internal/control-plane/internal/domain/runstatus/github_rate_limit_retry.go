@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	valuetypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/value"
+	valuetypes "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/types/value"
 )
 
 // RetryGitHubRateLimitComment replays one delayed run-status comment update after rate-limit recovery.

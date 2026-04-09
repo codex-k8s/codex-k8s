@@ -19,7 +19,7 @@ approvals:
 
 ## TL;DR
 - Wave `S12-E07` формализует readiness gate перед `run:qa`: rollout order, typed evidence surfaces, candidate runtime checks и rollback discipline собраны в один handover-артефакт.
-- В текущем candidate namespace `codex-k8s-dev-1` подтверждены готовые deploy/job resources для rollout order `migrations -> control-plane -> worker -> agent-runner -> api-gateway -> web-console`.
+- В текущем candidate namespace `kodex-dev-1` подтверждены готовые deploy/job resources для rollout order `migrations -> control-plane -> worker -> agent-runner -> api-gateway -> web-console`.
 - Live GitHub rate-limit path в этом doc-audit run не воспроизводился: исторический baseline Issue `#431` фиксировал disabled rollout через пустой env-gate; Issue `#500` позже перенёс source of truth в DB-backed platform setting `github_rate_limit_wait_enabled` и убрал deploy env wiring.
 
 ## Scope
@@ -32,7 +32,7 @@ approvals:
 
 ### Что осознанно не утверждается этим документом
 - synthetic trigger GitHub primary/secondary rate-limit в candidate namespace;
-- отдельные `codexk8s_github_rate_limit_*` Prometheus series: по repo audit и candidate runtime такие метрики не обнаружены;
+- отдельные `kodex_github_rate_limit_*` Prometheus series: по repo audit и candidate runtime такие метрики не обнаружены;
 - production alert rules, dashboards и manifest-изменения сверх уже принятых волн `#425..#430`.
 
 ## Canonical Evidence Surfaces
@@ -47,14 +47,14 @@ approvals:
 | Transport/UI visibility | realtime envelopes `wait_entered`, `wait_updated`, `wait_resolved`, `wait_manual_action_required`; wait queue и run details | `api-gateway` + `web-console` |
 
 ## Candidate Findings (2026-03-15)
-- `kubectl config view --minify -o jsonpath='{..namespace}'` вернул `codex-k8s-dev-1`.
-- `kubectl get deploy,pods,job -n codex-k8s-dev-1 -o wide` подтвердил:
-  - `deployment/codex-k8s-control-plane`, `deployment/codex-k8s-worker`, `deployment/codex-k8s`, `deployment/codex-k8s-web-console` готовы;
-  - `job/codex-k8s-migrate` завершён;
+- `kubectl config view --minify -o jsonpath='{..namespace}'` вернул `kodex-dev-1`.
+- `kubectl get deploy,pods,job -n kodex-dev-1 -o wide` подтвердил:
+  - `deployment/kodex-control-plane`, `deployment/kodex-worker`, `deployment/kodex`, `deployment/kodex-web-console` готовы;
+  - `job/kodex-migrate` завершён;
   - kaniko build jobs и `repo-sync` завершены;
   - agent run job для текущего doc-audit остаётся активным.
-- `kubectl logs -n codex-k8s-dev-1 deploy/codex-k8s-control-plane --tail=120 | rg 'github rate-limit|wait.entered|wait.resumed|manual_action_required|waiting_backpressure'` не вернул совпадений в пределах последних 120 строк.
-- Исторический baseline Issue `#431` по env-переменным сохраняется как evidence для doc-audit run; после Issue `#500` этот check больше не является current source of truth, потому что effective gate хранится в `system_settings.github_rate_limit_wait_enabled`, а `CODEXK8S_GITHUB_RATE_LIMIT_WAIT_ENABLED` удалён из bootstrap/deploy wiring.
+- `kubectl logs -n kodex-dev-1 deploy/kodex-control-plane --tail=120 | rg 'github rate-limit|wait.entered|wait.resumed|manual_action_required|waiting_backpressure'` не вернул совпадений в пределах последних 120 строк.
+- Исторический baseline Issue `#431` по env-переменным сохраняется как evidence для doc-audit run; после Issue `#500` этот check больше не является current source of truth, потому что effective gate хранится в `system_settings.github_rate_limit_wait_enabled`, а `KODEX_GITHUB_RATE_LIMIT_WAIT_ENABLED` удалён из bootstrap/deploy wiring.
 
 ## Runtime Diagnostics
 
@@ -62,20 +62,20 @@ approvals:
 1. Проверить rollout resources:
    - `kubectl -n <candidate-namespace> get deploy,pods,job -o wide`
 2. Проверить availability service endpoints:
-   - `kubectl -n <candidate-namespace> port-forward deploy/codex-k8s-control-plane 18081:8081`
+   - `kubectl -n <candidate-namespace> port-forward deploy/kodex-control-plane 18081:8081`
    - `curl -sf http://127.0.0.1:18081/health/readyz`
    - `curl -sf http://127.0.0.1:18081/metrics >/dev/null`
-   - `kubectl -n <candidate-namespace> port-forward deploy/codex-k8s-worker 18082:8082`
+   - `kubectl -n <candidate-namespace> port-forward deploy/kodex-worker 18082:8082`
    - `curl -sf http://127.0.0.1:18082/health/readyz`
    - `curl -sf http://127.0.0.1:18082/metrics >/dev/null`
-   - `kubectl -n <candidate-namespace> port-forward deploy/codex-k8s 18080:8080`
+   - `kubectl -n <candidate-namespace> port-forward deploy/kodex 18080:8080`
    - `curl -sf http://127.0.0.1:18080/metrics >/dev/null`
 3. Важное ограничение:
    - readiness gate сейчас проверяет доступность `/metrics`, а не наличие отдельных `github_rate_limit` series; выделенные Prometheus-метрики для этого capability в коде не найдены.
 
 ### Логи
-- `kubectl -n <candidate-namespace> logs deploy/codex-k8s-control-plane --tail=200 | rg 'github rate-limit|run.wait.(paused|resumed)|manual_action_required'`
-- `kubectl -n <candidate-namespace> logs deploy/codex-k8s-worker --tail=200 | rg 'github rate-limit wait processed|manual_action_required|resume'`
+- `kubectl -n <candidate-namespace> logs deploy/kodex-control-plane --tail=200 | rg 'github rate-limit|run.wait.(paused|resumed)|manual_action_required'`
+- `kubectl -n <candidate-namespace> logs deploy/kodex-worker --tail=200 | rg 'github rate-limit wait processed|manual_action_required|resume'`
 - `kubectl -n <candidate-namespace> logs job/<agent-runner-job> --tail=200 | rg 'github rate-limit handoff|waiting_backpressure|resume payload'`
 
 ### SQL / psql evidence

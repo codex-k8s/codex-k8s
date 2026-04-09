@@ -1,7 +1,7 @@
 ---
 doc_id: PRC-CK8S-0001
 type: process-requirements
-title: "codex-k8s — Development and Documentation Process Requirements"
+title: "kodex — Development and Documentation Process Requirements"
 status: active
 owner_role: EM
 created_at: 2026-02-06
@@ -50,7 +50,7 @@ approvals:
 - CI/CD discipline: merge только после green pipeline и обязательного deploy в production.
 - Docs-as-code: изменения кода и документации синхронны в одном рабочем цикле.
 - Traceability by default: каждое решение привязано к требованиям и артефактам.
-- Security by default: секреты не хранятся в репозитории, префикс переменных платформы `CODEXK8S_`.
+- Security by default: секреты не хранятся в репозитории, префикс переменных платформы `KODEX_`.
 
 ## Роли и ответственность
 

@@ -3,12 +3,12 @@ package app
 import "testing"
 
 func TestLoadConfigDefaults(t *testing.T) {
-	t.Setenv("CODEXK8S_HTTP_ADDR", "")
-	t.Setenv("CODEXK8S_ENV", "")
-	t.Setenv("CODEXK8S_CONTROL_PLANE_GRPC_TARGET", "codex-k8s-control-plane:9090")
-	t.Setenv("CODEXK8S_TELEGRAM_INTERACTION_ADAPTER_HTTP_TIMEOUT", "")
-	t.Setenv("CODEXK8S_TELEGRAM_INTERACTION_ADAPTER_STT_MODEL", "")
-	t.Setenv("CODEXK8S_TELEGRAM_INTERACTION_ADAPTER_STT_TIMEOUT", "")
+	t.Setenv("KODEX_HTTP_ADDR", "")
+	t.Setenv("KODEX_ENV", "")
+	t.Setenv("KODEX_CONTROL_PLANE_GRPC_TARGET", "kodex-control-plane:9090")
+	t.Setenv("KODEX_TELEGRAM_INTERACTION_ADAPTER_HTTP_TIMEOUT", "")
+	t.Setenv("KODEX_TELEGRAM_INTERACTION_ADAPTER_STT_MODEL", "")
+	t.Setenv("KODEX_TELEGRAM_INTERACTION_ADAPTER_STT_TIMEOUT", "")
 
 	cfg, err := LoadConfig()
 	if err != nil {
@@ -20,7 +20,7 @@ func TestLoadConfigDefaults(t *testing.T) {
 	if cfg.Environment != "production" {
 		t.Fatalf("Environment = %q, want production", cfg.Environment)
 	}
-	if cfg.ControlPlaneGRPCTarget != "codex-k8s-control-plane:9090" {
+	if cfg.ControlPlaneGRPCTarget != "kodex-control-plane:9090" {
 		t.Fatalf("ControlPlaneGRPCTarget = %q", cfg.ControlPlaneGRPCTarget)
 	}
 	if cfg.TelegramHTTPTimeout != "10s" {

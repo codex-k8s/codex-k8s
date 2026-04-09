@@ -1,7 +1,7 @@
 package flowevent
 
 import (
-	libflow "github.com/codex-k8s/codex-k8s/libs/go/postgres/floweventrepo"
+	libflow "github.com/codex-k8s/kodex/libs/go/postgres/floweventrepo"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 

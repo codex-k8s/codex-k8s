@@ -1,7 +1,7 @@
 ---
 doc_id: ARC-PRM-CK8S-0001
 type: prompt-policy
-title: "codex-k8s — Prompt Templates Policy"
+title: "kodex — Prompt Templates Policy"
 status: active
 owner_role: SA
 created_at: 2026-02-11
@@ -26,7 +26,7 @@ approvals:
   - `spec.projectDocs[]`
   - `spec.roleDocTemplates`
 - Effective template source в runtime и audit фиксируется как `repo_seed`.
-- Effective locale в текущем MVP берется из platform default `CODEXK8S_AGENT_DEFAULT_LOCALE`, fallback `ru`; unsupported locale нормализуется к `en`.
+- Effective locale в текущем MVP берется из platform default `KODEX_AGENT_DEFAULT_LOCALE`, fallback `ru`; unsupported locale нормализуется к `en`.
 
 ## Классы шаблонов
 
@@ -103,7 +103,7 @@ Seed-файл не отправляется агенту напрямую. Final
 ## Locale policy
 
 ### Effective locale
-- Worker задает locale из `CODEXK8S_AGENT_DEFAULT_LOCALE`.
+- Worker задает locale из `KODEX_AGENT_DEFAULT_LOCALE`.
 - Если значение пустое, используется `ru`.
 - В `agent-runner` locale нормализуется:
   - `ru*` -> `ru`

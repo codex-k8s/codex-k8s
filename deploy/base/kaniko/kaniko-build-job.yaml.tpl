@@ -1,22 +1,22 @@
-{{- $kanikoCacheEnabled := envOr "CODEXK8S_KANIKO_CACHE_ENABLED" "false" -}}
-{{- $kanikoCacheRepo := envOr "CODEXK8S_KANIKO_CACHE_REPO" "" -}}
-{{- $kanikoCacheTTL := envOr "CODEXK8S_KANIKO_CACHE_TTL" "" -}}
+{{- $kanikoCacheEnabled := envOr "KODEX_KANIKO_CACHE_ENABLED" "false" -}}
+{{- $kanikoCacheRepo := envOr "KODEX_KANIKO_CACHE_REPO" "" -}}
+{{- $kanikoCacheTTL := envOr "KODEX_KANIKO_CACHE_TTL" "" -}}
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: {{ envOr "CODEXK8S_KANIKO_JOB_NAME" "" }}
-  namespace: {{ envOr "CODEXK8S_PRODUCTION_NAMESPACE" "" }}
+  name: {{ envOr "KODEX_KANIKO_JOB_NAME" "" }}
+  namespace: {{ envOr "KODEX_PRODUCTION_NAMESPACE" "" }}
   labels:
-    app.kubernetes.io/name: codex-k8s-kaniko
-    app.kubernetes.io/component: {{ envOr "CODEXK8S_KANIKO_COMPONENT" "" }}
+    app.kubernetes.io/name: kodex-kaniko
+    app.kubernetes.io/component: {{ envOr "KODEX_KANIKO_COMPONENT" "" }}
 spec:
   backoffLimit: 0
   ttlSecondsAfterFinished: 600
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: codex-k8s-kaniko
-        app.kubernetes.io/component: {{ envOr "CODEXK8S_KANIKO_COMPONENT" "" }}
+        app.kubernetes.io/name: kodex-kaniko
+        app.kubernetes.io/component: {{ envOr "KODEX_KANIKO_COMPONENT" "" }}
     spec:
       # For single-node production we rely on the node loopback registry and therefore need hostNetwork.
       hostNetwork: true
@@ -27,28 +27,28 @@ spec:
           emptyDir: {}
       initContainers:
         - name: clone
-          image: {{ envOr "CODEXK8S_KANIKO_CLONE_IMAGE" "127.0.0.1:5000/codex-k8s/mirror/alpine-git:2.47.2" }}
+          image: {{ envOr "KODEX_KANIKO_CLONE_IMAGE" "127.0.0.1:5000/kodex/mirror/alpine-git:2.47.2" }}
           imagePullPolicy: IfNotPresent
           env:
             - name: GIT_TOKEN
               valueFrom:
                 secretKeyRef:
-                  name: codex-k8s-git-token
+                  name: kodex-git-token
                   key: token
-            - name: CODEXK8S_GITHUB_REPO
-              value: '{{ envOr "CODEXK8S_GITHUB_REPO" "" }}'
-            - name: CODEXK8S_BUILD_REF
-              value: '{{ envOr "CODEXK8S_BUILD_REF" "" }}'
+            - name: KODEX_GITHUB_REPO
+              value: '{{ envOr "KODEX_GITHUB_REPO" "" }}'
+            - name: KODEX_BUILD_REF
+              value: '{{ envOr "KODEX_BUILD_REF" "" }}'
           command:
             - sh
             - -ec
             - |
               # Use shell runtime variables from container env (set above via secret refs).
-              git clone "https://x-access-token:$GIT_TOKEN@github.com/$CODEXK8S_GITHUB_REPO.git" /workspace
+              git clone "https://x-access-token:$GIT_TOKEN@github.com/$KODEX_GITHUB_REPO.git" /workspace
               cd /workspace
-              checkout_ref="$CODEXK8S_BUILD_REF"
-              if git rev-parse --verify -q "origin/$CODEXK8S_BUILD_REF^{commit}" >/dev/null 2>&1; then
-                checkout_ref="origin/$CODEXK8S_BUILD_REF"
+              checkout_ref="$KODEX_BUILD_REF"
+              if git rev-parse --verify -q "origin/$KODEX_BUILD_REF^{commit}" >/dev/null 2>&1; then
+                checkout_ref="origin/$KODEX_BUILD_REF"
               fi
               git checkout --detach "$checkout_ref"
           volumeMounts:
@@ -56,13 +56,13 @@ spec:
               mountPath: /workspace
       containers:
         - name: kaniko
-          image: {{ envOr "CODEXK8S_KANIKO_EXECUTOR_IMAGE" "127.0.0.1:5000/codex-k8s/mirror/kaniko-executor:v1.23.2-debug" }}
+          image: {{ envOr "KODEX_KANIKO_EXECUTOR_IMAGE" "127.0.0.1:5000/kodex/mirror/kaniko-executor:v1.23.2-debug" }}
           imagePullPolicy: IfNotPresent
           args:
-            - --context={{ envOr "CODEXK8S_KANIKO_CONTEXT" "" }}
-            - --dockerfile={{ envOr "CODEXK8S_KANIKO_DOCKERFILE" "" }}
-            - --destination={{ envOr "CODEXK8S_KANIKO_DESTINATION_LATEST" "" }}
-            - --destination={{ envOr "CODEXK8S_KANIKO_DESTINATION_SHA" "" }}
+            - --context={{ envOr "KODEX_KANIKO_CONTEXT" "" }}
+            - --dockerfile={{ envOr "KODEX_KANIKO_DOCKERFILE" "" }}
+            - --destination={{ envOr "KODEX_KANIKO_DESTINATION_LATEST" "" }}
+            - --destination={{ envOr "KODEX_KANIKO_DESTINATION_SHA" "" }}
             - --cache={{ $kanikoCacheEnabled }}
 {{ if ne $kanikoCacheEnabled "false" }}
 {{ if ne $kanikoCacheRepo "" }}
@@ -71,24 +71,24 @@ spec:
 {{ if ne $kanikoCacheTTL "" }}
             - --cache-ttl={{ $kanikoCacheTTL }}
 {{ end }}
-            - --compressed-caching={{ envOr "CODEXK8S_KANIKO_CACHE_COMPRESSED" "false" }}
-            - --cache-copy-layers={{ envOr "CODEXK8S_KANIKO_CACHE_COPY_LAYERS" "true" }}
+            - --compressed-caching={{ envOr "KODEX_KANIKO_CACHE_COMPRESSED" "false" }}
+            - --cache-copy-layers={{ envOr "KODEX_KANIKO_CACHE_COPY_LAYERS" "true" }}
 {{ end }}
-            - --snapshot-mode={{ envOr "CODEXK8S_KANIKO_SNAPSHOT_MODE" "redo" }}
-            - --single-snapshot={{ envOr "CODEXK8S_KANIKO_SINGLE_SNAPSHOT" "true" }}
-            - --use-new-run={{ envOr "CODEXK8S_KANIKO_USE_NEW_RUN" "true" }}
-            - --verbosity={{ envOr "CODEXK8S_KANIKO_VERBOSITY" "info" }}
-            - --cleanup={{ envOr "CODEXK8S_KANIKO_CLEANUP" "true" }}
+            - --snapshot-mode={{ envOr "KODEX_KANIKO_SNAPSHOT_MODE" "redo" }}
+            - --single-snapshot={{ envOr "KODEX_KANIKO_SINGLE_SNAPSHOT" "true" }}
+            - --use-new-run={{ envOr "KODEX_KANIKO_USE_NEW_RUN" "true" }}
+            - --verbosity={{ envOr "KODEX_KANIKO_VERBOSITY" "info" }}
+            - --cleanup={{ envOr "KODEX_KANIKO_CLEANUP" "true" }}
             - --insecure
-            - --insecure-registry={{ envOr "CODEXK8S_INTERNAL_REGISTRY_HOST" "" }}
-            - --skip-tls-verify-registry={{ envOr "CODEXK8S_INTERNAL_REGISTRY_HOST" "" }}
+            - --insecure-registry={{ envOr "KODEX_INTERNAL_REGISTRY_HOST" "" }}
+            - --skip-tls-verify-registry={{ envOr "KODEX_INTERNAL_REGISTRY_HOST" "" }}
           resources:
             requests:
-              cpu: '{{ envOr "CODEXK8S_KANIKO_CPU_REQUEST" "4" }}'
-              memory: '{{ envOr "CODEXK8S_KANIKO_MEMORY_REQUEST" "8Gi" }}'
+              cpu: '{{ envOr "KODEX_KANIKO_CPU_REQUEST" "4" }}'
+              memory: '{{ envOr "KODEX_KANIKO_MEMORY_REQUEST" "8Gi" }}'
             limits:
-              cpu: '{{ envOr "CODEXK8S_KANIKO_CPU_LIMIT" "16" }}'
-              memory: '{{ envOr "CODEXK8S_KANIKO_MEMORY_LIMIT" "32Gi" }}'
+              cpu: '{{ envOr "KODEX_KANIKO_CPU_LIMIT" "16" }}'
+              memory: '{{ envOr "KODEX_KANIKO_MEMORY_LIMIT" "32Gi" }}'
           volumeMounts:
             - name: workspace
               mountPath: /workspace

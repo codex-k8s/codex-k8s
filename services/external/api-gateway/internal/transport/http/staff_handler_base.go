@@ -1,6 +1,6 @@
 package http
 
-import "github.com/codex-k8s/codex-k8s/services/external/api-gateway/internal/controlplane"
+import "github.com/codex-k8s/kodex/services/external/api-gateway/internal/controlplane"
 
 // staffHandler implements staff/private JSON endpoints protected by JWT.
 type staffHandler struct {

@@ -1,7 +1,7 @@
 ---
 doc_id: ARC-C4N-CK8S-0001
 type: c4-container
-title: "codex-k8s — C4 Container"
+title: "kodex — C4 Container"
 status: active
 owner_role: SA
 created_at: 2026-02-06
@@ -16,7 +16,7 @@ approvals:
   approved_at: 2026-02-19
 ---
 
-# C4 Container: codex-k8s
+# C4 Container: kodex
 
 ## TL;DR
 - Основные контейнеры: `web-console`, `api-gateway`, `control-plane`, `worker`, `postgres`.
@@ -26,7 +26,7 @@ approvals:
 ## Диаграмма (Mermaid C4Container)
 ```mermaid
 C4Container
-title codex-k8s - Container Diagram
+title kodex - Container Diagram
 
 Person(owner, "Owner/Admin", "Управляет платформой")
 System_Ext(github, "GitHub", "OAuth, API, webhooks")
@@ -34,7 +34,7 @@ System_Ext(k8s, "Kubernetes", "Cluster API")
 System_Ext(openai, "OpenAI API", "LLM")
 System_Ext(approverexec, "HTTP Approver/Executor integrations", "Approval and feedback (Telegram/Slack/etc)")
 
-System_Boundary(b0, "codex-k8s") {
+System_Boundary(b0, "kodex") {
   Container(web, "Web Console", "Vue3", "UI для настроек, агентов, сессий и запусков")
   Container(gw, "API Gateway", "Go HTTP", "Webhook ingress и публичный API слой")
   Container(cp, "Control Plane", "Go", "Доменная логика и state orchestration")

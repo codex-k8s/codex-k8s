@@ -4,7 +4,7 @@
       <VAppBarNavIcon v-if="auth.isAuthed" @click="toggleDrawer" />
 
       <RouterLink class="brand" :to="{ name: 'mission-control' }">
-        <img class="logo" src="/brand/logo.png" alt="codex-k8s logo" />
+        <img class="logo" src="/brand/logo.png" alt="kodex logo" />
         <div class="brand-text">
           <div class="brand-title">{{ t("app.title") }}</div>
           <div class="brand-subtitle">{{ t("app.subtitle") }}</div>

@@ -7,11 +7,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/codex-k8s/codex-k8s/libs/go/errs"
-	docsetdomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/docset"
-	repocfgrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/repocfg"
-	querytypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/query"
-	valuetypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/value"
+	"github.com/codex-k8s/kodex/libs/go/errs"
+	docsetdomain "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/docset"
+	repocfgrepo "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/repository/repocfg"
+	querytypes "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/types/query"
+	valuetypes "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/types/value"
 	"github.com/google/uuid"
 )
 
@@ -276,7 +276,7 @@ func (s *Service) ListDocsetGroups(ctx context.Context, principal Principal, doc
 		locale = "ru"
 	}
 
-	manifestBlob, ok, err := s.githubMgmt.GetFile(ctx, token, "codex-k8s", "agent-knowledge-base", "docset.manifest.json", docsetRef)
+	manifestBlob, ok, err := s.githubMgmt.GetFile(ctx, token, "kodex", "agent-knowledge-base", "docset.manifest.json", docsetRef)
 	if err != nil {
 		return nil, err
 	}
@@ -337,7 +337,7 @@ func (s *Service) ImportDocset(ctx context.Context, principal Principal, project
 		return querytypes.DocsetImportResult{}, err
 	}
 
-	manifestBlob, ok, err := s.githubMgmt.GetFile(ctx, token, "codex-k8s", "agent-knowledge-base", "docset.manifest.json", docsetRef)
+	manifestBlob, ok, err := s.githubMgmt.GetFile(ctx, token, "kodex", "agent-knowledge-base", "docset.manifest.json", docsetRef)
 	if err != nil {
 		return querytypes.DocsetImportResult{}, err
 	}
@@ -357,7 +357,7 @@ func (s *Service) ImportDocset(ctx context.Context, principal Principal, project
 	files := make(map[string][]byte, len(plan.Files)+1)
 	lockFiles := make([]valuetypes.DocsetLockFile, 0, len(plan.Files))
 	for _, f := range plan.Files {
-		blob, ok, err := s.githubMgmt.GetFile(ctx, token, "codex-k8s", "agent-knowledge-base", f.SrcPath, docsetRef)
+		blob, ok, err := s.githubMgmt.GetFile(ctx, token, "kodex", "agent-knowledge-base", f.SrcPath, docsetRef)
 		if err != nil {
 			return querytypes.DocsetImportResult{}, err
 		}
@@ -388,7 +388,7 @@ func (s *Service) ImportDocset(ctx context.Context, principal Principal, project
 	if err != nil {
 		return querytypes.DocsetImportResult{}, err
 	}
-	branch := fmt.Sprintf("codex-k8s-docset-import/%s", time.Now().UTC().Format("20060102-150405"))
+	branch := fmt.Sprintf("kodex-docset-import/%s", time.Now().UTC().Format("20060102-150405"))
 	title := fmt.Sprintf("chore(docs): import docset %s (%s)", manifest.Docset.ID, docsetRef)
 	body := fmt.Sprintf("Docset import\n\n- docset: %s\n- ref: %s\n- locale: %s\n- groups: %s\n- files: %d\n", manifest.Docset.ID, docsetRef, locale, strings.Join(selectedGroups, ", "), len(plan.Files))
 	prNumber, prURL, err := s.githubMgmt.CreatePullRequestWithFiles(ctx, token, targetRepo.Owner, targetRepo.Name, baseBranch, branch, title, body, files)
@@ -458,7 +458,7 @@ func (s *Service) SyncDocset(ctx context.Context, principal Principal, projectID
 		locale = "ru"
 	}
 
-	manifestBlob, ok, err := s.githubMgmt.GetFile(ctx, token, "codex-k8s", "agent-knowledge-base", "docset.manifest.json", docsetRef)
+	manifestBlob, ok, err := s.githubMgmt.GetFile(ctx, token, "kodex", "agent-knowledge-base", "docset.manifest.json", docsetRef)
 	if err != nil {
 		return querytypes.DocsetSyncResult{}, err
 	}
@@ -491,7 +491,7 @@ func (s *Service) SyncDocset(ctx context.Context, principal Principal, projectID
 	files := make(map[string][]byte, len(plan.Updates)+1)
 	updatedLockFiles := make([]valuetypes.DocsetLockFile, 0, len(plan.Updates))
 	for _, f := range plan.Updates {
-		blob, ok, err := s.githubMgmt.GetFile(ctx, token, "codex-k8s", "agent-knowledge-base", f.SrcPath, docsetRef)
+		blob, ok, err := s.githubMgmt.GetFile(ctx, token, "kodex", "agent-knowledge-base", f.SrcPath, docsetRef)
 		if err != nil {
 			return querytypes.DocsetSyncResult{}, err
 		}
@@ -521,7 +521,7 @@ func (s *Service) SyncDocset(ctx context.Context, principal Principal, projectID
 	}
 	files["docs/.docset-lock.json"] = lockOut
 
-	branch := fmt.Sprintf("codex-k8s-docset-sync/%s", time.Now().UTC().Format("20060102-150405"))
+	branch := fmt.Sprintf("kodex-docset-sync/%s", time.Now().UTC().Format("20060102-150405"))
 	title := fmt.Sprintf("chore(docs): sync docset %s (%s)", manifest.Docset.ID, docsetRef)
 	body := fmt.Sprintf("Docset sync\n\n- docset: %s\n- ref: %s\n- locale: %s\n- updated: %d\n- drift: %d\n", manifest.Docset.ID, docsetRef, locale, len(plan.Updates), len(plan.Drift))
 	prNumber, prURL, err := s.githubMgmt.CreatePullRequestWithFiles(ctx, token, targetRepo.Owner, targetRepo.Name, baseBranch, branch, title, body, files)

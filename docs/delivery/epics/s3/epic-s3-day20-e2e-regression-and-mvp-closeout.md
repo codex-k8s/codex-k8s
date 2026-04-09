@@ -31,7 +31,7 @@ approvals:
 - Full e2e на чистом VPS (Ubuntu 24.04):
   - bootstrap с `bootstrap/host/config-e2e-test.env`,
   - проверка self-deploy контура,
-  - cross-project сценарий (`project-example` + `codex-k8s`).
+  - cross-project сценарий (`project-example` + `kodex`).
 - E2E regression по ключевым MVP сценариям:
   - stage labels flow,
   - self-improve loop,

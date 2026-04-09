@@ -454,7 +454,7 @@ async function attachAndPreflight() {
 }
 
 function isPlatformRepository(item: RepositoryBinding): boolean {
-  return `${item.owner}/${item.name}`.toLowerCase() === "codex-k8s/codex-k8s";
+  return `${item.owner}/${item.name}`.toLowerCase() === "codex-k8s/kodex";
 }
 
 function askRemove(repositoryId: string, label: string) {

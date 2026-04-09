@@ -9,7 +9,7 @@ import (
 
 	gh "github.com/google/go-github/v82/github"
 
-	"github.com/codex-k8s/codex-k8s/libs/go/repo/provider"
+	"github.com/codex-k8s/kodex/libs/go/repo/provider"
 )
 
 // Provider implements RepositoryProvider for GitHub REST API v3.
@@ -49,7 +49,7 @@ func (p *Provider) ValidateRepository(ctx context.Context, token string, owner s
 	}, nil
 }
 
-// EnsureWebhook makes sure a webhook exists and is configured for codex-k8s.
+// EnsureWebhook makes sure a webhook exists and is configured for kodex.
 func (p *Provider) EnsureWebhook(ctx context.Context, token string, owner string, name string, spec provider.WebhookSpec) error {
 	client := gh.NewClient(p.httpClient).WithAuthToken(token)
 
@@ -175,7 +175,7 @@ func normalizeEvents(in []string) []string {
 		out = append(out, e)
 	}
 	if len(out) == 0 {
-		// GitHub default is "push", but codex-k8s expects more. We keep it minimal here.
+		// GitHub default is "push", but kodex expects more. We keep it minimal here.
 		out = []string{"push"}
 	}
 	return out

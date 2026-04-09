@@ -9,7 +9,7 @@ import (
 	"strings"
 	"text/template"
 
-	webhookdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/webhook"
+	webhookdomain "github.com/codex-k8s/kodex/libs/go/domain/webhook"
 )
 
 //go:embed templates/*.tmpl templates/prompt_blocks/*.tmpl

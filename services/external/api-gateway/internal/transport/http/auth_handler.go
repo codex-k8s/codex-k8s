@@ -5,14 +5,14 @@ import (
 	"net/http"
 	"time"
 
-	jwtlib "github.com/codex-k8s/codex-k8s/libs/go/auth/jwt"
-	"github.com/codex-k8s/codex-k8s/libs/go/errs"
-	"github.com/codex-k8s/codex-k8s/services/external/api-gateway/internal/transport/http/casters"
+	jwtlib "github.com/codex-k8s/kodex/libs/go/auth/jwt"
+	"github.com/codex-k8s/kodex/libs/go/errs"
+	"github.com/codex-k8s/kodex/services/external/api-gateway/internal/transport/http/casters"
 	"github.com/labstack/echo/v5"
 )
 
 const (
-	cookieOAuthState = "codexk8s_oauth_state"
+	cookieOAuthState = "kodex_oauth_state"
 )
 
 type authService interface {

@@ -26,7 +26,7 @@ const (
 	runStatusFailedPrecondition  = "failed_precondition"
 	runStatusWaitingBackpressure = "waiting_backpressure"
 
-	envContext7APIKey = "CODEXK8S_CONTEXT7_API_KEY"
+	envContext7APIKey = "KODEX_CONTEXT7_API_KEY"
 
 	sessionLogVersionV1      = "v1"
 	maxCapturedCommandOutput = 256 * 1024

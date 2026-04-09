@@ -1,6 +1,6 @@
 package enum
 
-import sharedsystemsettings "github.com/codex-k8s/codex-k8s/libs/go/systemsettings"
+import sharedsystemsettings "github.com/codex-k8s/kodex/libs/go/systemsettings"
 
 // SystemSettingKey identifies one platform-owned runtime setting.
 type SystemSettingKey string

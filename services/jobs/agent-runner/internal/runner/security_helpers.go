@@ -19,8 +19,8 @@ func (s *Service) configureGitAuthEnvironment(workspaceDir string) (func(), erro
 	scriptPath := filepath.Join(workspaceDir, fmt.Sprintf("git-askpass-%s.sh", sanitizePathComponent(s.cfg.RunID)))
 	scriptContent := `#!/bin/sh
 case "$1" in
-  *Username*) printf '%s\n' "$CODEXK8S_GIT_BOT_USERNAME" ;;
-  *Password*) printf '%s\n' "$CODEXK8S_GIT_BOT_TOKEN" ;;
+  *Username*) printf '%s\n' "$KODEX_GIT_BOT_USERNAME" ;;
+  *Password*) printf '%s\n' "$KODEX_GIT_BOT_TOKEN" ;;
   *) printf '\n' ;;
 esac
 `

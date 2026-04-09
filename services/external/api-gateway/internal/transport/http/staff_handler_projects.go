@@ -5,7 +5,7 @@ import (
 
 	"github.com/labstack/echo/v5"
 
-	"github.com/codex-k8s/codex-k8s/services/external/api-gateway/internal/transport/http/casters"
+	"github.com/codex-k8s/kodex/services/external/api-gateway/internal/transport/http/casters"
 )
 
 func (h *staffHandler) ListProjects(c *echo.Context) error {

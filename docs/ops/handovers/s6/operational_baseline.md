@@ -38,16 +38,16 @@ approvals:
 ## Runbook baseline
 
 ### Когда запускать incident-процедуру
-- `CrashLoopBackOff`/`ImagePullBackOff` у критичных компонентов (`codex-k8s`, `codex-k8s-control-plane`, `codex-k8s-worker`, `postgres`).
+- `CrashLoopBackOff`/`ImagePullBackOff` у критичных компонентов (`kodex`, `kodex-control-plane`, `kodex-worker`, `postgres`).
 - Устойчивое нарушение SLO (availability/error/critical latency) дольше alert окна.
 - Невозможность стабилизировать сервис в течение 15 минут mitigation-действиями.
 
 ### Быстрый triage
-1. `kubectl -n "$CODEXK8S_PRODUCTION_NAMESPACE" get pods,deploy,job -o wide`
-2. `kubectl -n "$CODEXK8S_PRODUCTION_NAMESPACE" logs deploy/codex-k8s-control-plane --tail=200`
-3. `kubectl -n "$CODEXK8S_PRODUCTION_NAMESPACE" logs deploy/codex-k8s-worker --tail=200`
-4. `kubectl -n "$CODEXK8S_PRODUCTION_NAMESPACE" logs deploy/codex-k8s --tail=200`
-5. `kubectl -n "$CODEXK8S_PRODUCTION_NAMESPACE" get events --sort-by=.lastTimestamp | tail -n 120`
+1. `kubectl -n "$KODEX_PRODUCTION_NAMESPACE" get pods,deploy,job -o wide`
+2. `kubectl -n "$KODEX_PRODUCTION_NAMESPACE" logs deploy/kodex-control-plane --tail=200`
+3. `kubectl -n "$KODEX_PRODUCTION_NAMESPACE" logs deploy/kodex-worker --tail=200`
+4. `kubectl -n "$KODEX_PRODUCTION_NAMESPACE" logs deploy/kodex --tail=200`
+5. `kubectl -n "$KODEX_PRODUCTION_NAMESPACE" get events --sort-by=.lastTimestamp | tail -n 120`
 
 ### Критерии стабилизации
 - Все критичные deployment в `Ready`, restart count не растёт.

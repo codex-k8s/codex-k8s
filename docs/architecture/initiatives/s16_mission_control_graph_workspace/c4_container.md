@@ -29,7 +29,7 @@ Person(owner, "Owner / operator", "Использует graph workspace для c
 System_Ext(github, "GitHub", "Issues, PRs, comments, reviews, labels")
 System_Ext(k8s, "Kubernetes", "Agent and background runtime")
 
-System_Boundary(b0, "codex-k8s") {
+System_Boundary(b0, "kodex") {
   Container(runner, "Agent Runner / agent pod", "Codex CLI job", "Emits run lineage, produced artifacts and launch params; never owns graph truth")
   Container(cp, "Control Plane", "Go", "Owns graph truth, node classification, continuity state, metadata/watermarks and next-step policy")
   Container(worker, "Worker", "Go", "Runs bounded inventory sync, recent-closed-history backfill, enrichment/reconcile jobs and lifecycle tasks")

@@ -11,8 +11,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/codex-k8s/codex-k8s/libs/go/manifesttpl"
-	"github.com/codex-k8s/codex-k8s/libs/go/servicescfg"
+	"github.com/codex-k8s/kodex/libs/go/manifesttpl"
+	"github.com/codex-k8s/kodex/libs/go/servicescfg"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	yamlutil "k8s.io/apimachinery/pkg/util/yaml"
 )
@@ -258,17 +258,17 @@ func shouldApplyServiceScope(scope servicescfg.ServiceScope, targetNamespace str
 		return true, ""
 	}
 
-	envName := strings.ToLower(strings.TrimSpace(vars["CODEXK8S_ENV"]))
+	envName := strings.ToLower(strings.TrimSpace(vars["KODEX_ENV"]))
 	if envName == "" {
-		envName = strings.ToLower(strings.TrimSpace(vars["CODEXK8S_SERVICES_CONFIG_ENV"]))
+		envName = strings.ToLower(strings.TrimSpace(vars["KODEX_SERVICES_CONFIG_ENV"]))
 	}
 	if envName != "" && envName != "production" && envName != "prod" {
 		return false, "service scope=infrastructure-singleton applies only in production environment"
 	}
 
-	platformNamespace := strings.TrimSpace(vars["CODEXK8S_PLATFORM_NAMESPACE"])
+	platformNamespace := strings.TrimSpace(vars["KODEX_PLATFORM_NAMESPACE"])
 	if platformNamespace == "" {
-		platformNamespace = strings.TrimSpace(vars["CODEXK8S_PRODUCTION_NAMESPACE"])
+		platformNamespace = strings.TrimSpace(vars["KODEX_PRODUCTION_NAMESPACE"])
 	}
 	namespace := strings.TrimSpace(targetNamespace)
 	if platformNamespace != "" && namespace != "" && namespace != platformNamespace {

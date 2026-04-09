@@ -124,7 +124,7 @@ approvals:
 - Детальный contract delta: `docs/architecture/initiatives/s10_mcp_user_interactions/api_contract.md`.
 - Source of truth для `run:dev`:
   - OpenAPI callback path: `services/external/api-gateway/api/server/api.yaml`
-  - gRPC bridge: `proto/codexk8s/controlplane/v1/controlplane.proto`
+  - gRPC bridge: `proto/kodex/controlplane/v1/controlplane.proto`
   - Built-in tool surface: `control-plane` MCP catalog
 - Совместимость:
   - новые tool names и callback path additive;
@@ -205,21 +205,21 @@ sequenceDiagram
   - existing control-plane audit/flow events `interaction.request.created`, `interaction.callback.received`, `interaction.response.accepted|rejected`, `interaction.wait.entered`, `interaction.wait.resumed` остаются каноническим source-of-truth для lifecycle evidence.
 - Метрики:
   - runtime counters/histograms в `control-plane`:
-    - `codexk8s_interaction_requests_created_total{tool_name,interaction_kind}`;
-    - `codexk8s_interaction_resume_total{interaction_kind,request_status}`;
-    - `codexk8s_interaction_decision_turnaround_seconds{request_status}`;
+    - `kodex_interaction_requests_created_total{tool_name,interaction_kind}`;
+    - `kodex_interaction_resume_total{interaction_kind,request_status}`;
+    - `kodex_interaction_decision_turnaround_seconds{request_status}`;
   - runtime metrics в `worker`:
-    - `codexk8s_interaction_dispatch_attempt_total{adapter,status}`;
-    - `codexk8s_interaction_dispatch_retry_scheduled_total{adapter,error_code}`;
+    - `kodex_interaction_dispatch_attempt_total{adapter,status}`;
+    - `kodex_interaction_dispatch_retry_scheduled_total{adapter,error_code}`;
   - persisted collector metrics в `control-plane`:
-    - `codexk8s_interaction_requests_state{interaction_kind,state}`;
-    - `codexk8s_interaction_pending_dispatch_backlog{interaction_kind,queue_kind}`;
-    - `codexk8s_interaction_wait_deadline_overdue{interaction_kind}`;
-    - `codexk8s_interaction_callback_events_total{callback_kind,classification}`;
-    - `codexk8s_interaction_dispatch_attempts_total{interaction_kind,adapter_kind,status}`;
+    - `kodex_interaction_requests_state{interaction_kind,state}`;
+    - `kodex_interaction_pending_dispatch_backlog{interaction_kind,queue_kind}`;
+    - `kodex_interaction_wait_deadline_overdue{interaction_kind}`;
+    - `kodex_interaction_callback_events_total{callback_kind,classification}`;
+    - `kodex_interaction_dispatch_attempts_total{interaction_kind,adapter_kind,status}`;
   - edge ingress metrics в `api-gateway`:
-    - `codexk8s_interaction_callback_requests_total{callback_kind,classification}`;
-    - `codexk8s_interaction_callback_duration_seconds{callback_kind,classification}`.
+    - `kodex_interaction_callback_requests_total{callback_kind,classification}`;
+    - `kodex_interaction_callback_duration_seconds{callback_kind,classification}`.
 - Трейсы:
   - `agent-runner -> control-plane -> postgres`
   - `worker -> adapter`
@@ -230,9 +230,9 @@ sequenceDiagram
   - decision turnaround latency;
   - delivery retry backlog.
 - Алерты:
-  - рост `codexk8s_interaction_callback_events_total{classification="duplicate|stale"}` выше baseline;
-  - `codexk8s_interaction_wait_deadline_overdue > 0` дольше agreed grace window;
-  - repeated `codexk8s_interaction_dispatch_attempts_total{status="failed"}` или рост retry backlog на одном adapter provider.
+  - рост `kodex_interaction_callback_events_total{classification="duplicate|stale"}` выше baseline;
+  - `kodex_interaction_wait_deadline_overdue > 0` дольше agreed grace window;
+  - repeated `kodex_interaction_dispatch_attempts_total{status="failed"}` или рост retry backlog на одном adapter provider.
 
 ## Тестирование
 - Юнит:

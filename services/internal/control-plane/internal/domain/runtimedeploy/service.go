@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	runtimedeploytaskrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/runtimedeploytask"
+	runtimedeploytaskrepo "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/repository/runtimedeploytask"
 )
 
 const (
@@ -16,7 +16,7 @@ const (
 	defaultRolloutTimeout          = 20 * time.Minute
 	defaultKanikoTimeout           = 30 * time.Minute
 	defaultWaitPollInterval        = 2 * time.Second
-	defaultFieldManager            = "codex-k8s-control-plane"
+	defaultFieldManager            = "kodex-control-plane"
 	defaultRegistryCleanupKeepTags = 5
 	defaultKanikoJobLogTailLines   = int64(200)
 )

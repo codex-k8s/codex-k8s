@@ -1,17 +1,17 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: {{ envOr "CODEXK8S_IMAGE_MIRROR_JOB_NAME" "" }}
-  namespace: {{ envOr "CODEXK8S_PRODUCTION_NAMESPACE" "" }}
+  name: {{ envOr "KODEX_IMAGE_MIRROR_JOB_NAME" "" }}
+  namespace: {{ envOr "KODEX_PRODUCTION_NAMESPACE" "" }}
   labels:
-    app.kubernetes.io/name: codex-k8s-image-mirror
+    app.kubernetes.io/name: kodex-image-mirror
 spec:
   backoffLimit: 0
   ttlSecondsAfterFinished: 300
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: codex-k8s-image-mirror
+        app.kubernetes.io/name: kodex-image-mirror
     spec:
       # For single-node production we mirror into node-local loopback registry.
       hostNetwork: true
@@ -19,15 +19,15 @@ spec:
       restartPolicy: Never
       containers:
         - name: mirror
-          image: {{ envOr "CODEXK8S_IMAGE_MIRROR_TOOL_IMAGE" "gcr.io/go-containerregistry/crane:debug" }}
+          image: {{ envOr "KODEX_IMAGE_MIRROR_TOOL_IMAGE" "gcr.io/go-containerregistry/crane:debug" }}
           imagePullPolicy: IfNotPresent
           env:
             - name: SOURCE_IMAGE
-              value: '{{ envOr "CODEXK8S_IMAGE_MIRROR_SOURCE" "" }}'
+              value: '{{ envOr "KODEX_IMAGE_MIRROR_SOURCE" "" }}'
             - name: TARGET_IMAGE
-              value: '{{ envOr "CODEXK8S_IMAGE_MIRROR_TARGET" "" }}'
+              value: '{{ envOr "KODEX_IMAGE_MIRROR_TARGET" "" }}'
             - name: MIRROR_PLATFORM
-              value: '{{ envOr "CODEXK8S_IMAGE_MIRROR_PLATFORM" "linux/amd64" }}'
+              value: '{{ envOr "KODEX_IMAGE_MIRROR_PLATFORM" "linux/amd64" }}'
           command:
             - sh
             - -ec

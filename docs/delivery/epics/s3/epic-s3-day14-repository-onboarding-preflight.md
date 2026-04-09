@@ -43,14 +43,14 @@ approvals:
   - открыть PR и оставить comment, затем закрыть PR и удалить ветку.
 - Domain preflight при создании проекта и при настройке full-env:
   - проверить, что домены, используемые для `ai-staging` и ai slots, резолвятся на ingress кластера;
-  - проверять домены, которые реально получаются из `services.yaml` (с учётом `domainTemplate` и дефолтов, где используются `CODEXK8S_PRODUCTION_DOMAIN`/`CODEXK8S_AI_DOMAIN`);
+  - проверять домены, которые реально получаются из `services.yaml` (с учётом `domainTemplate` и дефолтов, где используются `KODEX_PRODUCTION_DOMAIN`/`KODEX_AI_DOMAIN`);
   - дополнительно проверять webhook host платформы, чтобы получить ожидаемый ingress IP для сравнения (best-effort).
 - UI/DB:
   - для каждого репозитория хранить не только platform token, но и параметры бота (token + username/email);
   - показывать preflight status и список прошедших/проваленных проверок с подсказками по исправлению.
 - Безопасность:
   - preflight не должен логировать secret material;
-  - тестовые артефакты в GitHub должны быть помечены префиксом (например `codex-k8s-preflight-*`) и удаляться/закрываться автоматически.
+  - тестовые артефакты в GitHub должны быть помечены префиксом (например `kodex-preflight-*`) и удаляться/закрываться автоматически.
 
 ### Out of scope
 - Полная поддержка GitHub App installation flow.
@@ -107,7 +107,7 @@ approvals:
   - create branch + commit + PR + comment + close PR + delete branch (bot).
 - Реализован domain/DNS preflight:
   - проверка host’а webhook URL платформы (как источник ожидаемого ingress IP для best-effort сравнения);
-  - проверка доменов, которые реально получаются из `services.yaml` (через `spec.environments.<env>.domainTemplate` или дефолты на базе `CODEXK8S_PRODUCTION_DOMAIN`/`CODEXK8S_AI_DOMAIN`);
+  - проверка доменов, которые реально получаются из `services.yaml` (через `spec.environments.<env>.domainTemplate` или дефолты на базе `KODEX_PRODUCTION_DOMAIN`/`KODEX_AI_DOMAIN`);
   - DNS lookup + best-effort сравнение resolved IP с ingress IP (по webhook host).
 - Реализован запрет параллельных preflight на один репозиторий (DB lock).
 - UI:

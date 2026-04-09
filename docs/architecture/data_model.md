@@ -1,7 +1,7 @@
 ---
 doc_id: DM-CK8S-0001
 type: data-model
-title: "codex-k8s — Data Model"
+title: "kodex — Data Model"
 status: active
 owner_role: SA
 created_at: 2026-02-06
@@ -16,7 +16,7 @@ approvals:
   approved_at: 2026-02-19
 ---
 
-# Data Model: codex-k8s
+# Data Model: kodex
 
 ## TL;DR
 - Ключевые сущности: users, projects, system_settings, system_setting_changes, repositories, project_databases, agents, agent_runs, worker_instances, agent_sessions, token_usage, slots, runtime_deploy_tasks, flow_events, links, docs_meta, doc_chunks.
@@ -494,7 +494,7 @@ approvals:
 
 ## Политика хранения данных
 - Retention: flow_events, agent_sessions.session_json, agent_sessions.codex_cli_session_json и token_usage с ротацией/архивом по сроку.
-- `agent_runs.agent_logs_json` очищается периодическим cleanup loop в `control-plane` для завершённых run старше `CODEXK8S_RUN_AGENT_LOGS_RETENTION_DAYS` (default: `14`).
+- `agent_runs.agent_logs_json` очищается периодическим cleanup loop в `control-plane` для завершённых run старше `KODEX_RUN_AGENT_LOGS_RETENTION_DAYS` (default: `14`).
 - Архивирование: ежедневный backup БД в production.
 - PII/комплаенс: email хранится, токены только в шифрованном виде.
 

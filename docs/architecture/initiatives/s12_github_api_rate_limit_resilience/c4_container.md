@@ -31,7 +31,7 @@ Person(owner, "Owner / reviewer", "Ждёт понятный wait-state и сл�
 Person(operator, "Platform operator", "Диагностирует affected contour и manual action")
 System_Ext(github, "GitHub API", "Rate-limit signals and repo operations")
 
-System_Boundary(b0, "codex-k8s") {
+System_Boundary(b0, "kodex") {
   Container(runner, "Agent Runner / agent pod", "Codex CLI job", "Captures raw agent-path evidence and stops local retries after handoff")
   Container(cp, "Control Plane", "Go", "Owns classification, controlled wait aggregate, visibility contract and manual-action decisions")
   Container(worker, "Worker", "Go", "Runs wait scheduling, eligibility sweeps and finite auto-resume attempts")

@@ -7,19 +7,19 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/codex-k8s/codex-k8s/libs/go/errs"
-	learningfeedbackrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/learningfeedback"
-	projectrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/project"
-	projectmemberrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/projectmember"
-	projecttokenrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/projecttoken"
-	repocfgrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/repocfg"
-	staffrunrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/staffrun"
-	userrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/user"
-	querytypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/query"
+	"github.com/codex-k8s/kodex/libs/go/errs"
+	learningfeedbackrepo "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/repository/learningfeedback"
+	projectrepo "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/repository/project"
+	projectmemberrepo "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/repository/projectmember"
+	projecttokenrepo "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/repository/projecttoken"
+	repocfgrepo "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/repository/repocfg"
+	staffrunrepo "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/repository/staffrun"
+	userrepo "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/repository/user"
+	querytypes "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/types/query"
 
 	"github.com/google/uuid"
 
-	"github.com/codex-k8s/codex-k8s/libs/go/repo/provider"
+	"github.com/codex-k8s/kodex/libs/go/repo/provider"
 	"github.com/jackc/pgx/v5"
 )
 
@@ -519,7 +519,7 @@ func (s *Service) DeleteProjectRepository(ctx context.Context, principal Princip
 	if _, ok := s.cfg.ProtectedRepositoryIDs[repositoryID]; ok {
 		return errs.Forbidden{Msg: "cannot delete platform repository binding"}
 	}
-	if platformRepo := getOptionalEnv("CODEXK8S_GITHUB_REPO"); platformRepo != "" {
+	if platformRepo := getOptionalEnv("KODEX_GITHUB_REPO"); platformRepo != "" {
 		platformOwner, platformName, ok := strings.Cut(platformRepo, "/")
 		platformOwner = strings.TrimSpace(platformOwner)
 		platformName = strings.TrimSpace(platformName)

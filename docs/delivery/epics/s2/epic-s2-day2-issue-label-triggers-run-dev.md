@@ -19,7 +19,7 @@ approvals:
 # Epic S2 Day 2: Issue label triggers for run:dev and run:dev:revise
 
 ## TL;DR
-- Цель эпика: сделать GitHub Issue лейблы входом для запуска разработки внутри `codex-k8s`.
+- Цель эпика: сделать GitHub Issue лейблы входом для запуска разработки внутри `kodex`.
 - Ключевая ценность: разработка становится webhook-driven и трассируемой (flow_events + run state).
 - MVP-результат: `issues.labeled` webhook создаёт run request и ставит run в очередь на исполнение.
 
@@ -55,7 +55,7 @@ approvals:
 
 ## Прогресс реализации (2026-02-11)
 - Реализован ingest `issues.labeled` в `control-plane`:
-  - trigger labels `run:dev` и `run:dev:revise` читаются из env (`CODEXK8S_RUN_DEV_LABEL`, `CODEXK8S_RUN_DEV_REVISE_LABEL`);
+  - trigger labels `run:dev` и `run:dev:revise` читаются из env (`KODEX_RUN_DEV_LABEL`, `KODEX_RUN_DEV_REVISE_LABEL`);
   - нетриггерные issue label события помечаются как `ignored` с записью `webhook.ignored` в `flow_events`.
 - Добавлена авторизация sender для issue-trigger:
   - разрешены `platform_owner`, `platform_admin`, `project_member` c ролями `admin|read_write`;
@@ -67,6 +67,6 @@ approvals:
   - `status` enum: `accepted|duplicate|ignored`;
   - `api-gateway` возвращает `200` для `duplicate|ignored`, `202` для `accepted`.
 - Bootstrap/deploy синхронизация:
-  - `CODEXK8S_GITHUB_WEBHOOK_EVENTS` включает `issues`;
+  - `KODEX_GITHUB_WEBHOOK_EVENTS` включает `issues`;
   - каталог `run:*|state:*|need:*` задаётся platform env/config и синхронизируется в GitHub labels без GitHub Variables;
-  - runtime secret пополнен `CODEXK8S_RUN_DEV_LABEL` и `CODEXK8S_RUN_DEV_REVISE_LABEL`.
+  - runtime secret пополнен `KODEX_RUN_DEV_LABEL` и `KODEX_RUN_DEV_REVISE_LABEL`.

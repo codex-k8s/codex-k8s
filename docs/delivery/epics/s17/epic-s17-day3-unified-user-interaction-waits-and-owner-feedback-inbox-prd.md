@@ -18,7 +18,7 @@ approvals:
 
 ## TL;DR
 - Подготовлен PRD-пакет Sprint S17 для unified owner feedback loop: `epic-s17-day3-unified-user-interaction-waits-and-owner-feedback-inbox-prd.md` и `prd-s17-day3-unified-user-interaction-waits-and-owner-feedback-inbox.md`.
-- Зафиксированы user stories, FR/AC/NFR, scenario matrix, edge cases и expected evidence для owner inbox, same-session continuation, max timeout/TTL baseline built-in `codex_k8s` MCP wait path, lifecycle transparency, deterministic response binding и recovery-only fallback.
+- Зафиксированы user stories, FR/AC/NFR, scenario matrix, edge cases и expected evidence для owner inbox, same-session continuation, max timeout/TTL baseline built-in `kodex` MCP wait path, lifecycle transparency, deterministic response binding и recovery-only fallback.
 - Принято продуктовое решение: same live pod / same `codex` session остаётся primary happy-path, snapshot-resume используется только как recovery fallback, Telegram pending inbox и staff-console fallback работают поверх одного persisted backend contract, а overdue/manual-fallback visibility остаётся blocking requirement.
 - Дополнительные каналы, reminders/escalations, attachments, multi-party routing, richer conversation UX и detached resume-run как равноправный happy-path остаются later-wave scope.
 - Создана follow-up issue `#559` для stage `run:arch` без trigger-лейбла.
@@ -41,7 +41,7 @@ approvals:
 ### In scope
 - Формализация user stories, FR/AC/NFR, scenario matrix и expected evidence для unified owner feedback loop.
 - Приоритизация волн `core same-session owner feedback -> transparency/recovery evidence -> deferred conversation expansion`.
-- Фиксация product guardrails для same-session continuation, max timeout/TTL baseline built-in `codex_k8s` MCP wait path, recovery-only snapshot-resume, dual-channel inbox, deterministic text/voice/callback binding и overdue/manual-fallback transparency.
+- Фиксация product guardrails для same-session continuation, max timeout/TTL baseline built-in `kodex` MCP wait path, recovery-only snapshot-resume, dual-channel inbox, deterministic text/voice/callback binding и overdue/manual-fallback transparency.
 - Явный handover в `run:arch` с перечнем продуктовых решений, которые нельзя потерять.
 - Синхронизация traceability (`issue_map`, `delivery_plan`, sprint/epic docs, history package, indexes).
 
@@ -60,14 +60,14 @@ approvals:
 
 | Wave | Приоритет | Scope | Exit signal |
 |---|---|---|---|
-| Wave 1 | `P0` | Pending inbox через Telegram + staff-console fallback, same-session continuation, delivery-before-wait lifecycle, max timeout/TTL baseline built-in `codex_k8s` MCP wait path | Owner получает pending request, понимает, что агент реально ждёт, и ответ приводит к continuation без GitHub-comment detour |
+| Wave 1 | `P0` | Pending inbox через Telegram + staff-console fallback, same-session continuation, delivery-before-wait lifecycle, max timeout/TTL baseline built-in `kodex` MCP wait path | Owner получает pending request, понимает, что агент реально ждёт, и ответ приводит к continuation без GitHub-comment detour |
 | Wave 2 | `P0` | Deterministic text/voice/callback binding, overdue / expired / manual-fallback transparency, recovery-only snapshot-resume classification и expected evidence | Negative/runtime edge cases explainable, а fallback path остаётся явно классифицированным и не скрывает product truth |
 | Wave 3 | `P1` (deferred) | Additional channels, reminders/escalations, attachments, multi-party routing, richer conversation UX и detached resume-run как отдельный product stream | Stream двигается только после owner-approved architecture/design без reopening core same-session contract |
 
 ## Acceptance criteria (Issue #557)
 - [x] Подготовлен PRD-артефакт unified owner feedback loop и синхронизирован в traceability-документах.
 - [x] Для core flows зафиксированы user stories, FR/AC/NFR, scenario matrix, edge cases и expected evidence.
-- [x] Явно сохранены locked baselines: same live pod / same `codex` session как primary happy-path, max timeout/TTL built-in `codex_k8s` MCP wait path не ниже owner wait window, snapshot-resume только как recovery fallback, lifecycle `created -> delivery pending -> delivery accepted -> waiting -> response -> continuation`, Telegram pending inbox + staff-console fallback, deterministic text/voice binding и `run:self-improve` exclusion.
+- [x] Явно сохранены locked baselines: same live pod / same `codex` session как primary happy-path, max timeout/TTL built-in `kodex` MCP wait path не ниже owner wait window, snapshot-resume только как recovery fallback, lifecycle `created -> delivery pending -> delivery accepted -> waiting -> response -> continuation`, Telegram pending inbox + staff-console fallback, deterministic text/voice binding и `run:self-improve` exclusion.
 - [x] Wave priorities сформулированы без смешения core MVP и deferred conversation/channel expansion scope.
 - [x] Создана follow-up issue `#559` для stage `run:arch` без trigger-лейбла.
 

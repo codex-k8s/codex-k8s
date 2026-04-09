@@ -23,7 +23,7 @@ approvals:
 
 ## Спецификации (source of truth)
 - OpenAPI: `services/external/api-gateway/api/server/api.yaml`.
-- gRPC proto: `proto/codexk8s/controlplane/v1/controlplane.proto`.
+- gRPC proto: `proto/kodex/controlplane/v1/controlplane.proto`.
 - HTTP DTO/casters:
   - `services/external/api-gateway/internal/transport/http/models`
   - `services/external/api-gateway/internal/transport/http/casters`

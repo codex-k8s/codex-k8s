@@ -1,7 +1,7 @@
 ---
 doc_id: ARC-APT-CK8S-0001
 type: architecture-design
-title: "codex-k8s — Agents configuration and prompt templates lifecycle architecture"
+title: "kodex — Agents configuration and prompt templates lifecycle architecture"
 status: in-review
 owner_role: SA
 created_at: 2026-02-25
@@ -53,11 +53,11 @@ Out of scope:
 ## C4 Container (domain view)
 ```mermaid
 C4Container
-title codex-k8s - Agents/Prompt Templates Domain
+title kodex - Agents/Prompt Templates Domain
 
 Person(owner, "Owner/Admin", "Управляет агентами и шаблонами")
 
-System_Boundary(b0, "codex-k8s") {
+System_Boundary(b0, "kodex") {
   Container(web, "Web Console", "Vue3", "UI управления агентами, шаблонами, историей")
   Container(gw, "API Gateway", "Go HTTP", "Валидация, auth, routing staff API")
   Container(cp, "Control Plane", "Go", "Доменная логика agents/templates/audit")

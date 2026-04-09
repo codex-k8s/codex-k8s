@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 
-	sharedgithubratelimit "github.com/codex-k8s/codex-k8s/libs/go/domain/githubratelimit"
-	"github.com/codex-k8s/codex-k8s/libs/go/mcp/userinteraction"
+	sharedgithubratelimit "github.com/codex-k8s/kodex/libs/go/domain/githubratelimit"
+	"github.com/codex-k8s/kodex/libs/go/mcp/userinteraction"
 )
 
 func extractInteractionResumePayload(runPayload json.RawMessage) (json.RawMessage, bool, error) {

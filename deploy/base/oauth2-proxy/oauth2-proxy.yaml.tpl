@@ -1,14 +1,14 @@
-{{- $host := envOr "CODEXK8S_PUBLIC_DOMAIN" (envOr "CODEXK8S_PRODUCTION_DOMAIN" "") -}}
-{{- $cookieDomain := envOr "CODEXK8S_OAUTH2_PROXY_COOKIE_DOMAIN" "" -}}
+{{- $host := envOr "KODEX_PUBLIC_DOMAIN" (envOr "KODEX_PRODUCTION_DOMAIN" "") -}}
+{{- $cookieDomain := envOr "KODEX_OAUTH2_PROXY_COOKIE_DOMAIN" "" -}}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: oauth2-proxy
-  namespace: {{ envOr "CODEXK8S_PRODUCTION_NAMESPACE" "" }}
+  namespace: {{ envOr "KODEX_PRODUCTION_NAMESPACE" "" }}
   labels:
     app.kubernetes.io/name: oauth2-proxy
 spec:
-  replicas: {{ envOr "CODEXK8S_PLATFORM_DEPLOYMENT_REPLICAS" "" }}
+  replicas: {{ envOr "KODEX_PLATFORM_DEPLOYMENT_REPLICAS" "" }}
   selector:
     matchLabels:
       app.kubernetes.io/name: oauth2-proxy
@@ -20,12 +20,12 @@ spec:
     spec:
       containers:
         - name: oauth2-proxy
-          image: {{ envOr "CODEXK8S_OAUTH2_PROXY_IMAGE" "quay.io/oauth2-proxy/oauth2-proxy:v7.6.0" }}
+          image: {{ envOr "KODEX_OAUTH2_PROXY_IMAGE" "quay.io/oauth2-proxy/oauth2-proxy:v7.6.0" }}
           imagePullPolicy: IfNotPresent
           args:
             - --provider=github
             - --http-address=0.0.0.0:4180
-            - --upstream=http://codex-k8s
+            - --upstream=http://kodex
             # Ensure upstream sees the original public Host (Ingress host).
             # api-gateway uses it when reverse-proxying the Vite dev server.
             - --pass-host-header=true
@@ -45,17 +45,17 @@ spec:
             - name: OAUTH2_PROXY_CLIENT_ID
               valueFrom:
                 secretKeyRef:
-                  name: codex-k8s-oauth2-proxy
+                  name: kodex-oauth2-proxy
                   key: OAUTH2_PROXY_CLIENT_ID
             - name: OAUTH2_PROXY_CLIENT_SECRET
               valueFrom:
                 secretKeyRef:
-                  name: codex-k8s-oauth2-proxy
+                  name: kodex-oauth2-proxy
                   key: OAUTH2_PROXY_CLIENT_SECRET
             - name: OAUTH2_PROXY_COOKIE_SECRET
               valueFrom:
                 secretKeyRef:
-                  name: codex-k8s-oauth2-proxy
+                  name: kodex-oauth2-proxy
                   key: OAUTH2_PROXY_COOKIE_SECRET
           ports:
             - name: http
@@ -77,7 +77,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: oauth2-proxy
-  namespace: {{ envOr "CODEXK8S_PRODUCTION_NAMESPACE" "" }}
+  namespace: {{ envOr "KODEX_PRODUCTION_NAMESPACE" "" }}
   labels:
     app.kubernetes.io/name: oauth2-proxy
 spec:

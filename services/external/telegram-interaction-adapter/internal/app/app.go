@@ -10,9 +10,9 @@ import (
 	"syscall"
 	"time"
 
-	controlplaneclient "github.com/codex-k8s/codex-k8s/services/external/telegram-interaction-adapter/internal/controlplane"
-	"github.com/codex-k8s/codex-k8s/services/external/telegram-interaction-adapter/internal/service"
-	httptransport "github.com/codex-k8s/codex-k8s/services/external/telegram-interaction-adapter/internal/transport/http"
+	controlplaneclient "github.com/codex-k8s/kodex/services/external/telegram-interaction-adapter/internal/controlplane"
+	"github.com/codex-k8s/kodex/services/external/telegram-interaction-adapter/internal/service"
+	httptransport "github.com/codex-k8s/kodex/services/external/telegram-interaction-adapter/internal/transport/http"
 )
 
 // Run starts telegram-interaction-adapter and blocks until shutdown.
@@ -27,18 +27,18 @@ func Run() error {
 
 	telegramHTTPTimeout, err := time.ParseDuration(cfg.TelegramHTTPTimeout)
 	if err != nil {
-		return fmt.Errorf("parse CODEXK8S_TELEGRAM_INTERACTION_ADAPTER_HTTP_TIMEOUT: %w", err)
+		return fmt.Errorf("parse KODEX_TELEGRAM_INTERACTION_ADAPTER_HTTP_TIMEOUT: %w", err)
 	}
 	if telegramHTTPTimeout <= 0 {
-		return fmt.Errorf("CODEXK8S_TELEGRAM_INTERACTION_ADAPTER_HTTP_TIMEOUT must be > 0")
+		return fmt.Errorf("KODEX_TELEGRAM_INTERACTION_ADAPTER_HTTP_TIMEOUT must be > 0")
 	}
 
 	sttTimeout, err := time.ParseDuration(cfg.TelegramSTTTimeout)
 	if err != nil {
-		return fmt.Errorf("parse CODEXK8S_TELEGRAM_INTERACTION_ADAPTER_STT_TIMEOUT: %w", err)
+		return fmt.Errorf("parse KODEX_TELEGRAM_INTERACTION_ADAPTER_STT_TIMEOUT: %w", err)
 	}
 	if sttTimeout <= 0 {
-		return fmt.Errorf("CODEXK8S_TELEGRAM_INTERACTION_ADAPTER_STT_TIMEOUT must be > 0")
+		return fmt.Errorf("KODEX_TELEGRAM_INTERACTION_ADAPTER_STT_TIMEOUT must be > 0")
 	}
 
 	controlPlaneClient, err := controlplaneclient.Dial(appCtx, cfg.ControlPlaneGRPCTarget)

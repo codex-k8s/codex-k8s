@@ -1,7 +1,7 @@
 ---
 doc_id: ARC-RBAC-CK8S-0001
 type: runtime-rbac
-title: "codex-k8s — Agent Runtime and RBAC Model"
+title: "kodex — Agent Runtime and RBAC Model"
 status: active
 owner_role: SA
 created_at: 2026-02-11
@@ -68,12 +68,12 @@ approvals:
   - `run:dev` создаёт новый candidate namespace или продолжает уже существующий candidate lineage текущей Issue/PR;
   - `run:qa` и `run:release` обязаны продолжать существующий candidate identity той же Issue/PR; fallback на default branch запрещён, при отсутствии lineage платформа публикует диагностический warning и ставит `need:input`;
   - `run:postdeploy` и `run:ops` не используют candidate namespace, а запускаются в production namespace платформы и читают production runtime с профилем `production-readonly`.
-  - run pods получают platform-scoped `CODEXK8S_CONTROL_PLANE_GRPC_TARGET` и `CODEXK8S_CONTROL_PLANE_MCP_BASE_URL`; candidate namespace не должен silently переписывать эти endpoint'ы на namespace-local `control-plane`.
+  - run pods получают platform-scoped `KODEX_CONTROL_PLANE_GRPC_TARGET` и `KODEX_CONTROL_PLANE_MCP_BASE_URL`; candidate namespace не должен silently переписывать эти endpoint'ы на namespace-local `control-plane`.
 - Отдельный debug-label для manual-retention не используется.
 - В Kubernetes нет встроенного TTL-контроллера для namespace; cleanup реализуется безопасным sweeper-контуром:
   - in-band sweep в worker reconcile tick;
-  - production `CronJob` `codex-k8s-worker-namespace-cleanup` как out-of-band backstop;
-  - удаление допускается только для managed namespace'ов с ownership-label, allowlist platform runtime namespace names (issue-run prefix + slot namespaces `codex-k8s-dev-*`) и без non-terminal run / active workload.
+  - production `CronJob` `kodex-worker-namespace-cleanup` как out-of-band backstop;
+  - удаление допускается только для managed namespace'ов с ownership-label, allowlist platform runtime namespace names (issue-run prefix + slot namespaces `kodex-dev-*`) и без non-terminal run / active workload.
 
 Целевой baseline реализации (S2 Day3 + Issue #74):
 - Worker создаёт namespace idempotent, применяет `ServiceAccount + Role + RoleBinding + ResourceQuota + LimitRange`.
@@ -84,8 +84,8 @@ approvals:
   - `run.namespace.cleaned`,
   - `run.namespace.cleanup_failed`,
   - `run.namespace.cleanup_skipped`.
-- Runtime metadata namespace/job унифицированы через labels/annotations с префиксом `codex-k8s.dev/*`.
-- Cleanup удаляет только managed namespaces с `codex-k8s.dev/managed-by=codex-k8s-worker` и `codex-k8s.dev/namespace-purpose=run`, namespace name из allowlist platform runtime scopes (`codex-issue*` и slot namespaces `codex-k8s-dev-*`), terminal run state в БД и без active workload в namespace, включая unsuspended `CronJob`.
+- Runtime metadata namespace/job унифицированы через labels/annotations с префиксом `kodex.works/*`.
+- Cleanup удаляет только managed namespaces с `kodex.works/managed-by=kodex-worker` и `kodex.works/namespace-purpose=run`, namespace name из allowlist platform runtime scopes (`codex-issue*` и slot namespaces `kodex-dev-*`), terminal run state в БД и без active workload в namespace, включая unsuspended `CronJob`.
 
 ## Права `full-env` в рамках namespace
 
@@ -134,9 +134,9 @@ approvals:
 - Platform/bot GitHub токены хранятся в singleton таблице `platform_github_tokens`
   (поля `platform_token_encrypted`, `bot_token_encrypted`) и синхронизируются из env на старте control-plane.
 - Agent pod получает минимально необходимые runtime-секреты на время run:
-  - `CODEXK8S_OPENAI_API_KEY` для codex auth;
-  - `CODEXK8S_GIT_BOT_TOKEN` для git transport path.
-- Agent pod получает platform-scoped control-plane endpoints из env; отсутствие явного `CODEXK8S_CONTROL_PLANE_GRPC_TARGET`/`CODEXK8S_CONTROL_PLANE_MCP_BASE_URL` считается misconfiguration и не должно маскироваться namespace-local fallback'ом.
+  - `KODEX_OPENAI_API_KEY` для codex auth;
+  - `KODEX_GIT_BOT_TOKEN` для git transport path.
+- Agent pod получает platform-scoped control-plane endpoints из env; отсутствие явного `KODEX_CONTROL_PLANE_GRPC_TARGET`/`KODEX_CONTROL_PLANE_MCP_BASE_URL` считается misconfiguration и не должно маскироваться namespace-local fallback'ом.
 - Для `full-env` pod формируется `KUBECONFIG` из namespaced ServiceAccount.
 - Прямой доступ агента к Kubernetes `secrets` запрещён RBAC (read/write).
 - Создание/обновление секретов с генерацией значений и approver-политикой выполняется через MCP control tools.

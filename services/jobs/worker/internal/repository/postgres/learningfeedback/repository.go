@@ -5,7 +5,7 @@ import (
 	_ "embed"
 	"fmt"
 
-	domainrepo "github.com/codex-k8s/codex-k8s/services/jobs/worker/internal/domain/repository/learningfeedback"
+	domainrepo "github.com/codex-k8s/kodex/services/jobs/worker/internal/domain/repository/learningfeedback"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 

@@ -191,7 +191,7 @@ approvals:
   - open issue bodies `#281`, `#282`, `#312` очищены от same-repo blob links и branch-specific doc refs.
 - Проверки implementation package:
   - `rg -n -g '!docs/delivery/documentation_ia_migration_map.md' -g '!docs/delivery/issue_map.md' -g '!docs/delivery/requirements_traceability.md' 'docs/README\.md|docs/03_engineering/' docs services.yaml` — no matches;
-  - `rg -n -g '!docs/delivery/issue_map.md' -g '!docs/delivery/requirements_traceability.md' 'https://github\.com/codex-k8s/codex-k8s/blob/' docs services.yaml` — no matches;
+  - `rg -n -g '!docs/delivery/issue_map.md' -g '!docs/delivery/requirements_traceability.md' 'https://github\.com/codex-k8s/kodex/blob/' docs services.yaml` — no matches;
   - `git diff --check` — passed.
 
 ## Актуализация по Issue #327 (`run:doc-audit`, 2026-03-12)

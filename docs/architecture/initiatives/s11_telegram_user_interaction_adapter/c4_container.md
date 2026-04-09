@@ -33,7 +33,7 @@ System_Ext(tgadapter, "Telegram adapter contour", "Channel-specific rendering, r
 System_Ext(telegram, "Telegram Bot API", "Bot transport and webhook delivery")
 System_Ext(github, "GitHub", "Issue/PR links and fallback context")
 
-System_Boundary(b0, "codex-k8s") {
+System_Boundary(b0, "kodex") {
   Container(runner, "Agent Runner / agent pod", "Codex CLI job", "Calls built-in interaction tools and resumes run")
   Container(gw, "API Gateway", "Go HTTP", "Validates adapter callback auth/schema and bridges to control-plane")
   Container(cp, "Control Plane", "Go", "Owns interaction aggregate, semantic classification, wait-state and operator visibility")

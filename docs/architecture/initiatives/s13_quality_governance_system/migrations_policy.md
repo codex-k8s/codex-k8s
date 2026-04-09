@@ -131,7 +131,7 @@ approvals:
 ### Pre-migration checks
 - Existing `flow_events` and artifact link consumers remain compatible with nullable governance linkage.
 - No service outside `control-plane` expects to write governance tables directly.
-- Feature flags are declared with `CODEXK8S_` prefix and defaulted off.
+- Feature flags are declared with `KODEX_` prefix and defaulted off.
 - Deploy plan preserves mandatory order `migrations -> control-plane -> worker -> api-gateway -> web-console`.
 
 ### Post-migration verification

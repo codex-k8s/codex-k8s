@@ -56,7 +56,7 @@ approvals:
 
 ## Неподвижные guardrails из Day1-Day3
 - Same live pod / same `codex` session остаётся primary happy-path.
-- Effective max timeout/TTL built-in `codex_k8s` MCP wait path не может быть ниже owner wait window.
+- Effective max timeout/TTL built-in `kodex` MCP wait path не может быть ниже owner wait window.
 - Persisted session snapshot разрешён только как recovery fallback при потере live runtime.
 - Lifecycle truth обязана сохранять минимум стадии `created -> delivery pending -> delivery accepted -> waiting -> response -> continuation`.
 - Telegram inbox и staff-console fallback обязаны жить поверх одного persisted backend contract.

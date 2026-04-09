@@ -7,7 +7,7 @@ import (
 )
 
 const (
-	controlPlaneServiceName = "codex-k8s-control-plane"
+	controlPlaneServiceName = "kodex-control-plane"
 	clusterLocalSuffix      = "svc.cluster.local"
 	controlPlaneGRPCPort    = "9090"
 )

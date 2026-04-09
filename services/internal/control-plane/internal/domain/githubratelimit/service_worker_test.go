@@ -7,11 +7,11 @@ import (
 	"testing"
 	"time"
 
-	floweventdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/flowevent"
-	sharedgithubratelimit "github.com/codex-k8s/codex-k8s/libs/go/domain/githubratelimit"
-	agentrunrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/agentrun"
-	enumtypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/enum"
-	valuetypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/value"
+	floweventdomain "github.com/codex-k8s/kodex/libs/go/domain/flowevent"
+	sharedgithubratelimit "github.com/codex-k8s/kodex/libs/go/domain/githubratelimit"
+	agentrunrepo "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/repository/agentrun"
+	enumtypes "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/types/enum"
+	valuetypes "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/types/value"
 )
 
 func TestProcessNextAutoResumeSchedulesAgentSessionResume(t *testing.T) {
@@ -183,7 +183,7 @@ func TestProcessNextAutoResumeReschedulesReplayFailureWithinBudget(t *testing.T)
 		ResumeActionKind: enumtypes.GitHubRateLimitResumeActionKindPlatformCallReplay,
 		ResumePayloadJSON: marshalJSONPayload(valuetypes.GitHubRateLimitPlatformCallReplayPayload{
 			OperationKind:            enumtypes.GitHubRateLimitPlatformReplayOperationKindIssueStageTransition,
-			RepositoryFullName:       "codex-k8s/codex-k8s",
+			RepositoryFullName:       "codex-k8s/kodex",
 			IssueNumber:              427,
 			TargetLabel:              "run:qa",
 			RequestFingerprint:       "issue:427:run:dev:revise->run:qa",
@@ -263,7 +263,7 @@ func TestProcessNextAutoResumeEscalatesReplayFailureAfterBudgetExhausted(t *test
 		AutoResumeAttemptsUsed: 1,
 		ResumePayloadJSON: marshalJSONPayload(valuetypes.GitHubRateLimitPlatformCallReplayPayload{
 			OperationKind:            enumtypes.GitHubRateLimitPlatformReplayOperationKindIssueStageTransition,
-			RepositoryFullName:       "codex-k8s/codex-k8s",
+			RepositoryFullName:       "codex-k8s/kodex",
 			IssueNumber:              427,
 			TargetLabel:              "run:qa",
 			RequestFingerprint:       "issue:427:run:dev:revise->run:qa",

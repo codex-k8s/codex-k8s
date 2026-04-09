@@ -5,9 +5,9 @@ import (
 	"testing"
 	"time"
 
-	missioncontroldomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/missioncontrol"
-	enumtypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/enum"
-	valuetypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/value"
+	missioncontroldomain "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/missioncontrol"
+	enumtypes "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/types/enum"
+	valuetypes "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/types/value"
 )
 
 func TestMissionControlWorkspaceSummary_AggregatesGlobalStateCounters(t *testing.T) {
@@ -76,8 +76,8 @@ func TestMissionControlNodeDetailsToProto_RunUsesLifecycleFieldsFromProjectionPa
 		RuntimeMode:        "full-env",
 		TriggerLabel:       "run:dev",
 		BranchHead:         "2623e7f2dae8d280d4e82263ff42e98a023afd6f",
-		IssueRef:           "codex-k8s/codex-k8s#545",
-		PullRequestRef:     "codex-k8s/codex-k8s/pull/552",
+		IssueRef:           "codex-k8s/kodex#545",
+		PullRequestRef:     "codex-k8s/kodex/pull/552",
 		CandidateNamespace: "codex-issue-3278207d1cd3-i545",
 		StartedAt:          &startedAt,
 		FinishedAt:         &finishedAt,
@@ -103,7 +103,7 @@ func TestMissionControlNodeDetailsToProto_RunUsesLifecycleFieldsFromProjectionPa
 			ActiveState:       enumtypes.MissionControlActiveStateReview,
 			ContinuityStatus:  enumtypes.MissionControlContinuityStatusComplete,
 			CoverageClass:     enumtypes.MissionControlCoverageClassOpenPrimary,
-			RootNodePublicID:  "codex-k8s/codex-k8s#545",
+			RootNodePublicID:  "codex-k8s/kodex#545",
 			ProjectionVersion: 11,
 		},
 	})

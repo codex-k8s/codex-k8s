@@ -21,7 +21,7 @@ func TestReconcileMissionControlExecutesAcceptedStageNextStep(t *testing.T) {
 				CommandID:            "cmd-1",
 				Status:               "accepted",
 				EffectiveCommandKind: "stage.next_step.execute",
-				RepositoryFullName:   "codex-k8s/codex-k8s",
+				RepositoryFullName:   "codex-k8s/kodex",
 				StageNextStep: &MissionControlStageNextStepPayload{
 					ThreadKind:  "issue",
 					ThreadNo:    371,
@@ -70,7 +70,7 @@ func TestReconcileMissionControlFailsAfterRetryBudget(t *testing.T) {
 				CommandID:            "cmd-2",
 				Status:               "queued",
 				EffectiveCommandKind: "stage.next_step.execute",
-				RepositoryFullName:   "codex-k8s/codex-k8s",
+				RepositoryFullName:   "codex-k8s/kodex",
 				StageNextStep: &MissionControlStageNextStepPayload{
 					ThreadKind:  "issue",
 					ThreadNo:    371,
@@ -147,7 +147,7 @@ func TestReconcileMissionControlWarmupUsesThrottle(t *testing.T) {
 
 	missionControl := &fakeMissionControlClient{
 		warmupProjects: []MissionControlWarmupProject{
-			{ProjectID: "proj-1", ProjectName: "Project", RepositoryFullName: "codex-k8s/codex-k8s"},
+			{ProjectID: "proj-1", ProjectName: "Project", RepositoryFullName: "codex-k8s/kodex"},
 		},
 	}
 
@@ -175,7 +175,7 @@ func TestReconcileMissionControlContinuesCommandsWhenWarmupFails(t *testing.T) {
 
 	missionControl := &fakeMissionControlClient{
 		warmupProjects: []MissionControlWarmupProject{
-			{ProjectID: "proj-1", ProjectName: "Project", RepositoryFullName: "codex-k8s/codex-k8s"},
+			{ProjectID: "proj-1", ProjectName: "Project", RepositoryFullName: "codex-k8s/kodex"},
 		},
 		warmupErrorsByProject: map[string]error{
 			"proj-1": errors.New("warmup failed"),
@@ -186,7 +186,7 @@ func TestReconcileMissionControlContinuesCommandsWhenWarmupFails(t *testing.T) {
 				CommandID:            "cmd-1",
 				Status:               "accepted",
 				EffectiveCommandKind: "stage.next_step.execute",
-				RepositoryFullName:   "codex-k8s/codex-k8s",
+				RepositoryFullName:   "codex-k8s/kodex",
 				StageNextStep: &MissionControlStageNextStepPayload{
 					ThreadKind:  "issue",
 					ThreadNo:    544,
@@ -221,7 +221,7 @@ func TestReconcileMissionControlWarmupsDoesNotLogPerProjectFailure(t *testing.T)
 	logger, buf := newMissionControlTestLogger()
 	missionControl := &fakeMissionControlClient{
 		warmupProjects: []MissionControlWarmupProject{
-			{ProjectID: "proj-1", ProjectName: "Project", RepositoryFullName: "codex-k8s/codex-k8s"},
+			{ProjectID: "proj-1", ProjectName: "Project", RepositoryFullName: "codex-k8s/kodex"},
 		},
 		warmupErrorsByProject: map[string]error{
 			"proj-1": errors.New("warmup failed"),
@@ -240,7 +240,7 @@ func TestReconcileMissionControlWarmupsDoesNotLogPerProjectFailure(t *testing.T)
 	if err == nil {
 		t.Fatal("reconcileMissionControlWarmups() error = nil, want error")
 	}
-	if !strings.Contains(err.Error(), "project proj-1 (codex-k8s/codex-k8s)") {
+	if !strings.Contains(err.Error(), "project proj-1 (codex-k8s/kodex)") {
 		t.Fatalf("reconcileMissionControlWarmups() error = %q, want project context", err)
 	}
 	if got := strings.TrimSpace(buf.String()); got != "" {
@@ -258,7 +258,7 @@ func TestReconcileMissionControlCommandsContinueAfterQueueFailure(t *testing.T) 
 				CommandID:            "cmd-broken",
 				Status:               "accepted",
 				EffectiveCommandKind: "stage.next_step.execute",
-				RepositoryFullName:   "codex-k8s/codex-k8s",
+				RepositoryFullName:   "codex-k8s/kodex",
 				StageNextStep: &MissionControlStageNextStepPayload{
 					ThreadKind:  "issue",
 					ThreadNo:    544,
@@ -270,7 +270,7 @@ func TestReconcileMissionControlCommandsContinueAfterQueueFailure(t *testing.T) 
 				CommandID:            "cmd-ok",
 				Status:               "accepted",
 				EffectiveCommandKind: "stage.next_step.execute",
-				RepositoryFullName:   "codex-k8s/codex-k8s",
+				RepositoryFullName:   "codex-k8s/kodex",
 				StageNextStep: &MissionControlStageNextStepPayload{
 					ThreadKind:  "issue",
 					ThreadNo:    545,
@@ -313,7 +313,7 @@ func TestReconcileMissionControlCommandsDoesNotLogPerCommandFailure(t *testing.T
 				CommandID:            "cmd-broken",
 				Status:               "accepted",
 				EffectiveCommandKind: "stage.next_step.execute",
-				RepositoryFullName:   "codex-k8s/codex-k8s",
+				RepositoryFullName:   "codex-k8s/kodex",
 				StageNextStep: &MissionControlStageNextStepPayload{
 					ThreadKind:  "issue",
 					ThreadNo:    544,
@@ -361,7 +361,7 @@ func TestLogMissionControlWarmupResultUsesInfoForOpenRolloutGates(t *testing.T) 
 		MissionControlWarmupProject{
 			ProjectID:          "proj-1",
 			ProjectName:        "Project",
-			RepositoryFullName: "codex-k8s/codex-k8s",
+			RepositoryFullName: "codex-k8s/kodex",
 		},
 		"corr-1",
 		MissionControlWarmupResult{

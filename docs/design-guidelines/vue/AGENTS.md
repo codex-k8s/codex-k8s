@@ -10,7 +10,7 @@
 - `docs/design-guidelines/vue/libraries.md` — что выносить в `libs/{vue,ts,js}` и как.
 - `docs/design-guidelines/common/external_dependencies_catalog.md` — согласованный список внешних библиотек и инструментов.
 
-Специфика `codex-k8s`:
+Специфика `kodex`:
 - основной frontend приложения живет в `services/staff/web-console`;
 - вход в UI защищен GitHub OAuth;
 - пользовательские настройки и права приходят из backend API (PostgreSQL как source of truth).

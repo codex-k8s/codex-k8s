@@ -8,8 +8,8 @@ import (
 	"os"
 	"time"
 
-	cpclient "github.com/codex-k8s/codex-k8s/services/jobs/agent-runner/internal/controlplane"
-	"github.com/codex-k8s/codex-k8s/services/jobs/agent-runner/internal/runner"
+	cpclient "github.com/codex-k8s/kodex/services/jobs/agent-runner/internal/controlplane"
+	"github.com/codex-k8s/kodex/services/jobs/agent-runner/internal/runner"
 )
 
 // ExitError keeps process exit code for top-level main.

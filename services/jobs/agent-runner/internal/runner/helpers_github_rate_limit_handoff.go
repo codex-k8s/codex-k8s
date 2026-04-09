@@ -11,8 +11,8 @@ import (
 	"strings"
 	"time"
 
-	sharedgithubratelimit "github.com/codex-k8s/codex-k8s/libs/go/domain/githubratelimit"
-	cpclient "github.com/codex-k8s/codex-k8s/services/jobs/agent-runner/internal/controlplane"
+	sharedgithubratelimit "github.com/codex-k8s/kodex/libs/go/domain/githubratelimit"
+	cpclient "github.com/codex-k8s/kodex/services/jobs/agent-runner/internal/controlplane"
 	"google.golang.org/grpc/codes"
 	grpcstatus "google.golang.org/grpc/status"
 )

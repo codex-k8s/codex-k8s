@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/codex-k8s/codex-k8s/libs/go/grpcutil"
-	controlplanev1 "github.com/codex-k8s/codex-k8s/proto/gen/go/codexk8s/controlplane/v1"
+	"github.com/codex-k8s/kodex/libs/go/grpcutil"
+	controlplanev1 "github.com/codex-k8s/kodex/proto/gen/go/kodex/controlplane/v1"
 	"google.golang.org/grpc"
 )
 

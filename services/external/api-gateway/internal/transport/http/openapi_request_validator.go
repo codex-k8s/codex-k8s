@@ -15,7 +15,7 @@ import (
 	"github.com/getkin/kin-openapi/routers/gorillamux"
 	"github.com/labstack/echo/v5"
 
-	"github.com/codex-k8s/codex-k8s/libs/go/errs"
+	"github.com/codex-k8s/kodex/libs/go/errs"
 )
 
 type openAPIRequestValidator struct {

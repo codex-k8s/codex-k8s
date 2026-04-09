@@ -6,7 +6,7 @@ import (
 	"log/slog"
 	"time"
 
-	workerinstancerepo "github.com/codex-k8s/codex-k8s/services/jobs/worker/internal/domain/repository/workerinstance"
+	workerinstancerepo "github.com/codex-k8s/kodex/services/jobs/worker/internal/domain/repository/workerinstance"
 )
 
 type workerHeartbeatParams struct {

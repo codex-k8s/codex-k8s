@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/codex-k8s/codex-k8s/libs/go/errs"
-	mcpdomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/mcp"
-	querytypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/query"
+	"github.com/codex-k8s/kodex/libs/go/errs"
+	mcpdomain "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/mcp"
+	querytypes "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/types/query"
 )
 
 func (s *Server) validateChangeGovernanceRunContext(runSession mcpdomain.SessionContext, requestedProjectID string) error {

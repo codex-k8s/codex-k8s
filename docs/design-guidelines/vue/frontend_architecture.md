@@ -2,7 +2,7 @@
 
 ## Где живёт фронтенд
 
-- Основная консоль `codex-k8s` размещается в `services/staff/web-console`.
+- Основная консоль `kodex` размещается в `services/staff/web-console`.
 - Дополнительные публичные страницы (если появятся) размещаются в `services/external/*`.
 - Dev-only frontend размещается в `services/dev/*` и не деплоится в production.
 

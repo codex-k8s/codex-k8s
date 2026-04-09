@@ -4,9 +4,9 @@ import (
 	"context"
 	"strings"
 
-	"github.com/codex-k8s/codex-k8s/libs/go/errs"
-	entitytypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/entity"
-	querytypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/query"
+	"github.com/codex-k8s/kodex/libs/go/errs"
+	entitytypes "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/types/entity"
+	querytypes "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/types/query"
 )
 
 // ResolveStaffByEmail resolves one allowed staff user by email and optionally refreshes GitHub login.

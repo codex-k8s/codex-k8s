@@ -8,9 +8,9 @@ import (
 	"strings"
 	"time"
 
-	agentdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/agent"
-	webhookdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/webhook"
-	"github.com/codex-k8s/codex-k8s/libs/go/k8s/clientcfg"
+	agentdomain "github.com/codex-k8s/kodex/libs/go/domain/agent"
+	webhookdomain "github.com/codex-k8s/kodex/libs/go/domain/webhook"
+	"github.com/codex-k8s/kodex/libs/go/k8s/clientcfg"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -21,15 +21,15 @@ import (
 var nonDNSLabel = regexp.MustCompile(`[^a-z0-9-]`)
 
 const (
-	runWorkloadAppName        = "codex-k8s-run"
+	runWorkloadAppName        = "kodex-run"
 	runContainerName          = "run"
 	aiRepairKeepaliveName     = "keepalive"
 	aiRepairComponentLabelVal = "ai-repair"
 	discussionComponentLabel  = "discussion"
-	workerAppName             = "codex-k8s"
+	workerAppName             = "kodex"
 	workerComponentLabel      = "worker"
 	runRepoCacheVolumeName    = "repo-cache"
-	runRepoCacheClaimName     = "codex-k8s-repo-cache"
+	runRepoCacheClaimName     = "kodex-repo-cache"
 	runRepoCacheMountPath     = "/workspace"
 )
 
@@ -302,7 +302,7 @@ func NewForClient(cfg Config, client kubernetes.Interface) *Launcher {
 		cfg.Image = "busybox:1.36"
 	}
 	if cfg.Command == "" {
-		cfg.Command = "/usr/local/bin/codex-k8s-agent-runner"
+		cfg.Command = "/usr/local/bin/kodex-agent-runner"
 	}
 	if cfg.TTLSeconds <= 0 {
 		cfg.TTLSeconds = 600
@@ -431,7 +431,7 @@ func (l *Launcher) Launch(ctx context.Context, spec JobSpec) (JobRef, error) {
 			Namespace: ref.Namespace,
 			Labels: map[string]string{
 				"app.kubernetes.io/name":       runWorkloadAppName,
-				"app.kubernetes.io/managed-by": "codex-k8s-worker",
+				"app.kubernetes.io/managed-by": "kodex-worker",
 				metadataLabelRunID:             spec.RunID,
 				metadataLabelProjectID:         sanitizeLabel(spec.ProjectID),
 			},
@@ -508,7 +508,7 @@ func (l *Launcher) launchRunPod(ctx context.Context, ref JobRef, spec JobSpec, j
 			Labels: map[string]string{
 				"app.kubernetes.io/name":       runWorkloadAppName,
 				"app.kubernetes.io/component":  strings.TrimSpace(componentLabel),
-				"app.kubernetes.io/managed-by": "codex-k8s-worker",
+				"app.kubernetes.io/managed-by": "kodex-worker",
 				metadataLabelRunID:             spec.RunID,
 				metadataLabelProjectID:         sanitizeLabel(spec.ProjectID),
 			},
@@ -540,39 +540,39 @@ func buildRunContainer(spec JobSpec, image string, command string) corev1.Contai
 
 func buildRunContainerEnv(spec JobSpec) []corev1.EnvVar {
 	return []corev1.EnvVar{
-		{Name: "CODEXK8S_RUN_ID", Value: spec.RunID},
-		{Name: "CODEXK8S_CORRELATION_ID", Value: spec.CorrelationID},
-		{Name: "CODEXK8S_PROJECT_ID", Value: spec.ProjectID},
-		{Name: "CODEXK8S_SLOT_NO", Value: fmt.Sprintf("%d", spec.SlotNo)},
-		{Name: "CODEXK8S_RUNTIME_MODE", Value: string(spec.RuntimeMode)},
-		{Name: "CODEXK8S_RUNTIME_TARGET_ENV", Value: strings.TrimSpace(spec.RuntimeTargetEnv)},
-		{Name: "CODEXK8S_RUNTIME_BUILD_REF", Value: strings.TrimSpace(spec.RuntimeBuildRef)},
-		{Name: "CODEXK8S_RUNTIME_ACCESS_PROFILE", Value: strings.TrimSpace(string(spec.RuntimeAccessProfile))},
-		{Name: "CODEXK8S_CONTROL_PLANE_GRPC_TARGET", Value: strings.TrimSpace(spec.ControlPlaneGRPCTarget)},
-		{Name: "CODEXK8S_MCP_BASE_URL", Value: strings.TrimSpace(spec.MCPBaseURL)},
-		{Name: "CODEXK8S_MCP_BEARER_TOKEN", Value: strings.TrimSpace(spec.MCPBearerToken)},
-		{Name: "CODEXK8S_QUALITY_GOVERNANCE_ENABLED", Value: fmt.Sprintf("%t", spec.QualityGovernanceEnabled)},
-		{Name: "CODEXK8S_REPOSITORY_FULL_NAME", Value: strings.TrimSpace(spec.RepositoryFullName)},
-		{Name: "CODEXK8S_ISSUE_NUMBER", Value: fmt.Sprintf("%d", spec.IssueNumber)},
-		{Name: "CODEXK8S_RUN_TRIGGER_KIND", Value: strings.TrimSpace(spec.TriggerKind)},
-		{Name: "CODEXK8S_RUN_TRIGGER_LABEL", Value: strings.TrimSpace(spec.TriggerLabel)},
-		{Name: "CODEXK8S_DISCUSSION_MODE", Value: fmt.Sprintf("%t", spec.DiscussionMode)},
-		{Name: "CODEXK8S_RUN_TARGET_BRANCH", Value: strings.TrimSpace(spec.TargetBranch)},
-		{Name: "CODEXK8S_EXISTING_PR_NUMBER", Value: fmt.Sprintf("%d", spec.ExistingPRNumber)},
-		{Name: "CODEXK8S_AGENT_KEY", Value: strings.TrimSpace(spec.AgentKey)},
-		{Name: "CODEXK8S_AGENT_MODEL", Value: strings.TrimSpace(spec.AgentModel)},
-		{Name: "CODEXK8S_AGENT_REASONING_EFFORT", Value: strings.TrimSpace(spec.AgentReasoningEffort)},
-		{Name: "CODEXK8S_PROMPT_TEMPLATE_KIND", Value: strings.TrimSpace(spec.PromptTemplateKind)},
-		{Name: "CODEXK8S_PROMPT_TEMPLATE_SOURCE", Value: strings.TrimSpace(spec.PromptTemplateSource)},
-		{Name: "CODEXK8S_PROMPT_TEMPLATE_LOCALE", Value: strings.TrimSpace(spec.PromptTemplateLocale)},
-		{Name: "CODEXK8S_STATE_IN_REVIEW_LABEL", Value: strings.TrimSpace(spec.StateInReviewLabel)},
-		{Name: "CODEXK8S_AGENT_BASE_BRANCH", Value: strings.TrimSpace(spec.BaseBranch)},
-		{Name: "CODEXK8S_OPENAI_API_KEY", Value: strings.TrimSpace(spec.OpenAIAPIKey)},
-		{Name: "CODEXK8S_CONTEXT7_API_KEY", Value: strings.TrimSpace(spec.Context7APIKey)},
-		{Name: "CODEXK8S_AGENT_DISPLAY_NAME", Value: strings.TrimSpace(spec.AgentDisplayName)},
-		{Name: "CODEXK8S_GIT_BOT_TOKEN", Value: strings.TrimSpace(spec.GitBotToken)},
-		{Name: "CODEXK8S_GIT_BOT_USERNAME", Value: strings.TrimSpace(spec.GitBotUsername)},
-		{Name: "CODEXK8S_GIT_BOT_MAIL", Value: strings.TrimSpace(spec.GitBotMail)},
+		{Name: "KODEX_RUN_ID", Value: spec.RunID},
+		{Name: "KODEX_CORRELATION_ID", Value: spec.CorrelationID},
+		{Name: "KODEX_PROJECT_ID", Value: spec.ProjectID},
+		{Name: "KODEX_SLOT_NO", Value: fmt.Sprintf("%d", spec.SlotNo)},
+		{Name: "KODEX_RUNTIME_MODE", Value: string(spec.RuntimeMode)},
+		{Name: "KODEX_RUNTIME_TARGET_ENV", Value: strings.TrimSpace(spec.RuntimeTargetEnv)},
+		{Name: "KODEX_RUNTIME_BUILD_REF", Value: strings.TrimSpace(spec.RuntimeBuildRef)},
+		{Name: "KODEX_RUNTIME_ACCESS_PROFILE", Value: strings.TrimSpace(string(spec.RuntimeAccessProfile))},
+		{Name: "KODEX_CONTROL_PLANE_GRPC_TARGET", Value: strings.TrimSpace(spec.ControlPlaneGRPCTarget)},
+		{Name: "KODEX_MCP_BASE_URL", Value: strings.TrimSpace(spec.MCPBaseURL)},
+		{Name: "KODEX_MCP_BEARER_TOKEN", Value: strings.TrimSpace(spec.MCPBearerToken)},
+		{Name: "KODEX_QUALITY_GOVERNANCE_ENABLED", Value: fmt.Sprintf("%t", spec.QualityGovernanceEnabled)},
+		{Name: "KODEX_REPOSITORY_FULL_NAME", Value: strings.TrimSpace(spec.RepositoryFullName)},
+		{Name: "KODEX_ISSUE_NUMBER", Value: fmt.Sprintf("%d", spec.IssueNumber)},
+		{Name: "KODEX_RUN_TRIGGER_KIND", Value: strings.TrimSpace(spec.TriggerKind)},
+		{Name: "KODEX_RUN_TRIGGER_LABEL", Value: strings.TrimSpace(spec.TriggerLabel)},
+		{Name: "KODEX_DISCUSSION_MODE", Value: fmt.Sprintf("%t", spec.DiscussionMode)},
+		{Name: "KODEX_RUN_TARGET_BRANCH", Value: strings.TrimSpace(spec.TargetBranch)},
+		{Name: "KODEX_EXISTING_PR_NUMBER", Value: fmt.Sprintf("%d", spec.ExistingPRNumber)},
+		{Name: "KODEX_AGENT_KEY", Value: strings.TrimSpace(spec.AgentKey)},
+		{Name: "KODEX_AGENT_MODEL", Value: strings.TrimSpace(spec.AgentModel)},
+		{Name: "KODEX_AGENT_REASONING_EFFORT", Value: strings.TrimSpace(spec.AgentReasoningEffort)},
+		{Name: "KODEX_PROMPT_TEMPLATE_KIND", Value: strings.TrimSpace(spec.PromptTemplateKind)},
+		{Name: "KODEX_PROMPT_TEMPLATE_SOURCE", Value: strings.TrimSpace(spec.PromptTemplateSource)},
+		{Name: "KODEX_PROMPT_TEMPLATE_LOCALE", Value: strings.TrimSpace(spec.PromptTemplateLocale)},
+		{Name: "KODEX_STATE_IN_REVIEW_LABEL", Value: strings.TrimSpace(spec.StateInReviewLabel)},
+		{Name: "KODEX_AGENT_BASE_BRANCH", Value: strings.TrimSpace(spec.BaseBranch)},
+		{Name: "KODEX_OPENAI_API_KEY", Value: strings.TrimSpace(spec.OpenAIAPIKey)},
+		{Name: "KODEX_CONTEXT7_API_KEY", Value: strings.TrimSpace(spec.Context7APIKey)},
+		{Name: "KODEX_AGENT_DISPLAY_NAME", Value: strings.TrimSpace(spec.AgentDisplayName)},
+		{Name: "KODEX_GIT_BOT_TOKEN", Value: strings.TrimSpace(spec.GitBotToken)},
+		{Name: "KODEX_GIT_BOT_USERNAME", Value: strings.TrimSpace(spec.GitBotUsername)},
+		{Name: "KODEX_GIT_BOT_MAIL", Value: strings.TrimSpace(spec.GitBotMail)},
 	}
 }
 
@@ -785,13 +785,13 @@ func BuildRunJobName(runID string) string {
 		normalized = "run"
 	}
 
-	name := "codex-k8s-run-" + normalized
+	name := "kodex-run-" + normalized
 	if len(name) > 63 {
 		name = name[:63]
 	}
 	name = strings.TrimRight(name, "-")
 	if name == "" {
-		return "codex-k8s-run"
+		return "kodex-run"
 	}
 	return name
 }

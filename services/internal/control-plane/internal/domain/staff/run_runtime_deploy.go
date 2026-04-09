@@ -4,9 +4,9 @@ import (
 	"context"
 	"strings"
 
-	"github.com/codex-k8s/codex-k8s/libs/go/errs"
-	runtimedeploytaskrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/runtimedeploytask"
-	runtimedeploydomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/runtimedeploy"
+	"github.com/codex-k8s/kodex/libs/go/errs"
+	runtimedeploytaskrepo "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/repository/runtimedeploytask"
+	runtimedeploydomain "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/runtimedeploy"
 )
 
 const defaultRuntimeDeployTaskPage = 1

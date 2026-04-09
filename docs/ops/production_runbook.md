@@ -25,26 +25,26 @@ approvals:
 Предпосылки:
 - есть доступ по SSH на production host (Ubuntu 24.04);
 - на host установлен `kubectl` (k3s) и кластер поднят;
-- namespace по умолчанию: `codex-k8s-prod`.
+- namespace по умолчанию: `kodex-prod`.
 
 Базовые команды:
 
 ```bash
-export CODEXK8S_PRODUCTION_NAMESPACE="codex-k8s-prod"
-export CODEXK8S_PRODUCTION_DOMAIN="platform.codex-k8s.dev"
+export KODEX_PRODUCTION_NAMESPACE="kodex-prod"
+export KODEX_PRODUCTION_DOMAIN="platform.kodex.works"
 
-kubectl -n "$CODEXK8S_PRODUCTION_NAMESPACE" get pods -o wide
-kubectl -n "$CODEXK8S_PRODUCTION_NAMESPACE" get deploy,job,ingress
-kubectl -n "$CODEXK8S_PRODUCTION_NAMESPACE" logs deploy/codex-k8s --tail=200
-kubectl -n "$CODEXK8S_PRODUCTION_NAMESPACE" logs deploy/codex-k8s-worker --tail=200
+kubectl -n "$KODEX_PRODUCTION_NAMESPACE" get pods -o wide
+kubectl -n "$KODEX_PRODUCTION_NAMESPACE" get deploy,job,ingress
+kubectl -n "$KODEX_PRODUCTION_NAMESPACE" logs deploy/kodex --tail=200
+kubectl -n "$KODEX_PRODUCTION_NAMESPACE" logs deploy/kodex-worker --tail=200
 ```
 
 Ожидаемо:
-- rollout `codex-k8s-control-plane`, `codex-k8s` (api-gateway + staff UI), `codex-k8s-worker`, `oauth2-proxy` успешен;
-- последний `codex-k8s-migrate-*` job completed;
+- rollout `kodex-control-plane`, `kodex` (api-gateway + staff UI), `kodex-worker`, `oauth2-proxy` успешен;
+- последний `kodex-migrate-*` job completed;
 - `/healthz`, `/readyz`, `/metrics` доступны через `kubectl port-forward`;
-- `codex-k8s-production-tls` secret существует;
-- при включённом TLS reuse в служебном namespace (`codex-k8s-system`) существует `codex-k8s-tls-<hash>` secret;
+- `kodex-production-tls` secret существует;
+- при включённом TLS reuse в служебном namespace (`kodex-system`) существует `kodex-tls-<hash>` secret;
 - webhook endpoint отвечает **401** на invalid signature (и не редиректит в OAuth).
 
 Порядок выкладки production:
@@ -71,8 +71,8 @@ kubectl -n "$CODEXK8S_PRODUCTION_NAMESPACE" logs deploy/codex-k8s-worker --tail=
 Минимальный шаблон проверки:
 
 ```bash
-ns="<runtime-namespace>" # например codex-k8s-dev-1; не подставлять production default
-svc="codex-k8s"
+ns="<runtime-namespace>" # например kodex-dev-1; не подставлять production default
+svc="kodex"
 fqdn="${svc}.${ns}.svc.cluster.local"
 base="http://${fqdn}"
 ts="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
@@ -96,7 +96,7 @@ printf 'timestamp=%s\nissue_or_pr=%s\nchecklist=%s\n' "$ts" "$issue_or_pr" "$che
 
 ```bash
 kubectl -n "$ns" get svc,pods -o wide
-kubectl -n "$ns" logs deploy/codex-k8s --tail=200
+kubectl -n "$ns" logs deploy/kodex --tail=200
 kubectl -n "$ns" get events --sort-by=.lastTimestamp | tail -n 80
 ```
 
@@ -111,7 +111,7 @@ kubectl -n "$ns" get events --sort-by=.lastTimestamp | tail -n 80
 Минимальный evidence bundle:
 - namespace и service DNS/FQDN;
 - `/metrics` excerpt для `control-plane` и `api-gateway`;
-- `/metrics` excerpt для `worker` через service DNS, а для hot-reload candidate без materialized `codex-k8s-worker` Service — через `kubectl port-forward`;
+- `/metrics` excerpt для `worker` через service DNS, а для hot-reload candidate без materialized `kodex-worker` Service — через `kubectl port-forward`;
 - хотя бы один callback probe с ожидаемым `401`/`400`, чтобы подтвердить, что edge-метрики инкрементируются даже на rejected ingress;
 - логи `control-plane` и `worker` после rollout без repeated crash/restart pattern.
 
@@ -119,38 +119,38 @@ kubectl -n "$ns" get events --sort-by=.lastTimestamp | tail -n 80
 
 ```bash
 ns="<runtime-namespace>"
-control_plane_fqdn="codex-k8s-control-plane.${ns}.svc.cluster.local"
-worker_fqdn="codex-k8s-worker.${ns}.svc.cluster.local"
-api_fqdn="codex-k8s.${ns}.svc.cluster.local"
+control_plane_fqdn="kodex-control-plane.${ns}.svc.cluster.local"
+worker_fqdn="kodex-worker.${ns}.svc.cluster.local"
+api_fqdn="kodex.${ns}.svc.cluster.local"
 worker_metrics_url="http://${worker_fqdn}:8082/metrics"
 
-if ! kubectl -n "$ns" get svc codex-k8s-worker >/dev/null 2>&1; then
-  echo "codex-k8s-worker Service is not materialized in this namespace; using port-forward fallback"
-  kubectl -n "$ns" port-forward deploy/codex-k8s-worker 18082:8082 >/tmp/codex-k8s-worker-port-forward.log 2>&1 &
+if ! kubectl -n "$ns" get svc kodex-worker >/dev/null 2>&1; then
+  echo "kodex-worker Service is not materialized in this namespace; using port-forward fallback"
+  kubectl -n "$ns" port-forward deploy/kodex-worker 18082:8082 >/tmp/kodex-worker-port-forward.log 2>&1 &
   worker_port_forward_pid=$!
   trap 'kill "${worker_port_forward_pid}" >/dev/null 2>&1 || true' EXIT
   worker_metrics_url="http://127.0.0.1:18082/metrics"
 fi
 
-curl -fsS "http://${control_plane_fqdn}:8081/metrics" | grep 'codexk8s_interaction' || true
-curl -fsS "${worker_metrics_url}" | grep 'codexk8s_interaction_dispatch_' || true
-curl -fsS "http://${api_fqdn}/metrics" | grep 'codexk8s_interaction_callback_' || true
+curl -fsS "http://${control_plane_fqdn}:8081/metrics" | grep 'kodex_interaction' || true
+curl -fsS "${worker_metrics_url}" | grep 'kodex_interaction_dispatch_' || true
+curl -fsS "http://${api_fqdn}/metrics" | grep 'kodex_interaction_callback_' || true
 
 curl -sS -o /tmp/interaction-callback.out -D /tmp/interaction-callback.headers -w '%{http_code}\n' \
   -H 'Content-Type: application/json' \
   -X POST "http://${api_fqdn}/api/v1/mcp/interactions/callback" \
   --data '{"interaction_id":"smoke-probe","callback_kind":"decision_response"}'
 
-curl -fsS "http://${api_fqdn}/metrics" | grep 'codexk8s_interaction_callback_' || true
-kubectl -n "$ns" logs deploy/codex-k8s-control-plane --tail=120
-kubectl -n "$ns" logs deploy/codex-k8s-worker --tail=120
+curl -fsS "http://${api_fqdn}/metrics" | grep 'kodex_interaction_callback_' || true
+kubectl -n "$ns" logs deploy/kodex-control-plane --tail=120
+kubectl -n "$ns" logs deploy/kodex-worker --tail=120
 ```
 
 Интерпретация:
 - `control-plane` должен отдавать `/metrics` без 5xx и без `promhttp_metric_handler_errors_total` роста по interaction collector path;
-- `worker` должен отдавать `/metrics` и публиковать `codexk8s_interaction_dispatch_attempt_total` / `codexk8s_interaction_dispatch_retry_scheduled_total`;
-- service DNS остаётся основным evidence path для fully applied namespace/prod; `port-forward` fallback допустим только для hot-reload candidate, где `codex-k8s-worker` Service ещё не materialized;
-- `api-gateway` после probe должен показать `codexk8s_interaction_callback_requests_total{callback_kind="unknown",classification="error"}` и histogram `codexk8s_interaction_callback_duration_seconds`;
+- `worker` должен отдавать `/metrics` и публиковать `kodex_interaction_dispatch_attempt_total` / `kodex_interaction_dispatch_retry_scheduled_total`;
+- service DNS остаётся основным evidence path для fully applied namespace/prod; `port-forward` fallback допустим только для hot-reload candidate, где `kodex-worker` Service ещё не materialized;
+- `api-gateway` после probe должен показать `kodex_interaction_callback_requests_total{callback_kind="unknown",classification="error"}` и histogram `kodex_interaction_callback_duration_seconds`;
 - отсутствие interaction-specific samples в `control-plane` допустимо до первого реального tool/callback traffic, но endpoint и collector registration должны оставаться стабильными;
 - repeated restart loops, repeated collector errors или невозможность прочитать `/metrics` считаются rollout blocker до `run:qa`.
 
@@ -159,12 +159,12 @@ kubectl -n "$ns" logs deploy/codex-k8s-worker --tail=120
 Для postdeploy-контуров (`run:postdeploy` / `run:ops`) используйте минимальный gate:
 
 ```bash
-ns="${CODEXK8S_PRODUCTION_NAMESPACE:-codex-k8s-prod}"
+ns="${KODEX_PRODUCTION_NAMESPACE:-kodex-prod}"
 
 kubectl -n "$ns" get pods,deploy,job -o wide
-kubectl -n "$ns" logs deploy/codex-k8s-control-plane --tail=200
-kubectl -n "$ns" logs deploy/codex-k8s-worker --tail=200
-kubectl -n "$ns" logs deploy/codex-k8s --tail=200
+kubectl -n "$ns" logs deploy/kodex-control-plane --tail=200
+kubectl -n "$ns" logs deploy/kodex-worker --tail=200
+kubectl -n "$ns" logs deploy/kodex --tail=200
 kubectl -n "$ns" get events --sort-by=.lastTimestamp | tail -n 120
 ```
 
@@ -203,7 +203,7 @@ kubectl -n "$ns" get events --sort-by=.lastTimestamp | tail -n 120
 Проверка с хоста разработчика:
 
 ```bash
-host="platform.codex-k8s.dev"
+host="platform.kodex.works"
 for p in 22 80 443 6443 5000 10250 10254 8443; do
   echo -n "$p "
   if timeout 3 bash -lc "</dev/tcp/$host/$p" >/dev/null 2>&1; then echo open; else echo closed; fi
@@ -213,46 +213,46 @@ done
 ## Полезные команды kubectl
 
 ```bash
-ns="codex-k8s-prod"
+ns="kodex-prod"
 kubectl -n "$ns" get pods -o wide
-kubectl -n "$ns" logs deploy/codex-k8s --tail=200
-kubectl -n "$ns" logs deploy/codex-k8s-control-plane --tail=200
-kubectl -n "$ns" logs deploy/codex-k8s-worker --tail=200
+kubectl -n "$ns" logs deploy/kodex --tail=200
+kubectl -n "$ns" logs deploy/kodex-control-plane --tail=200
+kubectl -n "$ns" logs deploy/kodex-worker --tail=200
 kubectl -n "$ns" get ingress
-kubectl -n "$ns" describe ingress codex-k8s
+kubectl -n "$ns" describe ingress kodex
 kubectl -n "$ns" get certificate,order,challenge -A
 
 # TLS reuse store (best-effort, может быть пусто в самый первый деплой)
-kubectl -n codex-k8s-system get secrets | grep '^codex-k8s-tls-' || true
+kubectl -n kodex-system get secrets | grep '^kodex-tls-' || true
 
 # Full-env run namespaces (S2 Day3 baseline)
-kubectl get ns -l codex-k8s.dev/managed-by=codex-k8s-worker,codex-k8s.dev/namespace-purpose=run
-for run_ns in $(kubectl get ns -l codex-k8s.dev/managed-by=codex-k8s-worker,codex-k8s.dev/namespace-purpose=run -o jsonpath='{.items[*].metadata.name}'); do
+kubectl get ns -l kodex.works/managed-by=kodex-worker,kodex.works/namespace-purpose=run
+for run_ns in $(kubectl get ns -l kodex.works/managed-by=kodex-worker,kodex.works/namespace-purpose=run -o jsonpath='{.items[*].metadata.name}'); do
   echo "=== ${run_ns} ==="
   kubectl -n "${run_ns}" get sa,role,rolebinding,resourcequota,limitrange,job,pod
 done
 
 # Day4: проверить env wiring и логи agent-runner job
-for run_ns in $(kubectl get ns -l codex-k8s.dev/managed-by=codex-k8s-worker,codex-k8s.dev/namespace-purpose=run -o jsonpath='{.items[*].metadata.name}'); do
+for run_ns in $(kubectl get ns -l kodex.works/managed-by=kodex-worker,kodex.works/namespace-purpose=run -o jsonpath='{.items[*].metadata.name}'); do
   echo "=== ${run_ns} agent jobs ==="
   kubectl -n "${run_ns}" get jobs,pods
-  kubectl -n "${run_ns}" get pod -l app.kubernetes.io/name=codex-k8s-run \
+  kubectl -n "${run_ns}" get pod -l app.kubernetes.io/name=kodex-run \
     -o jsonpath='{range .items[*].spec.containers[*].env[*]}{.name}{"\n"}{end}' \
-    | grep -E 'CODEXK8S_OPENAI_API_KEY|CODEXK8S_GIT_BOT_TOKEN|CODEXK8S_GIT_BOT_USERNAME|CODEXK8S_GIT_BOT_MAIL|CODEXK8S_AGENT_DISPLAY_NAME' || true
+    | grep -E 'KODEX_OPENAI_API_KEY|KODEX_GIT_BOT_TOKEN|KODEX_GIT_BOT_USERNAME|KODEX_GIT_BOT_MAIL|KODEX_AGENT_DISPLAY_NAME' || true
 done
 
 # Legacy runtime keys must not appear after Day3 rollout
-kubectl get ns -o json | grep -E 'codexk8s.io/(managed-by|namespace-purpose|runtime-mode|project-id|run-id|correlation-id)' || true
+kubectl get ns -o json | grep -E 'kodex.io/(managed-by|namespace-purpose|runtime-mode|project-id|run-id|correlation-id)' || true
 ```
 
 ## Namespace cleanup (автоматический)
 
-- В production развёрнут `CronJob` `codex-k8s-worker-namespace-cleanup`.
+- В production развёрнут `CronJob` `kodex-worker-namespace-cleanup`.
 - Расписание по умолчанию: каждые `15` минут (`*/15 * * * *`, `Etc/UTC`).
 - Cleanup работает только для managed runtime namespace с guardrails:
-  - labels `codex-k8s.dev/managed-by=codex-k8s-worker` и `codex-k8s.dev/namespace-purpose=run`;
-  - allowlist platform runtime namespace names: `codex-issue*` и slot namespaces `codex-k8s-dev-*`;
-  - в БД нет non-terminal run для `codex-k8s.dev/run-id`;
+  - labels `kodex.works/managed-by=kodex-worker` и `kodex.works/namespace-purpose=run`;
+  - allowlist platform runtime namespace names: `codex-issue*` и slot namespaces `kodex-dev-*`;
+  - в БД нет non-terminal run для `kodex.works/run-id`;
   - в namespace нет active `pod/job/cronjob/deployment/statefulset/daemonset/replicaset`.
 - Аудит причин пишется в worker logs и `flow_events` (`run.namespace.cleaned`, `run.namespace.cleanup_skipped`, `run.namespace.cleanup_failed`).
 - In-band cleanup в worker tick остаётся как best-effort backstop; для полного отключения нужно выключить и tick, и CronJob.
@@ -260,51 +260,51 @@ kubectl get ns -o json | grep -E 'codexk8s.io/(managed-by|namespace-purpose|runt
 Проверка статуса:
 
 ```bash
-ns="codex-k8s-prod"
+ns="kodex-prod"
 
-kubectl -n "$ns" get cronjob codex-k8s-worker-namespace-cleanup
+kubectl -n "$ns" get cronjob kodex-worker-namespace-cleanup
 kubectl -n "$ns" get jobs -l app.kubernetes.io/component=worker-namespace-cleanup
 kubectl -n "$ns" logs job/<cleanup_job_name> --tail=200
-kubectl -n "$ns" logs deploy/codex-k8s-worker --tail=200 | grep 'namespace cleanup' || true
-kubectl get ns -l codex-k8s.dev/managed-by=codex-k8s-worker,codex-k8s.dev/namespace-purpose=run
+kubectl -n "$ns" logs deploy/kodex-worker --tail=200 | grep 'namespace cleanup' || true
+kubectl get ns -l kodex.works/managed-by=kodex-worker,kodex.works/namespace-purpose=run
 ```
 
 Как отключить:
 
 ```bash
 # 1. Остановить периодический CronJob:
-export CODEXK8S_WORKER_NAMESPACE_CLEANUP_CRON_SUSPEND="true"
+export KODEX_WORKER_NAMESPACE_CLEANUP_CRON_SUSPEND="true"
 
 # 2. Если нужно полностью выключить и in-band cleanup внутри worker:
-export CODEXK8S_WORKER_RUN_NAMESPACE_CLEANUP="false"
+export KODEX_WORKER_RUN_NAMESPACE_CLEANUP="false"
 
 # 3. Применить обновлённые env и дождаться rollout платформы.
 ```
 
 ## Registry GC (автоматический)
 
-- В production/non-ai окружениях включён `CronJob` `codex-k8s-registry-gc`.
+- В production/non-ai окружениях включён `CronJob` `kodex-registry-gc`.
 - Расписание по умолчанию: ежедневно в `03:17 UTC`.
-- Job делает `scale deployment/codex-k8s-registry 1 -> 0`, выполняет `registry garbage-collect --delete-untagged`, затем возвращает `replicas=1`.
+- Job делает `scale deployment/kodex-registry 1 -> 0`, выполняет `registry garbage-collect --delete-untagged`, затем возвращает `replicas=1`.
 - Для init-контейнера GC helper по умолчанию используется mirrored shell-capable image
-  `127.0.0.1:5000/codex-k8s/mirror/alpine-k8s:1.32.2`
-  (можно переопределить через `CODEXK8S_KUBECTL_IMAGE`).
+  `127.0.0.1:5000/kodex/mirror/alpine-k8s:1.32.2`
+  (можно переопределить через `KODEX_KUBECTL_IMAGE`).
 
 Проверка статуса:
 
 ```bash
-ns="codex-k8s-prod"
-kubectl -n "$ns" get cronjob codex-k8s-registry-gc
-kubectl -n "$ns" get jobs -l app.kubernetes.io/name=codex-k8s-registry-gc
+ns="kodex-prod"
+kubectl -n "$ns" get cronjob kodex-registry-gc
+kubectl -n "$ns" get jobs -l app.kubernetes.io/name=kodex-registry-gc
 kubectl -n "$ns" logs job/<gc_job_name> --tail=200
 ```
 
 Форсированный запуск вне расписания:
 
 ```bash
-ns="codex-k8s-prod"
-kubectl -n "$ns" create job --from=cronjob/codex-k8s-registry-gc codex-k8s-registry-gc-manual-$(date +%s)
-kubectl -n "$ns" get jobs -l app.kubernetes.io/name=codex-k8s-registry-gc
+ns="kodex-prod"
+kubectl -n "$ns" create job --from=cronjob/kodex-registry-gc kodex-registry-gc-manual-$(date +%s)
+kubectl -n "$ns" get jobs -l app.kubernetes.io/name=kodex-registry-gc
 ```
 
 ## Host containerd image GC (автоматический)
@@ -312,22 +312,22 @@ kubectl -n "$ns" get jobs -l app.kubernetes.io/name=codex-k8s-registry-gc
 - Registry GC удаляет только untagged blobs из internal registry PVC.
 - Node-level `containerd` cache/snapshots это отдельный слой хранения; его чистит kubelet image GC и host prune timer.
 - Bootstrap настраивает:
-  - kubelet thresholds через `/var/lib/rancher/k3s/agent/etc/kubelet.conf.d/10-codex-k8s-image-gc.conf`;
-  - timer `codex-k8s-image-prune.timer`, который запускает `k3s crictl --timeout 120s rmi --prune`.
+  - kubelet thresholds через `/var/lib/rancher/k3s/agent/etc/kubelet.conf.d/10-kodex-image-gc.conf`;
+  - timer `kodex-image-prune.timer`, который запускает `k3s crictl --timeout 120s rmi --prune`.
 
 Проверка:
 
 ```bash
-sudo cat /var/lib/rancher/k3s/agent/etc/kubelet.conf.d/10-codex-k8s-image-gc.conf
-sudo systemctl status codex-k8s-image-prune.timer --no-pager
-sudo journalctl -u codex-k8s-image-prune.service -n 200 --no-pager
+sudo cat /var/lib/rancher/k3s/agent/etc/kubelet.conf.d/10-kodex-image-gc.conf
+sudo systemctl status kodex-image-prune.timer --no-pager
+sudo journalctl -u kodex-image-prune.service -n 200 --no-pager
 sudo /usr/local/bin/k3s crictl images | head -n 50
 ```
 
 Форсированный запуск:
 
 ```bash
-sudo systemctl start codex-k8s-image-prune.service
+sudo systemctl start kodex-image-prune.service
 sudo /usr/local/bin/k3s crictl --timeout 120s rmi --prune
 ```
 
@@ -338,39 +338,39 @@ sudo /usr/local/bin/k3s crictl --timeout 120s rmi --prune
   - `agent_sessions.session_json`, `agent_sessions.codex_cli_session_json`;
   - `runtime_deploy_tasks.logs_json`.
 - Retention настраивается через:
-  - `CODEXK8S_RUN_HEAVY_FIELDS_RETENTION_DAYS` (основной ключ);
-  - `CODEXK8S_RUN_AGENT_LOGS_RETENTION_DAYS` (legacy fallback).
+  - `KODEX_RUN_HEAVY_FIELDS_RETENTION_DAYS` (основной ключ);
+  - `KODEX_RUN_AGENT_LOGS_RETENTION_DAYS` (legacy fallback).
 
 ## Типовые проблемы
 
 ### Web UI не открывается / "ui upstream unavailable"
-- Проверить, что `codex-k8s-web-console` pod Running и port `5173` открыт в cluster.
+- Проверить, что `kodex-web-console` pod Running и port `5173` открыт в cluster.
 - Проверить NetworkPolicy baseline (должен быть allow до web-console).
 
 ### OAuth2 callback не проходит
 - В GitHub OAuth App callback должен быть:
-  - `https://<CODEXK8S_PRODUCTION_DOMAIN>/oauth2/callback`
+  - `https://<KODEX_PRODUCTION_DOMAIN>/oauth2/callback`
 
 ### Webhook не доходит
 - Убедиться, что path пропущен без auth:
   - `oauth2-proxy --skip-auth-regex=^/api/v1/webhooks/.*`
-- Проверить `CODEXK8S_GITHUB_WEBHOOK_SECRET` совпадает с секретом вебхука в GitHub.
+- Проверить `KODEX_GITHUB_WEBHOOK_SECRET` совпадает с секретом вебхука в GitHub.
 
 ### TLS не выпускается (HTTP-01) / cert-manager молчит
-- Убедиться, что `CODEXK8S_PRODUCTION_DOMAIN` резолвится в production host IP.
+- Убедиться, что `KODEX_PRODUCTION_DOMAIN` резолвится в production host IP.
 - Если это первый выпуск TLS, runtime-deploy использует echo-probe (HTTP) до включения issuer:
-  - проверить `kubectl -n "$CODEXK8S_PRODUCTION_NAMESPACE" get deploy,svc,ingress | grep echo-probe`;
-  - проверить логи `kubectl -n "$CODEXK8S_PRODUCTION_NAMESPACE" logs deploy/codex-k8s-control-plane --tail=200`.
+  - проверить `kubectl -n "$KODEX_PRODUCTION_NAMESPACE" get deploy,svc,ingress | grep echo-probe`;
+  - проверить логи `kubectl -n "$KODEX_PRODUCTION_NAMESPACE" logs deploy/kodex-control-plane --tail=200`.
 
 ### Build падает с `MANIFEST_UNKNOWN` при `retrieving image from cache`
 - Симптом: Kaniko падает на base image с логом вида `Error while retrieving image from cache ... MANIFEST_UNKNOWN`.
 - Причина: в registry мог остаться stale mirror/cache state после cleanup/GC (тег виден, но digest манифест недоступен).
-- Текущее безопасное значение по умолчанию: `CODEXK8S_KANIKO_CACHE_ENABLED=false`.
+- Текущее безопасное значение по умолчанию: `KODEX_KANIKO_CACHE_ENABLED=false`.
 - Если cache включали вручную и снова получили `MANIFEST_UNKNOWN`:
-  - переключить `CODEXK8S_KANIKO_CACHE_ENABLED=false` в `codex-k8s-runtime`;
-  - убедиться, что `codex-k8s-control-plane` подтянул значение после rollout;
+  - переключить `KODEX_KANIKO_CACHE_ENABLED=false` в `kodex-runtime`;
+  - убедиться, что `kodex-control-plane` подтянул значение после rollout;
   - повторить deploy.
 - Дополнительно:
   - mirror шаг выполняет platform-aware health-check (`--platform linux/amd64`) и ремонтирует stale mirror;
-  - mirror выполняется в single-arch режиме (`CODEXK8S_IMAGE_MIRROR_PLATFORM=linux/amd64`), чтобы не оставлять multi-arch index с отсутствующими дочерними манифестами;
+  - mirror выполняется в single-arch режиме (`KODEX_IMAGE_MIRROR_PLATFORM=linux/amd64`), чтобы не оставлять multi-arch index с отсутствующими дочерними манифестами;
   - при cache-related `MANIFEST_UNKNOWN` build автоматически ретраится без cache.

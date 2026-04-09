@@ -8,14 +8,14 @@ import (
 	"strings"
 	"time"
 
-	"github.com/codex-k8s/codex-k8s/libs/go/crypto/tokencrypt"
-	floweventdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/flowevent"
-	repoprovider "github.com/codex-k8s/codex-k8s/libs/go/repo/provider"
-	agentrunrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/agentrun"
-	agentrunlogrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/agentrunlog"
-	agentsessionrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/agentsession"
-	floweventrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/flowevent"
-	repocfgrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/repocfg"
+	"github.com/codex-k8s/kodex/libs/go/crypto/tokencrypt"
+	floweventdomain "github.com/codex-k8s/kodex/libs/go/domain/flowevent"
+	repoprovider "github.com/codex-k8s/kodex/libs/go/repo/provider"
+	agentrunrepo "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/repository/agentrun"
+	agentrunlogrepo "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/repository/agentrunlog"
+	agentsessionrepo "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/repository/agentsession"
+	floweventrepo "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/repository/flowevent"
+	repocfgrepo "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/repository/repocfg"
 )
 
 // Session mirrors persisted agent session snapshot entity.

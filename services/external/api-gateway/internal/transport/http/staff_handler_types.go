@@ -1,6 +1,6 @@
 package http
 
-import "github.com/codex-k8s/codex-k8s/services/external/api-gateway/internal/transport/http/models"
+import "github.com/codex-k8s/kodex/services/external/api-gateway/internal/transport/http/models"
 
 // pathLimit keeps parsed path id and list limit together for staff list handlers.
 type pathLimit struct {

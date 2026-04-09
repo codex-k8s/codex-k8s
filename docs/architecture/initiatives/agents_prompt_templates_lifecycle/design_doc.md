@@ -1,7 +1,7 @@
 ---
 doc_id: DSG-APT-CK8S-0001
 type: design-doc
-title: "codex-k8s — Detailed Design: agents settings and prompt templates lifecycle"
+title: "kodex — Detailed Design: agents settings and prompt templates lifecycle"
 status: in-review
 owner_role: SA
 created_at: 2026-02-25
@@ -89,7 +89,7 @@ approvals:
 - Детализация HTTP/gRPC: `docs/architecture/initiatives/agents_prompt_templates_lifecycle/api_contract.md`.
 - Source of truth для реализации в `run:dev`:
   - OpenAPI: `services/external/api-gateway/api/server/api.yaml`.
-  - gRPC: `proto/codexk8s/controlplane/v1/controlplane.proto`.
+  - gRPC: `proto/kodex/controlplane/v1/controlplane.proto`.
 - Error taxonomy:
   - `invalid_argument`, `unauthorized`, `forbidden`, `not_found`, `conflict`, `failed_precondition`, `internal`.
 - Concurrency contract:
@@ -193,7 +193,7 @@ sequenceDiagram
   4. `api-gateway` HTTP handlers + OpenAPI regeneration.
   5. `web-console` integration (typed client + state flow).
 - Feature flags (planned):
-  - `CODEXK8S_PROMPT_TEMPLATES_V2_ENABLED` (read/write cutover).
+  - `KODEX_PROMPT_TEMPLATES_V2_ENABLED` (read/write cutover).
 
 ## План отката (Rollback)
 - Триггеры:

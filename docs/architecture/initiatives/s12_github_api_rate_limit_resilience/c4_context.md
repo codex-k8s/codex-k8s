@@ -19,7 +19,7 @@ approvals:
 # C4 Context: Sprint S12 Day 4 GitHub API rate-limit resilience
 
 ## TL;DR
-- GitHub API rate-limit resilience остаётся capability slice внутри `codex-k8s`, а не отдельной внешней quota-management системы.
+- GitHub API rate-limit resilience остаётся capability slice внутри `kodex`, а не отдельной внешней quota-management системы.
 - Owner/reviewer, platform operator и агент получают разные visibility semantics, но единый source-of-truth остаётся внутри platform domain.
 
 ## Диаграмма (Mermaid C4Context)
@@ -31,7 +31,7 @@ Person(owner, "Owner / reviewer", "Ждёт завершения stage и вид
 Person(operator, "Platform operator", "Диагностирует blocked contour и следующий шаг")
 Person(agent, "System agent", "Должен handoff rate-limit signal без infinite local retries")
 
-System(system, "codex-k8s rate-limit resilience slice", "Contour-aware controlled wait capability для GitHub API")
+System(system, "kodex rate-limit resilience slice", "Contour-aware controlled wait capability для GitHub API")
 
 System_Ext(github, "GitHub API", "Primary and secondary rate-limit signals, repo and issue/PR operations")
 System_Ext(k8s, "Kubernetes", "Runtime substrate for agent-runner and worker")

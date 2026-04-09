@@ -1,6 +1,6 @@
 package flowevent
 
-import lib "github.com/codex-k8s/codex-k8s/libs/go/domain/flowevent"
+import lib "github.com/codex-k8s/kodex/libs/go/domain/flowevent"
 
 type InsertParams = lib.InsertParams
 

@@ -4,13 +4,13 @@ import (
 	"strings"
 	"testing"
 
-	webhookdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/webhook"
+	webhookdomain "github.com/codex-k8s/kodex/libs/go/domain/webhook"
 )
 
 func TestRenderPromptArtifactContractBlocks_UsesFullIssueURLAndRoleSpecificSections(t *testing.T) {
 	t.Parallel()
 
-	issueBlock, prBlock, err := renderPromptArtifactContractBlocks("codex-k8s/codex-k8s", 253, "dev", "dev", promptTemplateKindWork, promptLocaleRU)
+	issueBlock, prBlock, err := renderPromptArtifactContractBlocks("codex-k8s/kodex", 253, "dev", "dev", promptTemplateKindWork, promptLocaleRU)
 	if err != nil {
 		t.Fatalf("renderPromptArtifactContractBlocks() error = %v", err)
 	}
@@ -23,7 +23,7 @@ func TestRenderPromptArtifactContractBlocks_UsesFullIssueURLAndRoleSpecificSecti
 	if !strings.Contains(prBlock, "## Логи и runtime-диагностика") {
 		t.Fatalf("pr contract must contain dev-specific diagnostics section, got: %q", prBlock)
 	}
-	if !strings.Contains(prBlock, "Closes https://github.com/codex-k8s/codex-k8s/issues/253") {
+	if !strings.Contains(prBlock, "Closes https://github.com/codex-k8s/kodex/issues/253") {
 		t.Fatalf("pr contract must contain full issue URL closes directive, got: %q", prBlock)
 	}
 }
@@ -70,7 +70,7 @@ func TestRenderPromptArtifactContractBlocks_WorkPatternsKeepOptionalSprintDayFor
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			issueBlock, prBlock, err := renderPromptArtifactContractBlocks("codex-k8s/codex-k8s", 246, tc.agentKey, tc.triggerKind, promptTemplateKindWork, tc.locale)
+			issueBlock, prBlock, err := renderPromptArtifactContractBlocks("codex-k8s/kodex", 246, tc.agentKey, tc.triggerKind, promptTemplateKindWork, tc.locale)
 			if err != nil {
 				t.Fatalf("renderPromptArtifactContractBlocks() error = %v", err)
 			}
@@ -87,7 +87,7 @@ func TestRenderPromptArtifactContractBlocks_WorkPatternsKeepOptionalSprintDayFor
 func TestRenderPromptArtifactContractBlocks_ReviseInstructsAppendNotOverwrite(t *testing.T) {
 	t.Parallel()
 
-	_, prBlock, err := renderPromptArtifactContractBlocks("codex-k8s/codex-k8s", 310, "dev", "dev_revise", promptTemplateKindRevise, promptLocaleRU)
+	_, prBlock, err := renderPromptArtifactContractBlocks("codex-k8s/kodex", 310, "dev", "dev_revise", promptTemplateKindRevise, promptLocaleRU)
 	if err != nil {
 		t.Fatalf("renderPromptArtifactContractBlocks() error = %v", err)
 	}
@@ -108,7 +108,7 @@ func TestBuildPrompt_EmbedsRenderedPromptBlocks(t *testing.T) {
 	service := &Service{
 		cfg: Config{
 			RunID:              "run-123",
-			RepositoryFullName: "codex-k8s/codex-k8s",
+			RepositoryFullName: "codex-k8s/kodex",
 			AgentKey:           "qa",
 			IssueNumber:        246,
 			RuntimeMode:        runtimeModeCodeOnly,
@@ -143,7 +143,7 @@ func TestBuildPrompt_DiscussionIncludesDiscussionContinuationContract(t *testing
 	service := &Service{
 		cfg: Config{
 			RunID:              "run-discussion",
-			RepositoryFullName: "codex-k8s/codex-k8s",
+			RepositoryFullName: "codex-k8s/kodex",
 			AgentKey:           "dev",
 			IssueNumber:        289,
 			RuntimeMode:        runtimeModeCodeOnly,
@@ -180,7 +180,7 @@ func TestBuildPrompt_RevisePreservesExistingPRBodyInstructions(t *testing.T) {
 	service := &Service{
 		cfg: Config{
 			RunID:              "run-revise",
-			RepositoryFullName: "codex-k8s/codex-k8s",
+			RepositoryFullName: "codex-k8s/kodex",
 			AgentKey:           "dev",
 			IssueNumber:        310,
 			RuntimeMode:        runtimeModeCodeOnly,

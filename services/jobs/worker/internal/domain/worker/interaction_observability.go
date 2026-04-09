@@ -12,7 +12,7 @@ const interactionMetricUnknownLabel = "unknown"
 var (
 	interactionDispatchAttemptsTotal = promauto.NewCounterVec(
 		prometheus.CounterOpts{
-			Name: "codexk8s_interaction_dispatch_attempt_total",
+			Name: "kodex_interaction_dispatch_attempt_total",
 			Help: "Total number of interaction delivery attempts grouped by adapter and completion status.",
 		},
 		[]string{"adapter", "status"},
@@ -20,7 +20,7 @@ var (
 
 	interactionDispatchRetryScheduledTotal = promauto.NewCounterVec(
 		prometheus.CounterOpts{
-			Name: "codexk8s_interaction_dispatch_retry_scheduled_total",
+			Name: "kodex_interaction_dispatch_retry_scheduled_total",
 			Help: "Total number of retry schedules created for interaction delivery attempts.",
 		},
 		[]string{"adapter", "error_code"},

@@ -3,7 +3,7 @@ package value
 import (
 	"time"
 
-	enumtypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/enum"
+	enumtypes "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/types/enum"
 )
 
 // GitHubRateLimitHeaders is a sanitized snapshot of provider headers attached to one signal.

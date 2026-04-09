@@ -201,7 +201,7 @@ sequenceDiagram
 - Безопасность:
   - hidden draft content never enters user-facing DTOs;
   - GitHub comment mirror renders only typed projection fields;
-  - all platform env/flags use `CODEXK8S_` prefix.
+  - all platform env/flags use `KODEX_` prefix.
 - Наблюдаемость:
   - every draft ingestion, wave publication, decision, feedback and reclassification mirrors into `flow_events`.
 

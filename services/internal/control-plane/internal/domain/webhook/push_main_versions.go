@@ -9,7 +9,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/codex-k8s/codex-k8s/libs/go/servicescfg"
+	"github.com/codex-k8s/kodex/libs/go/servicescfg"
 	"gopkg.in/yaml.v3"
 )
 

@@ -3,8 +3,8 @@ package changegovernance
 import (
 	"fmt"
 
-	domainrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/changegovernance"
-	valuetypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/value"
+	domainrepo "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/repository/changegovernance"
+	valuetypes "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/types/value"
 )
 
 // Config controls rollout gates for change-governance foundation.

@@ -11,9 +11,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/codex-k8s/codex-k8s/libs/go/manifesttpl"
-	"github.com/codex-k8s/codex-k8s/libs/go/registry"
-	"github.com/codex-k8s/codex-k8s/libs/go/servicescfg"
+	"github.com/codex-k8s/kodex/libs/go/manifesttpl"
+	"github.com/codex-k8s/kodex/libs/go/registry"
+	"github.com/codex-k8s/kodex/libs/go/servicescfg"
 )
 
 type buildImageEntry struct {
@@ -69,25 +69,25 @@ func (s *Service) buildImages(ctx context.Context, repositoryRoot string, params
 
 	githubPAT := strings.TrimSpace(s.cfg.GitHubPAT)
 	if githubPAT == "" {
-		githubPAT = strings.TrimSpace(vars["CODEXK8S_GITHUB_PAT"])
+		githubPAT = strings.TrimSpace(vars["KODEX_GITHUB_PAT"])
 	}
 	if githubPAT == "" {
-		return fmt.Errorf("CODEXK8S_GITHUB_PAT is required for kaniko build jobs")
+		return fmt.Errorf("KODEX_GITHUB_PAT is required for kaniko build jobs")
 	}
 	repositoryFullName := strings.TrimSpace(params.RepositoryFullName)
 	if repositoryFullName == "" {
-		repositoryFullName = strings.TrimSpace(vars["CODEXK8S_GITHUB_REPO"])
+		repositoryFullName = strings.TrimSpace(vars["KODEX_GITHUB_REPO"])
 	}
 	if repositoryFullName == "" {
 		return fmt.Errorf("repository_full_name is required for kaniko build jobs")
 	}
 	buildRef := resolveRuntimeBuildRef(
 		params.BuildRef,
-		vars["CODEXK8S_BUILD_REF"],
-		vars["CODEXK8S_AGENT_BASE_BRANCH"],
+		vars["KODEX_BUILD_REF"],
+		vars["KODEX_AGENT_BASE_BRANCH"],
 	)
 	checkoutBuildRef := normalizeRuntimeBuildCheckoutRef(buildRef)
-	vars["CODEXK8S_BUILD_REF"] = buildRef
+	vars["KODEX_BUILD_REF"] = buildRef
 
 	runToken := sanitizeNameToken(params.RunID, 12)
 	if runToken == "" {
@@ -98,10 +98,10 @@ func (s *Service) buildImages(ctx context.Context, repositoryRoot string, params
 		runToken = generatedToken
 	}
 
-	if err := s.k8s.UpsertSecret(ctx, namespace, "codex-k8s-git-token", map[string][]byte{
+	if err := s.k8s.UpsertSecret(ctx, namespace, "kodex-git-token", map[string][]byte{
 		"token": []byte(githubPAT),
 	}); err != nil {
-		return fmt.Errorf("upsert codex-k8s-git-token secret: %w", err)
+		return fmt.Errorf("upsert kodex-git-token secret: %w", err)
 	}
 
 	repoRoot := strings.TrimSpace(repositoryRoot)
@@ -123,7 +123,7 @@ func (s *Service) buildImages(ctx context.Context, repositoryRoot string, params
 	}
 
 	if shouldRunCodegenCheck(stack, vars) {
-		codegenTemplatePath := filepath.Join(repoRoot, "deploy/base/codex-k8s/codegen-check-job.yaml.tpl")
+		codegenTemplatePath := filepath.Join(repoRoot, "deploy/base/kodex/codegen-check-job.yaml.tpl")
 		codegenTemplateRaw, codegenErr := os.ReadFile(codegenTemplatePath)
 		if codegenErr != nil {
 			return fmt.Errorf("read codegen check template %s: %w", codegenTemplatePath, codegenErr)
@@ -133,7 +133,7 @@ func (s *Service) buildImages(ctx context.Context, repositoryRoot string, params
 		}
 	}
 
-	maxParallel := parsePositiveInt(vars["CODEXK8S_KANIKO_MAX_PARALLEL"], 1)
+	maxParallel := parsePositiveInt(vars["KODEX_KANIKO_MAX_PARALLEL"], 1)
 	if maxParallel <= 0 {
 		maxParallel = 1
 	}
@@ -194,10 +194,10 @@ func (s *Service) buildImages(ctx context.Context, repositoryRoot string, params
 }
 
 func shouldRunCodegenCheck(stack *servicescfg.Stack, vars map[string]string) bool {
-	if stack == nil || !strings.EqualFold(strings.TrimSpace(stack.Spec.Project), "codex-k8s") {
+	if stack == nil || !strings.EqualFold(strings.TrimSpace(stack.Spec.Project), "kodex") {
 		return false
 	}
-	enabledRaw := strings.TrimSpace(vars["CODEXK8S_CODEGEN_CHECK_ENABLED"])
+	enabledRaw := strings.TrimSpace(vars["KODEX_CODEGEN_CHECK_ENABLED"])
 	if enabledRaw == "" {
 		return true
 	}
@@ -209,16 +209,16 @@ func shouldRunCodegenCheck(stack *servicescfg.Stack, vars map[string]string) boo
 }
 
 func (s *Service) runCodegenCheck(ctx context.Context, namespace string, repositoryFullName string, buildRef string, runToken string, runID string, vars map[string]string, templatePath string, templateRaw []byte) error {
-	jobName := "codex-k8s-codegen-check-" + sanitizeNameToken(runToken, 20)
+	jobName := "kodex-codegen-check-" + sanitizeNameToken(runToken, 20)
 	if len(jobName) > 63 {
 		jobName = strings.TrimRight(jobName[:63], "-")
 	}
 
 	jobVars := cloneStringMap(vars)
-	jobVars["CODEXK8S_PRODUCTION_NAMESPACE"] = namespace
-	jobVars["CODEXK8S_CODEGEN_CHECK_JOB_NAME"] = jobName
-	jobVars["CODEXK8S_GITHUB_REPO"] = repositoryFullName
-	jobVars["CODEXK8S_BUILD_REF"] = buildRef
+	jobVars["KODEX_PRODUCTION_NAMESPACE"] = namespace
+	jobVars["KODEX_CODEGEN_CHECK_JOB_NAME"] = jobName
+	jobVars["KODEX_GITHUB_REPO"] = repositoryFullName
+	jobVars["KODEX_BUILD_REF"] = buildRef
 
 	renderedRaw, err := manifesttpl.Render(templatePath, templateRaw, jobVars)
 	if err != nil {
@@ -234,7 +234,7 @@ func (s *Service) runCodegenCheck(ctx context.Context, namespace string, reposit
 	}
 
 	timeout := s.cfg.KanikoTimeout
-	if rawTimeout := strings.TrimSpace(vars["CODEXK8S_CODEGEN_CHECK_TIMEOUT"]); rawTimeout != "" {
+	if rawTimeout := strings.TrimSpace(vars["KODEX_CODEGEN_CHECK_TIMEOUT"]); rawTimeout != "" {
 		parsedTimeout, parseErr := time.ParseDuration(rawTimeout)
 		if parseErr == nil && parsedTimeout > 0 {
 			timeout = parsedTimeout
@@ -290,20 +290,20 @@ func (s *Service) runKanikoBuild(ctx context.Context, namespace string, reposito
 			Repository: repository,
 		}, nil
 	}
-	jobName := fmt.Sprintf("codex-k8s-kaniko-%s-%s", sanitizeNameToken(entry.Name, 24), runToken)
+	jobName := fmt.Sprintf("kodex-kaniko-%s-%s", sanitizeNameToken(entry.Name, 24), runToken)
 	if len(jobName) > 63 {
 		jobName = strings.TrimRight(jobName[:63], "-")
 	}
 	jobVars := cloneStringMap(vars)
-	jobVars["CODEXK8S_PRODUCTION_NAMESPACE"] = namespace
-	jobVars["CODEXK8S_GITHUB_REPO"] = repositoryFullName
-	jobVars["CODEXK8S_BUILD_REF"] = buildRef
-	jobVars["CODEXK8S_KANIKO_JOB_NAME"] = jobName
-	jobVars["CODEXK8S_KANIKO_COMPONENT"] = sanitizeNameToken(entry.Name, 30)
-	jobVars["CODEXK8S_KANIKO_CONTEXT"] = contextArg
-	jobVars["CODEXK8S_KANIKO_DOCKERFILE"] = dockerfileArg
-	jobVars["CODEXK8S_KANIKO_DESTINATION_LATEST"] = destinationLatest
-	jobVars["CODEXK8S_KANIKO_DESTINATION_SHA"] = destinationTagged
+	jobVars["KODEX_PRODUCTION_NAMESPACE"] = namespace
+	jobVars["KODEX_GITHUB_REPO"] = repositoryFullName
+	jobVars["KODEX_BUILD_REF"] = buildRef
+	jobVars["KODEX_KANIKO_JOB_NAME"] = jobName
+	jobVars["KODEX_KANIKO_COMPONENT"] = sanitizeNameToken(entry.Name, 30)
+	jobVars["KODEX_KANIKO_CONTEXT"] = contextArg
+	jobVars["KODEX_KANIKO_DOCKERFILE"] = dockerfileArg
+	jobVars["KODEX_KANIKO_DESTINATION_LATEST"] = destinationLatest
+	jobVars["KODEX_KANIKO_DESTINATION_SHA"] = destinationTagged
 
 	runKanikoOnce := func(attemptVars map[string]string, attemptLabel string) (string, error) {
 		renderedJobRaw, renderErr := manifesttpl.Render(templatePath, templateRaw, attemptVars)
@@ -340,9 +340,9 @@ func (s *Service) runKanikoBuild(ctx context.Context, namespace string, reposito
 		if isKanikoCacheEnabled(jobVars) && shouldRetryKanikoWithoutCache(failureLogs) {
 			s.appendTaskLogBestEffort(ctx, runID, "build", "warning", "Build image "+entry.Name+" failed due stale kaniko cache, retrying without cache")
 			noCacheVars := cloneStringMap(jobVars)
-			noCacheVars["CODEXK8S_KANIKO_CACHE_ENABLED"] = "false"
-			noCacheVars["CODEXK8S_KANIKO_CACHE_REPO"] = ""
-			noCacheVars["CODEXK8S_KANIKO_CACHE_TTL"] = ""
+			noCacheVars["KODEX_KANIKO_CACHE_ENABLED"] = "false"
+			noCacheVars["KODEX_KANIKO_CACHE_REPO"] = ""
+			noCacheVars["KODEX_KANIKO_CACHE_TTL"] = ""
 			retryLogs, retryErr := runKanikoOnce(noCacheVars, "retry-no-cache")
 			if retryErr == nil {
 				if strings.TrimSpace(retryLogs) != "" {
@@ -372,7 +372,7 @@ func (s *Service) runKanikoBuild(ctx context.Context, namespace string, reposito
 }
 
 func (s *Service) mirrorExternalDependencies(ctx context.Context, namespace string, vars map[string]string, runID string, stack *servicescfg.Stack, templatePath string, templateRaw []byte) error {
-	enabled := strings.TrimSpace(vars["CODEXK8S_IMAGE_MIRROR_ENABLED"])
+	enabled := strings.TrimSpace(vars["KODEX_IMAGE_MIRROR_ENABLED"])
 	if enabled == "" {
 		enabled = "true"
 	}
@@ -387,7 +387,7 @@ func (s *Service) mirrorExternalDependencies(ctx context.Context, namespace stri
 	if stack == nil || len(stack.Spec.Images) == 0 {
 		return nil
 	}
-	internalHost := strings.TrimSpace(vars["CODEXK8S_INTERNAL_REGISTRY_HOST"])
+	internalHost := strings.TrimSpace(vars["KODEX_INTERNAL_REGISTRY_HOST"])
 	if internalHost == "" {
 		return nil
 	}
@@ -410,12 +410,12 @@ func (s *Service) mirrorExternalDependencies(ctx context.Context, namespace stri
 	}
 	sort.Slice(entries, func(i, j int) bool { return entries[i].Name < entries[j].Name })
 
-	mirrorToolImage := strings.TrimSpace(valueOr(vars, "CODEXK8S_IMAGE_MIRROR_TOOL_IMAGE", "gcr.io/go-containerregistry/crane:debug"))
+	mirrorToolImage := strings.TrimSpace(valueOr(vars, "KODEX_IMAGE_MIRROR_TOOL_IMAGE", "gcr.io/go-containerregistry/crane:debug"))
 	jobToken, err := randomHex(4)
 	if err != nil {
 		return fmt.Errorf("generate image mirror token: %w", err)
 	}
-	maxParallel := parsePositiveInt(vars["CODEXK8S_IMAGE_MIRROR_MAX_PARALLEL"], 1)
+	maxParallel := parsePositiveInt(vars["KODEX_IMAGE_MIRROR_MAX_PARALLEL"], 1)
 	if maxParallel <= 0 {
 		maxParallel = 1
 	}
@@ -450,7 +450,7 @@ func (s *Service) mirrorExternalDependencies(ctx context.Context, namespace stri
 			continue
 		}
 
-		jobName := fmt.Sprintf("codex-k8s-mirror-%s-%s", sanitizeNameToken(entry.Name, 20), jobToken)
+		jobName := fmt.Sprintf("kodex-mirror-%s-%s", sanitizeNameToken(entry.Name, 20), jobToken)
 		if len(jobName) > 63 {
 			jobName = strings.TrimRight(jobName[:63], "-")
 		}
@@ -505,11 +505,11 @@ func (s *Service) runMirrorJob(ctx context.Context, namespace string, vars map[s
 	s.appendTaskLogBestEffort(ctx, runID, "mirror", "info", "Ensuring mirror "+job.SourceImage+" -> "+job.TargetImage)
 
 	jobVars := cloneStringMap(vars)
-	jobVars["CODEXK8S_PRODUCTION_NAMESPACE"] = namespace
-	jobVars["CODEXK8S_IMAGE_MIRROR_JOB_NAME"] = job.JobName
-	jobVars["CODEXK8S_IMAGE_MIRROR_SOURCE"] = job.SourceImage
-	jobVars["CODEXK8S_IMAGE_MIRROR_TARGET"] = job.TargetImage
-	jobVars["CODEXK8S_IMAGE_MIRROR_TOOL_IMAGE"] = mirrorToolImage
+	jobVars["KODEX_PRODUCTION_NAMESPACE"] = namespace
+	jobVars["KODEX_IMAGE_MIRROR_JOB_NAME"] = job.JobName
+	jobVars["KODEX_IMAGE_MIRROR_SOURCE"] = job.SourceImage
+	jobVars["KODEX_IMAGE_MIRROR_TARGET"] = job.TargetImage
+	jobVars["KODEX_IMAGE_MIRROR_TOOL_IMAGE"] = mirrorToolImage
 
 	renderedRaw, renderErr := manifesttpl.Render(templatePath, templateRaw, jobVars)
 	if renderErr != nil {
@@ -539,14 +539,14 @@ func (s *Service) cleanupBuiltImageRepositories(ctx context.Context, vars map[st
 	if len(repositories) == 0 {
 		return nil
 	}
-	keepTags := parsePositiveInt(vars["CODEXK8S_REGISTRY_CLEANUP_KEEP_TAGS"], s.cfg.RegistryCleanupKeepTags)
+	keepTags := parsePositiveInt(vars["KODEX_REGISTRY_CLEANUP_KEEP_TAGS"], s.cfg.RegistryCleanupKeepTags)
 	if keepTags <= 0 {
 		keepTags = s.cfg.RegistryCleanupKeepTags
 	}
 	if keepTags <= 0 {
 		keepTags = 5
 	}
-	internalHost := strings.TrimSpace(vars["CODEXK8S_INTERNAL_REGISTRY_HOST"])
+	internalHost := strings.TrimSpace(vars["KODEX_INTERNAL_REGISTRY_HOST"])
 
 	for repository := range repositories {
 		repoPath := registry.ExtractRepositoryPath(repository, internalHost)
@@ -603,18 +603,18 @@ func resolveKanikoDockerfile(path string) (string, error) {
 func applyBuiltImageResult(vars map[string]string, imageName string, imageRef string) {
 	switch strings.ToLower(strings.TrimSpace(imageName)) {
 	case "api-gateway":
-		vars["CODEXK8S_API_GATEWAY_IMAGE"] = imageRef
+		vars["KODEX_API_GATEWAY_IMAGE"] = imageRef
 	case "control-plane":
-		vars["CODEXK8S_CONTROL_PLANE_IMAGE"] = imageRef
+		vars["KODEX_CONTROL_PLANE_IMAGE"] = imageRef
 	case "worker":
-		vars["CODEXK8S_WORKER_IMAGE"] = imageRef
+		vars["KODEX_WORKER_IMAGE"] = imageRef
 	case "agent-runner":
-		vars["CODEXK8S_AGENT_RUNNER_IMAGE"] = imageRef
-		if strings.TrimSpace(vars["CODEXK8S_WORKER_JOB_IMAGE"]) == "" {
-			vars["CODEXK8S_WORKER_JOB_IMAGE"] = imageRef
+		vars["KODEX_AGENT_RUNNER_IMAGE"] = imageRef
+		if strings.TrimSpace(vars["KODEX_WORKER_JOB_IMAGE"]) == "" {
+			vars["KODEX_WORKER_JOB_IMAGE"] = imageRef
 		}
 	case "web-console":
-		vars["CODEXK8S_WEB_CONSOLE_IMAGE"] = imageRef
+		vars["KODEX_WEB_CONSOLE_IMAGE"] = imageRef
 	}
 }
 
@@ -627,7 +627,7 @@ func (s *Service) shouldSkipKanikoBuild(ctx context.Context, repository string, 
 	if repository == "" || tag == "" {
 		return false, nil
 	}
-	internalHost := strings.TrimSpace(vars["CODEXK8S_INTERNAL_REGISTRY_HOST"])
+	internalHost := strings.TrimSpace(vars["KODEX_INTERNAL_REGISTRY_HOST"])
 	repoPath := registry.ExtractRepositoryPath(repository, internalHost)
 	if repoPath == "" {
 		return false, nil
@@ -682,7 +682,7 @@ func parsePositiveInt(raw string, fallback int) int {
 }
 
 func isKanikoCacheEnabled(vars map[string]string) bool {
-	value := strings.TrimSpace(vars["CODEXK8S_KANIKO_CACHE_ENABLED"])
+	value := strings.TrimSpace(vars["KODEX_KANIKO_CACHE_ENABLED"])
 	if value == "" {
 		return true
 	}

@@ -79,7 +79,7 @@ approvals:
 - Детализация transport/gRPC: `docs/architecture/initiatives/s7_mvp_readiness_gap_closure/api_contract.md`.
 - Source of truth для реализации в `run:dev`:
   - OpenAPI: `services/external/api-gateway/api/server/api.yaml`;
-  - gRPC: `proto/codexk8s/controlplane/v1/controlplane.proto`.
+  - gRPC: `proto/kodex/controlplane/v1/controlplane.proto`.
 - Mapping policy:
   - HTTP DTO <-> gRPC DTO через явные casters;
   - domain errors конвертируются только в HTTP error handler / gRPC interceptor.

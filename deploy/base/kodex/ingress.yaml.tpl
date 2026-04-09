@@ -1,19 +1,19 @@
-{{- $host := envOr "CODEXK8S_PUBLIC_DOMAIN" (envOr "CODEXK8S_PRODUCTION_DOMAIN" "") -}}
-{{- $tlsSecret := envOr "CODEXK8S_TLS_SECRET_NAME" "codex-k8s-production-tls" -}}
-{{- $certManager := eq (envOr "CODEXK8S_CERT_MANAGER_ANNOTATE" "false") "true" -}}
-{{- $isAI := eq (toLower (envOr "CODEXK8S_ENV" "")) "ai" -}}
-{{- $sharedAuthURL := envOr "CODEXK8S_SHARED_OAUTH2_PROXY_AUTH_URL" "" -}}
-{{- $sharedSigninURL := envOr "CODEXK8S_SHARED_OAUTH2_PROXY_SIGNIN_URL" "" -}}
+{{- $host := envOr "KODEX_PUBLIC_DOMAIN" (envOr "KODEX_PRODUCTION_DOMAIN" "") -}}
+{{- $tlsSecret := envOr "KODEX_TLS_SECRET_NAME" "kodex-production-tls" -}}
+{{- $certManager := eq (envOr "KODEX_CERT_MANAGER_ANNOTATE" "false") "true" -}}
+{{- $isAI := eq (toLower (envOr "KODEX_ENV" "")) "ai" -}}
+{{- $sharedAuthURL := envOr "KODEX_SHARED_OAUTH2_PROXY_AUTH_URL" "" -}}
+{{- $sharedSigninURL := envOr "KODEX_SHARED_OAUTH2_PROXY_SIGNIN_URL" "" -}}
 {{- $useSharedOAuth := and $isAI (ne $sharedAuthURL "") (ne $sharedSigninURL "") -}}
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: codex-k8s
-  namespace: {{ envOr "CODEXK8S_PRODUCTION_NAMESPACE" "" }}
+  name: kodex
+  namespace: {{ envOr "KODEX_PRODUCTION_NAMESPACE" "" }}
 {{- if or $certManager $useSharedOAuth }}
   annotations:
 {{- if $certManager }}
-    cert-manager.io/cluster-issuer: codex-k8s-letsencrypt
+    cert-manager.io/cluster-issuer: kodex-letsencrypt
 {{- end }}
 {{- if $useSharedOAuth }}
     nginx.ingress.kubernetes.io/auth-url: '{{ $sharedAuthURL }}'
@@ -36,7 +36,7 @@ spec:
             backend:
               service:
 {{- if $useSharedOAuth }}
-                name: codex-k8s
+                name: kodex
                 port:
                   number: 80
 {{- else }}
@@ -49,8 +49,8 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: codex-k8s-telegram-webhook
-  namespace: {{ envOr "CODEXK8S_PRODUCTION_NAMESPACE" "" }}
+  name: kodex-telegram-webhook
+  namespace: {{ envOr "KODEX_PRODUCTION_NAMESPACE" "" }}
 spec:
   ingressClassName: nginx
   tls:
@@ -65,7 +65,7 @@ spec:
             pathType: Exact
             backend:
               service:
-                name: codex-k8s-telegram-interaction-adapter
+                name: kodex-telegram-interaction-adapter
                 port:
                   number: 8080
 {{- end }}

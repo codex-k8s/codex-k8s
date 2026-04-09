@@ -68,7 +68,7 @@ approvals:
   - по данным `flow_events`: `run.pr.created=5`, `run.pr.updated=3`.
 - Подтверждена observability и runtime hygiene:
   - production deploy на `main` успешен (workflow run `21985095587`);
-  - на момент gate отсутствуют активные run namespaces (`codex-k8s.dev/namespace-purpose=run`);
+  - на момент gate отсутствуют активные run namespaces (`kodex.works/namespace-purpose=run`);
   - legacy manual-retention режим фиксируется аудитом (`run.namespace.cleanup_skipped=5`).
 - Подтверждена регрессия label-конфликтов и приоритета config labels тестами worker-домена.
 - Approval queue консистентна: зависших `mcp_action_requests` в `requested` состоянии нет.

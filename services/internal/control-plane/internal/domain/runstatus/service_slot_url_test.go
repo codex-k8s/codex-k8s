@@ -3,7 +3,7 @@ package runstatus
 import (
 	"testing"
 
-	querytypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/query"
+	querytypes "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/types/query"
 )
 
 func TestResolveRunSlotURL_RecomputesStaleURLForAISlot(t *testing.T) {
@@ -11,8 +11,8 @@ func TestResolveRunSlotURL_RecomputesStaleURLForAISlot(t *testing.T) {
 
 	svc := &Service{
 		cfg: Config{
-			AIDomain:         "ai.platform.codex-k8s.dev",
-			ProductionDomain: "platform.codex-k8s.dev",
+			AIDomain:         "ai.platform.kodex.works",
+			ProductionDomain: "platform.kodex.works",
 		},
 	}
 
@@ -22,11 +22,11 @@ func TestResolveRunSlotURL_RecomputesStaleURLForAISlot(t *testing.T) {
 		},
 	}, commentState{
 		RuntimeMode: runtimeModeFullEnv,
-		Namespace:   "codex-k8s-dev-2",
-		SlotURL:     "https://platform.codex-k8s.dev",
+		Namespace:   "kodex-dev-2",
+		SlotURL:     "https://platform.kodex.works",
 	})
 
-	want := "https://codex-k8s-dev-2.ai.platform.codex-k8s.dev"
+	want := "https://kodex-dev-2.ai.platform.kodex.works"
 	if got != want {
 		t.Fatalf("resolveRunSlotURL() = %q, want %q", got, want)
 	}
@@ -37,8 +37,8 @@ func TestResolveRunSlotURL_HidesURLWhenTargetEnvAndNamespaceAreNotFinal(t *testi
 
 	svc := &Service{
 		cfg: Config{
-			AIDomain:         "ai.platform.codex-k8s.dev",
-			ProductionDomain: "platform.codex-k8s.dev",
+			AIDomain:         "ai.platform.kodex.works",
+			ProductionDomain: "platform.kodex.works",
 		},
 	}
 
@@ -49,7 +49,7 @@ func TestResolveRunSlotURL_HidesURLWhenTargetEnvAndNamespaceAreNotFinal(t *testi
 	}, commentState{
 		RuntimeMode: runtimeModeFullEnv,
 		Namespace:   "codex-issue-3278207d1cd3-i77-ra335a61f755",
-		SlotURL:     "https://platform.codex-k8s.dev",
+		SlotURL:     "https://platform.kodex.works",
 	})
 
 	if got != "" {
@@ -62,8 +62,8 @@ func TestResolveRunSlotURL_UsesProductionDomainForExplicitProductionTarget(t *te
 
 	svc := &Service{
 		cfg: Config{
-			AIDomain:         "ai.platform.codex-k8s.dev",
-			ProductionDomain: "platform.codex-k8s.dev",
+			AIDomain:         "ai.platform.kodex.works",
+			ProductionDomain: "platform.kodex.works",
 		},
 	}
 
@@ -75,10 +75,10 @@ func TestResolveRunSlotURL_UsesProductionDomainForExplicitProductionTarget(t *te
 		},
 	}, commentState{
 		RuntimeMode: runtimeModeFullEnv,
-		Namespace:   "codex-k8s-prod",
+		Namespace:   "kodex-prod",
 	})
 
-	want := "https://platform.codex-k8s.dev"
+	want := "https://platform.kodex.works"
 	if got != want {
 		t.Fatalf("resolveRunSlotURL() = %q, want %q", got, want)
 	}
@@ -89,22 +89,22 @@ func TestResolveRunSlotURL_UsesRuntimePublicHostOverride(t *testing.T) {
 
 	svc := &Service{
 		cfg: Config{
-			AIDomain:         "ai.platform.codex-k8s.dev",
-			ProductionDomain: "platform.codex-k8s.dev",
+			AIDomain:         "ai.platform.kodex.works",
+			ProductionDomain: "platform.kodex.works",
 		},
 	}
 
 	got := svc.resolveRunSlotURL(runContext{
 		payload: querytypes.RunPayload{
 			Runtime: &querytypes.RunPayloadRuntime{
-				PublicHost: "codex-k8s-dev-3.ai.platform.codex-k8s.dev",
+				PublicHost: "kodex-dev-3.ai.platform.kodex.works",
 			},
 		},
 	}, commentState{
 		RuntimeMode: runtimeModeFullEnv,
 	})
 
-	want := "https://codex-k8s-dev-3.ai.platform.codex-k8s.dev"
+	want := "https://kodex-dev-3.ai.platform.kodex.works"
 	if got != want {
 		t.Fatalf("resolveRunSlotURL() = %q, want %q", got, want)
 	}

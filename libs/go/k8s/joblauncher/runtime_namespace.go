@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	agentdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/agent"
+	agentdomain "github.com/codex-k8s/kodex/libs/go/domain/agent"
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -32,10 +32,10 @@ const (
 	runNamespaceLeaseExpAnnotKey    = metadataAnnotationNamespaceExp
 	runNamespaceLeaseUpdAnnotKey    = metadataAnnotationNamespaceUpd
 
-	runNamespaceManagedByValue = "codex-k8s-worker"
+	runNamespaceManagedByValue = "kodex-worker"
 	runNamespacePurposeValue   = "run"
 
-	runNamespaceCleanupSlotPrefix = "codex-k8s-dev-"
+	runNamespaceCleanupSlotPrefix = "kodex-dev-"
 )
 
 // EnsureNamespace prepares baseline runtime resources for managed run execution.

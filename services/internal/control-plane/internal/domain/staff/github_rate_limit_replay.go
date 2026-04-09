@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/codex-k8s/codex-k8s/libs/go/errs"
-	repoprovider "github.com/codex-k8s/codex-k8s/libs/go/repo/provider"
-	enumtypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/enum"
-	valuetypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/value"
+	"github.com/codex-k8s/kodex/libs/go/errs"
+	repoprovider "github.com/codex-k8s/kodex/libs/go/repo/provider"
+	enumtypes "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/types/enum"
+	valuetypes "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/types/value"
 )
 
 // ReplayGitHubRateLimitPlatformCall replays one platform-owned GitHub mutation after recovery.

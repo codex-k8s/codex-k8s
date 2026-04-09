@@ -29,7 +29,7 @@ Person(owner, "Owner / reviewer", "Ждёт прозрачный governance stat
 Person(operator, "Platform operator", "Диагностирует gaps, readiness и outcomes policy-aware re-evaluation")
 System_Ext(github, "GitHub", "Issues, PRs, reviews, labels and publication signals")
 
-System_Boundary(b0, "codex-k8s") {
+System_Boundary(b0, "kodex") {
   Container(runner, "Agent Runner / agent pod", "Codex CLI job", "Emits draft/evidence signals, semantic wave hints and verification outputs; never owns governance policy")
   Container(cp, "Control Plane", "Go", "Owns canonical governance aggregate, publication gate, risk/evidence/verification/waiver decisions and typed projections")
   Container(worker, "Worker", "Go", "Runs asynchronous sweeps, feedback ingestion, stale-gate escalation and submits reconciliation findings for policy-aware re-evaluation")

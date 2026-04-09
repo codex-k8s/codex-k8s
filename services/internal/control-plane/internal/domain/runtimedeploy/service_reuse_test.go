@@ -8,9 +8,9 @@ import (
 	"testing"
 	"time"
 
-	agentrunrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/agentrun"
-	runtimedeploytaskrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/runtimedeploytask"
-	entitytypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/entity"
+	agentrunrepo "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/repository/agentrun"
+	runtimedeploytaskrepo "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/repository/runtimedeploytask"
+	entitytypes "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/types/entity"
 )
 
 func TestEvaluateRuntimeReuse_AllowsFastPathWhenFingerprintMatches(t *testing.T) {
@@ -69,12 +69,12 @@ func TestEvaluateRuntimeReuse_ReturnsFingerprintMismatchWhenRenderedManifestsDri
 		t.Fatalf("persistRuntimeFingerprint() error = %v", err)
 	}
 
-	manifestPath := filepath.Join(svc.repoSnapshotPath(params.TargetEnv, "codex-k8s", "codex-k8s", params.BuildRef), "deploy", "base", "app.yaml")
+	manifestPath := filepath.Join(svc.repoSnapshotPath(params.TargetEnv, "codex-k8s", "kodex", params.BuildRef), "deploy", "base", "app.yaml")
 	if err := os.WriteFile(manifestPath, []byte(`apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: app
-  namespace: {{ envOr "CODEXK8S_PRODUCTION_NAMESPACE" "" }}
+  namespace: {{ envOr "KODEX_PRODUCTION_NAMESPACE" "" }}
 spec:
   selector:
     matchLabels:
@@ -208,15 +208,15 @@ func newRuntimeReuseTestService(t *testing.T) (*Service, EvaluateReuseParams, *f
 
 	repoRoot := filepath.Join(t.TempDir(), "repo-cache")
 	commitSHA := "0123456789abcdef0123456789abcdef01234567"
-	snapshotRoot := filepath.Join(repoRoot, "github", "codex-k8s", "codex-k8s", commitSHA)
+	snapshotRoot := filepath.Join(repoRoot, "github", "codex-k8s", "kodex", commitSHA)
 	mustWriteRuntimeReuseTestRepo(t, snapshotRoot, commitSHA)
 
-	namespace := "codex-k8s-dev-1"
+	namespace := "kodex-dev-1"
 	k8s := &fakeRuntimeReuseKubernetesClient{
 		namespaces: map[string]RuntimeNamespaceState{
 			namespace: {
 				Name:        namespace,
-				Labels:      map[string]string{"codex-k8s.dev/managed-by": "codex-k8s-worker"},
+				Labels:      map[string]string{"kodex.works/managed-by": "kodex-worker"},
 				Annotations: map[string]string{},
 			},
 		},
@@ -238,7 +238,7 @@ func newRuntimeReuseTestService(t *testing.T) (*Service, EvaluateReuseParams, *f
 		Namespace:          namespace,
 		TargetEnv:          "ai",
 		SlotNo:             1,
-		RepositoryFullName: "codex-k8s/codex-k8s",
+		RepositoryFullName: "codex-k8s/kodex",
 		ServicesYAMLPath:   "services.yaml",
 		BuildRef:           commitSHA,
 	}
@@ -257,7 +257,7 @@ func mustWriteRuntimeReuseTestRepo(t *testing.T, repoRoot string, commitSHA stri
 	if err := os.MkdirAll(filepath.Join(repoRoot, "deploy", "base"), 0o755); err != nil {
 		t.Fatalf("mkdir deploy/base: %v", err)
 	}
-	if err := os.WriteFile(filepath.Join(repoRoot, "services.yaml"), []byte(`apiVersion: codex-k8s.dev/v1alpha1
+	if err := os.WriteFile(filepath.Join(repoRoot, "services.yaml"), []byte(`apiVersion: kodex.works/v1alpha1
 kind: ServiceStack
 metadata:
   name: runtime-reuse-test
@@ -280,9 +280,9 @@ spec:
 kind: ConfigMap
 metadata:
   name: infra
-  namespace: {{ envOr "CODEXK8S_PRODUCTION_NAMESPACE" "" }}
+  namespace: {{ envOr "KODEX_PRODUCTION_NAMESPACE" "" }}
 data:
-  env: {{ envOr "CODEXK8S_ENV" "" }}
+  env: {{ envOr "KODEX_ENV" "" }}
 `), 0o644); err != nil {
 		t.Fatalf("write infra manifest: %v", err)
 	}
@@ -290,7 +290,7 @@ data:
 kind: Deployment
 metadata:
   name: app
-  namespace: {{ envOr "CODEXK8S_PRODUCTION_NAMESPACE" "" }}
+  namespace: {{ envOr "KODEX_PRODUCTION_NAMESPACE" "" }}
 spec:
   selector:
     matchLabels:
@@ -302,7 +302,7 @@ spec:
     spec:
       containers:
         - name: app
-          image: example.com/app:{{ envOr "CODEXK8S_BUILD_REF" "" }}
+          image: example.com/app:{{ envOr "KODEX_BUILD_REF" "" }}
 `), 0o644); err != nil {
 		t.Fatalf("write app manifest: %v", err)
 	}

@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	domainrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/agentsession"
+	domainrepo "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/repository/agentsession"
 )
 
 func TestBuildUpsertRecord_PreservesExistingSnapshotPayloads(t *testing.T) {
@@ -14,7 +14,7 @@ func TestBuildUpsertRecord_PreservesExistingSnapshotPayloads(t *testing.T) {
 	existing := domainrepo.Session{
 		RunID:              "run-1",
 		CorrelationID:      "corr-1",
-		RepositoryFullName: "codex-k8s/codex-k8s",
+		RepositoryFullName: "codex-k8s/kodex",
 		AgentKey:           "dev",
 		BranchName:         "codex/issue-259",
 		SessionID:          "session-existing",
@@ -29,7 +29,7 @@ func TestBuildUpsertRecord_PreservesExistingSnapshotPayloads(t *testing.T) {
 	record, err := buildUpsertRecord(domainrepo.UpsertParams{
 		RunID:                   "run-1",
 		CorrelationID:           "corr-1",
-		RepositoryFullName:      "codex-k8s/codex-k8s",
+		RepositoryFullName:      "codex-k8s/kodex",
 		AgentKey:                "dev",
 		BranchName:              "codex/issue-259",
 		Status:                  "running",

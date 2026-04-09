@@ -1,11 +1,11 @@
 openapi: 3.0.3
 info:
-  title: codex-k8s api-gateway
+  title: kodex api-gateway
   version: 0.2.0
   description: |
-    External webhook + staff API contract for codex-k8s.
+    External webhook + staff API contract for kodex.
 servers:
-  - url: https://platform.codex-k8s.dev
+  - url: https://platform.kodex.works
 paths:
   /api/v1/webhooks/github:
     post:

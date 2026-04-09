@@ -15,7 +15,7 @@ func TestLoad_WithImportsComponentsAndTemplates(t *testing.T) {
 	rootFile := filepath.Join(tmpDir, "services.yaml")
 
 	base := `
-apiVersion: codex-k8s.dev/v1alpha1
+apiVersion: kodex.works/v1alpha1
 kind: ServiceStack
 metadata:
   name: demo
@@ -30,7 +30,7 @@ spec:
         deployGroup: internal
 `
 	root := `
-apiVersion: codex-k8s.dev/v1alpha1
+apiVersion: kodex.works/v1alpha1
 kind: ServiceStack
 metadata:
   name: demo
@@ -82,7 +82,7 @@ func TestLoad_ImportCycle(t *testing.T) {
 	second := filepath.Join(tmpDir, "second.yaml")
 
 	writeFile(t, first, `
-apiVersion: codex-k8s.dev/v1alpha1
+apiVersion: kodex.works/v1alpha1
 kind: ServiceStack
 metadata:
   name: demo
@@ -112,7 +112,7 @@ func TestLoad_UnknownComponentReference(t *testing.T) {
 	t.Parallel()
 
 	assertLoadErrorContains(t, `
-apiVersion: codex-k8s.dev/v1alpha1
+apiVersion: kodex.works/v1alpha1
 kind: ServiceStack
 metadata:
   name: demo
@@ -131,10 +131,10 @@ func TestLoad_CodexK8sRequiresProductionTemplate(t *testing.T) {
 
 	path := filepath.Join(t.TempDir(), "services.yaml")
 	writeFile(t, path, `
-apiVersion: codex-k8s.dev/v1alpha1
+apiVersion: kodex.works/v1alpha1
 kind: ServiceStack
 metadata:
-  name: codex-k8s
+  name: kodex
 spec:
   environments:
     production:
@@ -143,9 +143,9 @@ spec:
 
 	_, err := Load(path, LoadOptions{Env: "production"})
 	if err == nil {
-		t.Fatalf("expected codex-k8s production template validation error")
+		t.Fatalf("expected kodex production template validation error")
 	}
-	if !strings.Contains(err.Error(), "codex-k8s requires production namespace template") {
+	if !strings.Contains(err.Error(), "kodex requires production namespace template") {
 		t.Fatalf("unexpected error: %v", err)
 	}
 }
@@ -181,7 +181,7 @@ func TestLoadFromYAML_RendersDomainTemplate(t *testing.T) {
 	t.Parallel()
 
 	raw := []byte(strings.TrimSpace(`
-apiVersion: codex-k8s.dev/v1alpha1
+apiVersion: kodex.works/v1alpha1
 kind: ServiceStack
 metadata:
   name: demo
@@ -214,7 +214,7 @@ func TestLoad_WebhookRuntimeModes(t *testing.T) {
 
 	path := filepath.Join(t.TempDir(), "services.yaml")
 	writeFile(t, path, `
-apiVersion: codex-k8s.dev/v1alpha1
+apiVersion: kodex.works/v1alpha1
 kind: ServiceStack
 metadata:
   name: demo
@@ -266,7 +266,7 @@ func TestLoad_WebhookRuntimeNamespaceTTLValidation(t *testing.T) {
 	t.Parallel()
 
 	assertLoadErrorContains(t, `
-apiVersion: codex-k8s.dev/v1alpha1
+apiVersion: kodex.works/v1alpha1
 kind: ServiceStack
 metadata:
   name: demo
@@ -280,7 +280,7 @@ spec:
 `, "defaultNamespaceTTL")
 
 	assertLoadErrorContains(t, `
-apiVersion: codex-k8s.dev/v1alpha1
+apiVersion: kodex.works/v1alpha1
 kind: ServiceStack
 metadata:
   name: demo
@@ -299,7 +299,7 @@ func TestLoad_SecretResolutionContract(t *testing.T) {
 
 	path := filepath.Join(t.TempDir(), "services.yaml")
 	writeFile(t, path, `
-apiVersion: codex-k8s.dev/v1alpha1
+apiVersion: kodex.works/v1alpha1
 kind: ServiceStack
 metadata:
   name: demo
@@ -311,11 +311,11 @@ spec:
     environmentAliases:
       production: [prod]
     keyOverrides:
-      - sourceKey: CODEXK8S_GITHUB_OAUTH_CLIENT_ID
+      - sourceKey: KODEX_GITHUB_OAUTH_CLIENT_ID
         overrideKeys:
-          ai: CODEXK8S_GITHUB_OAUTH_CLIENT_ID_AI
+          ai: KODEX_GITHUB_OAUTH_CLIENT_ID_AI
     patterns:
-      - sourcePrefix: CODEXK8S_
+      - sourcePrefix: KODEX_
         excludeSuffixes: [_AI]
         environments: [ai]
         overrideTemplate: "{key}_{env_upper}"
@@ -327,11 +327,11 @@ spec:
 	}
 
 	resolver := NewSecretResolver(result.Stack)
-	overrideKey, ok := resolver.ResolveOverrideKey("ai", "CODEXK8S_GITHUB_OAUTH_CLIENT_ID")
+	overrideKey, ok := resolver.ResolveOverrideKey("ai", "KODEX_GITHUB_OAUTH_CLIENT_ID")
 	if !ok {
 		t.Fatalf("expected explicit key override")
 	}
-	if got, want := overrideKey, "CODEXK8S_GITHUB_OAUTH_CLIENT_ID_AI"; got != want {
+	if got, want := overrideKey, "KODEX_GITHUB_OAUTH_CLIENT_ID_AI"; got != want {
 		t.Fatalf("unexpected override key: got %q want %q", got, want)
 	}
 }
@@ -341,7 +341,7 @@ func TestLoad_ServiceScopeNormalization(t *testing.T) {
 
 	path := filepath.Join(t.TempDir(), "services.yaml")
 	writeFile(t, path, `
-apiVersion: codex-k8s.dev/v1alpha1
+apiVersion: kodex.works/v1alpha1
 kind: ServiceStack
 metadata:
   name: demo
@@ -371,7 +371,7 @@ func TestLoad_ServiceScopeValidation(t *testing.T) {
 	t.Parallel()
 
 	assertLoadErrorContains(t, `
-apiVersion: codex-k8s.dev/v1alpha1
+apiVersion: kodex.works/v1alpha1
 kind: ServiceStack
 metadata:
   name: demo
@@ -390,7 +390,7 @@ func TestLoad_ProjectDocsNormalizationAndRoles(t *testing.T) {
 
 	path := filepath.Join(t.TempDir(), "services.yaml")
 	writeFile(t, path, `
-apiVersion: codex-k8s.dev/v1alpha1
+apiVersion: kodex.works/v1alpha1
 kind: ServiceStack
 metadata:
   name: demo
@@ -431,7 +431,7 @@ func TestLoad_ProjectDocsValidation(t *testing.T) {
 	t.Parallel()
 
 	assertLoadErrorContains(t, `
-apiVersion: codex-k8s.dev/v1alpha1
+apiVersion: kodex.works/v1alpha1
 kind: ServiceStack
 metadata:
   name: demo
@@ -444,7 +444,7 @@ spec:
 `, "projectDocs[0].path")
 
 	assertLoadErrorContains(t, `
-apiVersion: codex-k8s.dev/v1alpha1
+apiVersion: kodex.works/v1alpha1
 kind: ServiceStack
 metadata:
   name: demo
@@ -461,7 +461,7 @@ spec:
 
 	path := filepath.Join(t.TempDir(), "services-allow-duplicate-paths.yaml")
 	writeFile(t, path, `
-apiVersion: codex-k8s.dev/v1alpha1
+apiVersion: kodex.works/v1alpha1
 kind: ServiceStack
 metadata:
   name: demo
@@ -480,7 +480,7 @@ spec:
 	}
 
 	assertLoadErrorContains(t, `
-apiVersion: codex-k8s.dev/v1alpha1
+apiVersion: kodex.works/v1alpha1
 kind: ServiceStack
 metadata:
   name: demo
@@ -499,7 +499,7 @@ func TestLoad_RoleDocTemplatesNormalization(t *testing.T) {
 
 	path := filepath.Join(t.TempDir(), "services.yaml")
 	writeFile(t, path, `
-apiVersion: codex-k8s.dev/v1alpha1
+apiVersion: kodex.works/v1alpha1
 kind: ServiceStack
 metadata:
   name: demo
@@ -545,7 +545,7 @@ func TestLoad_RoleDocTemplatesValidation(t *testing.T) {
 	t.Parallel()
 
 	assertLoadErrorContains(t, `
-apiVersion: codex-k8s.dev/v1alpha1
+apiVersion: kodex.works/v1alpha1
 kind: ServiceStack
 metadata:
   name: demo
@@ -558,7 +558,7 @@ spec:
 `, "spec.roleDocTemplates[\"pm\"] must contain at least one template")
 
 	assertLoadErrorContains(t, `
-apiVersion: codex-k8s.dev/v1alpha1
+apiVersion: kodex.works/v1alpha1
 kind: ServiceStack
 metadata:
   name: demo
@@ -573,7 +573,7 @@ spec:
 `, "duplicate spec.roleDocTemplates entry for role \"pm\" path \"docs/templates/prd.md\"")
 
 	assertLoadErrorContains(t, `
-apiVersion: codex-k8s.dev/v1alpha1
+apiVersion: kodex.works/v1alpha1
 kind: ServiceStack
 metadata:
   name: demo
@@ -587,7 +587,7 @@ spec:
 `, "spec.roleDocTemplates[\"pm\"][0].path")
 
 	assertLoadErrorContains(t, `
-apiVersion: codex-k8s.dev/v1alpha1
+apiVersion: kodex.works/v1alpha1
 kind: ServiceStack
 metadata:
   name: demo
@@ -614,7 +614,7 @@ func TestLoadFromYAML_SchemaValidationErrors(t *testing.T) {
 			name:        "services_not_array",
 			errContains: "services schema validation failed",
 			raw: `
-apiVersion: codex-k8s.dev/v1alpha1
+apiVersion: kodex.works/v1alpha1
 kind: ServiceStack
 metadata:
   name: demo
@@ -629,7 +629,7 @@ spec:
 			name:        "version_scalar_not_allowed",
 			errContains: "cannot unmarshal",
 			raw: `
-apiVersion: codex-k8s.dev/v1alpha1
+apiVersion: kodex.works/v1alpha1
 kind: ServiceStack
 metadata:
   name: demo
@@ -663,7 +663,7 @@ func TestLoadFromYAML_UnknownFieldsAreForwardCompatible(t *testing.T) {
 	t.Parallel()
 
 	result, err := LoadFromYAML([]byte(strings.TrimSpace(`
-apiVersion: codex-k8s.dev/v1alpha1
+apiVersion: kodex.works/v1alpha1
 kind: ServiceStack
 metadata:
   name: demo
@@ -707,7 +707,7 @@ func TestLoad_VersionsRenderTagTemplates(t *testing.T) {
 
 	path := filepath.Join(t.TempDir(), "services.yaml")
 	writeFile(t, path, `
-apiVersion: codex-k8s.dev/v1alpha1
+apiVersion: kodex.works/v1alpha1
 kind: ServiceStack
 metadata:
   name: demo
@@ -768,7 +768,7 @@ func TestLoad_TrimPrefixTemplateHelperUsesPrefixFirstOrder(t *testing.T) {
 
 	path := filepath.Join(t.TempDir(), "services.yaml")
 	writeFile(t, path, `
-apiVersion: codex-k8s.dev/v1alpha1
+apiVersion: kodex.works/v1alpha1
 kind: ServiceStack
 metadata:
   name: demo

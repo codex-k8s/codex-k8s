@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	agentdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/agent"
-	libslauncher "github.com/codex-k8s/codex-k8s/libs/go/k8s/joblauncher"
-	"github.com/codex-k8s/codex-k8s/services/jobs/worker/internal/domain/worker"
+	agentdomain "github.com/codex-k8s/kodex/libs/go/domain/agent"
+	libslauncher "github.com/codex-k8s/kodex/libs/go/k8s/joblauncher"
+	"github.com/codex-k8s/kodex/services/jobs/worker/internal/domain/worker"
 )
 
 // Adapter bridges domain launcher port with client-go launcher implementation.

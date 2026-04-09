@@ -4,12 +4,12 @@ import (
 	"context"
 	"net/http"
 
-	sharedsystemsettings "github.com/codex-k8s/codex-k8s/libs/go/systemsettings"
+	sharedsystemsettings "github.com/codex-k8s/kodex/libs/go/systemsettings"
 	"github.com/labstack/echo/v5"
 
-	controlplanev1 "github.com/codex-k8s/codex-k8s/proto/gen/go/codexk8s/controlplane/v1"
-	"github.com/codex-k8s/codex-k8s/services/external/api-gateway/internal/transport/http/casters"
-	"github.com/codex-k8s/codex-k8s/services/external/api-gateway/internal/transport/http/models"
+	controlplanev1 "github.com/codex-k8s/kodex/proto/gen/go/kodex/controlplane/v1"
+	"github.com/codex-k8s/kodex/services/external/api-gateway/internal/transport/http/casters"
+	"github.com/codex-k8s/kodex/services/external/api-gateway/internal/transport/http/models"
 )
 
 func (h *staffHandler) ListSystemSettings(c *echo.Context) error {

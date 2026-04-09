@@ -73,4 +73,4 @@ gen-proto-go:
 	@protoc -I proto \
 		--go_out=proto/gen/go --go_opt=paths=source_relative \
 		--go-grpc_out=proto/gen/go --go-grpc_opt=paths=source_relative \
-		proto/codexk8s/controlplane/v1/controlplane.proto
+		proto/kodex/controlplane/v1/controlplane.proto

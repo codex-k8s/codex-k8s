@@ -3,14 +3,14 @@ package cli
 import (
 	"testing"
 
-	"github.com/codex-k8s/codex-k8s/libs/go/servicescfg"
+	"github.com/codex-k8s/kodex/libs/go/servicescfg"
 )
 
 func TestCollectGitHubLabels(t *testing.T) {
 	values := map[string]string{
-		"CODEXK8S_RUN_DEV_LABEL":   "run:dev",
-		"CODEXK8S_RUN_OPS_LABEL":   "run:ops",
-		"CODEXK8S_PUBLIC_BASE_URL": "https://platform.codex-k8s.dev",
+		"KODEX_RUN_DEV_LABEL":   "run:dev",
+		"KODEX_RUN_OPS_LABEL":   "run:ops",
+		"KODEX_PUBLIC_BASE_URL": "https://platform.kodex.works",
 	}
 
 	labels := collectGitHubLabels(values)
@@ -37,31 +37,31 @@ func TestNormalizeGitHubEvents(t *testing.T) {
 
 func TestApplyGitHubEnvironmentOverrides(t *testing.T) {
 	values := map[string]string{
-		"CODEXK8S_OPENAI_API_KEY":            "prod-key",
-		"CODEXK8S_AI_OPENAI_API_KEY":         "ai-key",
-		"CODEXK8S_PRODUCTION_OPENAI_API_KEY": "prod-override-key",
-		"CODEXK8S_AI_DOMAIN":                 "ai.platform.example.dev",
-		"CODEXK8S_AI_AI_DOMAIN":              "should-not-be-used",
+		"KODEX_OPENAI_API_KEY":            "prod-key",
+		"KODEX_AI_OPENAI_API_KEY":         "ai-key",
+		"KODEX_PRODUCTION_OPENAI_API_KEY": "prod-override-key",
+		"KODEX_AI_DOMAIN":                 "ai.platform.example.dev",
+		"KODEX_AI_AI_DOMAIN":              "should-not-be-used",
 	}
 
-	keys := []string{"CODEXK8S_OPENAI_API_KEY", "CODEXK8S_AI_DOMAIN"}
+	keys := []string{"KODEX_OPENAI_API_KEY", "KODEX_AI_DOMAIN"}
 	resolver := servicescfg.NewSecretResolver(nil)
 
 	production := cloneStringMap(values)
 	applyEnvironmentOverrides(production, "production", keys, resolver)
-	if got, want := production["CODEXK8S_OPENAI_API_KEY"], "prod-override-key"; got != want {
+	if got, want := production["KODEX_OPENAI_API_KEY"], "prod-override-key"; got != want {
 		t.Fatalf("production override mismatch: got %q want %q", got, want)
 	}
-	if got, want := production["CODEXK8S_AI_DOMAIN"], "ai.platform.example.dev"; got != want {
-		t.Fatalf("expected CODEXK8S_AI_DOMAIN to remain unchanged: got %q want %q", got, want)
+	if got, want := production["KODEX_AI_DOMAIN"], "ai.platform.example.dev"; got != want {
+		t.Fatalf("expected KODEX_AI_DOMAIN to remain unchanged: got %q want %q", got, want)
 	}
 
 	ai := cloneStringMap(values)
 	applyEnvironmentOverrides(ai, "ai", keys, resolver)
-	if got, want := ai["CODEXK8S_OPENAI_API_KEY"], "ai-key"; got != want {
+	if got, want := ai["KODEX_OPENAI_API_KEY"], "ai-key"; got != want {
 		t.Fatalf("ai override mismatch: got %q want %q", got, want)
 	}
-	if got, want := ai["CODEXK8S_AI_DOMAIN"], "ai.platform.example.dev"; got != want {
-		t.Fatalf("expected CODEXK8S_AI_DOMAIN to remain unchanged: got %q want %q", got, want)
+	if got, want := ai["KODEX_AI_DOMAIN"], "ai.platform.example.dev"; got != want {
+		t.Fatalf("expected KODEX_AI_DOMAIN to remain unchanged: got %q want %q", got, want)
 	}
 }

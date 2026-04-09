@@ -25,10 +25,10 @@ type RepositoryBinding struct {
 	// ExternalID is a provider-specific repository id (e.g. GitHub repository numeric id).
 	ExternalID int64
 
-	// Owner is a repository owner/namespace (e.g. "codex-k8s").
+	// Owner is a repository owner/namespace (e.g. "kodex").
 	Owner string
 
-	// Name is a repository short name (e.g. "codex-k8s").
+	// Name is a repository short name (e.g. "kodex").
 	Name string
 
 	// ServicesYAMLPath is a path to services.yaml within the repository.

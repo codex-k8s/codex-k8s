@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/codex-k8s/codex-k8s/libs/go/manifesttpl"
+	"github.com/codex-k8s/kodex/libs/go/manifesttpl"
 )
 
 func TestDefaultWorkerReplicas(t *testing.T) {
@@ -65,59 +65,59 @@ func TestResolveHotReloadFlag(t *testing.T) {
 }
 
 func TestBuildTemplateVars_AiForcesKanikoCleanupDisabled(t *testing.T) {
-	t.Setenv("CODEXK8S_KANIKO_CLEANUP", "true")
+	t.Setenv("KODEX_KANIKO_CLEANUP", "true")
 	svc := &Service{}
-	vars := svc.buildTemplateVars(PrepareParams{TargetEnv: "ai"}, "codex-k8s-dev-1")
-	if got, want := vars["CODEXK8S_KANIKO_CLEANUP"], "false"; got != want {
-		t.Fatalf("buildTemplateVars ai CODEXK8S_KANIKO_CLEANUP=%q want %q", got, want)
+	vars := svc.buildTemplateVars(PrepareParams{TargetEnv: "ai"}, "kodex-dev-1")
+	if got, want := vars["KODEX_KANIKO_CLEANUP"], "false"; got != want {
+		t.Fatalf("buildTemplateVars ai KODEX_KANIKO_CLEANUP=%q want %q", got, want)
 	}
-	if got, want := vars["CODEXK8S_HOT_RELOAD"], "true"; got != want {
-		t.Fatalf("buildTemplateVars ai CODEXK8S_HOT_RELOAD=%q want %q", got, want)
+	if got, want := vars["KODEX_HOT_RELOAD"], "true"; got != want {
+		t.Fatalf("buildTemplateVars ai KODEX_HOT_RELOAD=%q want %q", got, want)
 	}
 }
 
 func TestBuildTemplateVars_ProductionPreservesKanikoCleanupValue(t *testing.T) {
-	t.Setenv("CODEXK8S_KANIKO_CLEANUP", "true")
+	t.Setenv("KODEX_KANIKO_CLEANUP", "true")
 	svc := &Service{}
-	vars := svc.buildTemplateVars(PrepareParams{TargetEnv: "production"}, "codex-k8s-prod")
-	if got, want := vars["CODEXK8S_KANIKO_CLEANUP"], "true"; got != want {
-		t.Fatalf("buildTemplateVars production CODEXK8S_KANIKO_CLEANUP=%q want %q", got, want)
+	vars := svc.buildTemplateVars(PrepareParams{TargetEnv: "production"}, "kodex-prod")
+	if got, want := vars["KODEX_KANIKO_CLEANUP"], "true"; got != want {
+		t.Fatalf("buildTemplateVars production KODEX_KANIKO_CLEANUP=%q want %q", got, want)
 	}
 }
 
 func TestBuildTemplateVars_PreservesExplicitPlatformControlPlaneEndpoints(t *testing.T) {
-	t.Setenv("CODEXK8S_CONTROL_PLANE_GRPC_TARGET", "codex-k8s-control-plane.codex-k8s-prod.svc.cluster.local:9090")
-	t.Setenv("CODEXK8S_CONTROL_PLANE_MCP_BASE_URL", "http://codex-k8s-control-plane.codex-k8s-prod.svc.cluster.local:8081/mcp")
+	t.Setenv("KODEX_CONTROL_PLANE_GRPC_TARGET", "kodex-control-plane.kodex-prod.svc.cluster.local:9090")
+	t.Setenv("KODEX_CONTROL_PLANE_MCP_BASE_URL", "http://kodex-control-plane.kodex-prod.svc.cluster.local:8081/mcp")
 
 	svc := &Service{}
 	vars := svc.buildTemplateVars(PrepareParams{TargetEnv: "ai"}, "codex-issue-503")
-	if got, want := vars["CODEXK8S_CONTROL_PLANE_GRPC_TARGET"], "codex-k8s-control-plane.codex-k8s-prod.svc.cluster.local:9090"; got != want {
+	if got, want := vars["KODEX_CONTROL_PLANE_GRPC_TARGET"], "kodex-control-plane.kodex-prod.svc.cluster.local:9090"; got != want {
 		t.Fatalf("grpc target = %q, want %q", got, want)
 	}
-	if got, want := vars["CODEXK8S_CONTROL_PLANE_MCP_BASE_URL"], "http://codex-k8s-control-plane.codex-k8s-prod.svc.cluster.local:8081/mcp"; got != want {
+	if got, want := vars["KODEX_CONTROL_PLANE_MCP_BASE_URL"], "http://kodex-control-plane.kodex-prod.svc.cluster.local:8081/mcp"; got != want {
 		t.Fatalf("mcp base url = %q, want %q", got, want)
 	}
 }
 
 func TestBuildTemplateVars_DoesNotInventNamespaceLocalControlPlaneEndpoints(t *testing.T) {
-	t.Setenv("CODEXK8S_CONTROL_PLANE_GRPC_TARGET", "")
-	t.Setenv("CODEXK8S_CONTROL_PLANE_MCP_BASE_URL", "")
+	t.Setenv("KODEX_CONTROL_PLANE_GRPC_TARGET", "")
+	t.Setenv("KODEX_CONTROL_PLANE_MCP_BASE_URL", "")
 
 	svc := &Service{}
 	vars := svc.buildTemplateVars(PrepareParams{TargetEnv: "ai"}, "codex-issue-503")
-	if got := vars["CODEXK8S_CONTROL_PLANE_GRPC_TARGET"]; got != "" {
+	if got := vars["KODEX_CONTROL_PLANE_GRPC_TARGET"]; got != "" {
 		t.Fatalf("grpc target = %q, want empty value", got)
 	}
-	if got := vars["CODEXK8S_CONTROL_PLANE_MCP_BASE_URL"]; got != "" {
+	if got := vars["KODEX_CONTROL_PLANE_MCP_BASE_URL"]; got != "" {
 		t.Fatalf("mcp base url = %q, want empty value", got)
 	}
 }
 
 func TestRenderAppTemplate_UsesLocalControlPlaneDefaultsWhenVarsMissing(t *testing.T) {
-	t.Setenv("CODEXK8S_CONTROL_PLANE_GRPC_TARGET", "")
-	t.Setenv("CODEXK8S_CONTROL_PLANE_MCP_BASE_URL", "")
+	t.Setenv("KODEX_CONTROL_PLANE_GRPC_TARGET", "")
+	t.Setenv("KODEX_CONTROL_PLANE_MCP_BASE_URL", "")
 
-	raw, err := os.ReadFile(filepath.Join("..", "..", "..", "..", "..", "..", "deploy", "base", "codex-k8s", "app.yaml.tpl"))
+	raw, err := os.ReadFile(filepath.Join("..", "..", "..", "..", "..", "..", "deploy", "base", "kodex", "app.yaml.tpl"))
 	if err != nil {
 		t.Fatalf("read app template: %v", err)
 	}
@@ -128,16 +128,16 @@ func TestRenderAppTemplate_UsesLocalControlPlaneDefaultsWhenVarsMissing(t *testi
 	}
 
 	output := string(rendered)
-	if !strings.Contains(output, "value: 'codex-k8s-control-plane:9090'") {
+	if !strings.Contains(output, "value: 'kodex-control-plane:9090'") {
 		t.Fatalf("rendered app template does not contain local grpc target default:\n%s", output)
 	}
-	if !strings.Contains(output, "value: 'http://codex-k8s-control-plane:8081/mcp'") {
+	if !strings.Contains(output, "value: 'http://kodex-control-plane:8081/mcp'") {
 		t.Fatalf("rendered app template does not contain local mcp base url default:\n%s", output)
 	}
 }
 
 func TestRenderTelegramAdapterTemplate_UsesLocalControlPlaneDefaultWhenVarsMissing(t *testing.T) {
-	t.Setenv("CODEXK8S_CONTROL_PLANE_GRPC_TARGET", "")
+	t.Setenv("KODEX_CONTROL_PLANE_GRPC_TARGET", "")
 
 	raw, err := os.ReadFile(filepath.Join("..", "..", "..", "..", "..", "..", "deploy", "base", "telegram-interaction-adapter", "telegram-interaction-adapter.yaml.tpl"))
 	if err != nil {
@@ -150,18 +150,18 @@ func TestRenderTelegramAdapterTemplate_UsesLocalControlPlaneDefaultWhenVarsMissi
 	}
 
 	output := string(rendered)
-	if !strings.Contains(output, "value: 'codex-k8s-control-plane:9090'") {
+	if !strings.Contains(output, "value: 'kodex-control-plane:9090'") {
 		t.Fatalf("rendered telegram adapter template does not contain local grpc target default:\n%s", output)
 	}
-	if !strings.Contains(output, "name: CODEXK8S_ENV") {
-		t.Fatalf("rendered telegram adapter template does not contain CODEXK8S_ENV:\n%s", output)
+	if !strings.Contains(output, "name: KODEX_ENV") {
+		t.Fatalf("rendered telegram adapter template does not contain KODEX_ENV:\n%s", output)
 	}
 }
 
 func TestRenderIngressTemplate_OmitsTelegramWebhookIngressForAI(t *testing.T) {
-	t.Setenv("CODEXK8S_CONTROL_PLANE_GRPC_TARGET", "")
+	t.Setenv("KODEX_CONTROL_PLANE_GRPC_TARGET", "")
 
-	raw, err := os.ReadFile(filepath.Join("..", "..", "..", "..", "..", "..", "deploy", "base", "codex-k8s", "ingress.yaml.tpl"))
+	raw, err := os.ReadFile(filepath.Join("..", "..", "..", "..", "..", "..", "deploy", "base", "kodex", "ingress.yaml.tpl"))
 	if err != nil {
 		t.Fatalf("read ingress template: %v", err)
 	}
@@ -172,24 +172,24 @@ func TestRenderIngressTemplate_OmitsTelegramWebhookIngressForAI(t *testing.T) {
 	}
 
 	output := string(rendered)
-	if strings.Contains(output, "name: codex-k8s-telegram-webhook") {
+	if strings.Contains(output, "name: kodex-telegram-webhook") {
 		t.Fatalf("rendered ai ingress must not contain telegram webhook ingress:\n%s", output)
 	}
 }
 
 func TestRenderIngressTemplate_ContainsTelegramWebhookIngressForProduction(t *testing.T) {
-	raw, err := os.ReadFile(filepath.Join("..", "..", "..", "..", "..", "..", "deploy", "base", "codex-k8s", "ingress.yaml.tpl"))
+	raw, err := os.ReadFile(filepath.Join("..", "..", "..", "..", "..", "..", "deploy", "base", "kodex", "ingress.yaml.tpl"))
 	if err != nil {
 		t.Fatalf("read ingress template: %v", err)
 	}
 
-	rendered, err := manifesttpl.Render("ingress", raw, (&Service{}).buildTemplateVars(PrepareParams{TargetEnv: "production"}, "codex-k8s-prod"))
+	rendered, err := manifesttpl.Render("ingress", raw, (&Service{}).buildTemplateVars(PrepareParams{TargetEnv: "production"}, "kodex-prod"))
 	if err != nil {
 		t.Fatalf("render ingress template: %v", err)
 	}
 
 	output := string(rendered)
-	if !strings.Contains(output, "name: codex-k8s-telegram-webhook") {
+	if !strings.Contains(output, "name: kodex-telegram-webhook") {
 		t.Fatalf("rendered production ingress must contain telegram webhook ingress:\n%s", output)
 	}
 }
@@ -199,7 +199,7 @@ func TestResolveServicesConfigPath_PrefersRepoSnapshotWhenConfigPathIsAbsolute(t
 
 	repoRoot := t.TempDir()
 	repoServicesPath := filepath.Join(repoRoot, "services.yaml")
-	if err := os.WriteFile(repoServicesPath, []byte("apiVersion: codex-k8s.dev/v1alpha1\n"), 0o644); err != nil {
+	if err := os.WriteFile(repoServicesPath, []byte("apiVersion: kodex.works/v1alpha1\n"), 0o644); err != nil {
 		t.Fatalf("write %s: %v", repoServicesPath, err)
 	}
 
@@ -219,7 +219,7 @@ func TestResolveServicesConfigPath_UsesAbsolutePathWhenRepoSnapshotMissing(t *te
 
 	absoluteRoot := t.TempDir()
 	absolutePath := filepath.Join(absoluteRoot, "services.yaml")
-	if err := os.WriteFile(absolutePath, []byte("apiVersion: codex-k8s.dev/v1alpha1\n"), 0o644); err != nil {
+	if err := os.WriteFile(absolutePath, []byte("apiVersion: kodex.works/v1alpha1\n"), 0o644); err != nil {
 		t.Fatalf("write %s: %v", absolutePath, err)
 	}
 
@@ -242,7 +242,7 @@ func TestResolveServicesConfigPath_PathFromRunRelativeHasPriority(t *testing.T) 
 	if err := os.MkdirAll(filepath.Dir(fullPath), 0o755); err != nil {
 		t.Fatalf("mkdir %s: %v", filepath.Dir(fullPath), err)
 	}
-	if err := os.WriteFile(fullPath, []byte("apiVersion: codex-k8s.dev/v1alpha1\n"), 0o644); err != nil {
+	if err := os.WriteFile(fullPath, []byte("apiVersion: kodex.works/v1alpha1\n"), 0o644); err != nil {
 		t.Fatalf("write %s: %v", fullPath, err)
 	}
 

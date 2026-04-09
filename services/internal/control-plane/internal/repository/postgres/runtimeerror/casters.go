@@ -1,8 +1,8 @@
 package runtimeerror
 
 import (
-	domainrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/runtimeerror"
-	"github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/runtimeerror/dbmodel"
+	domainrepo "github.com/codex-k8s/kodex/services/internal/control-plane/internal/domain/repository/runtimeerror"
+	"github.com/codex-k8s/kodex/services/internal/control-plane/internal/repository/postgres/runtimeerror/dbmodel"
 )
 
 func fromDBModel(row dbmodel.RuntimeErrorRow) domainrepo.Item {

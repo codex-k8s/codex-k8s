@@ -1,6 +1,6 @@
 # Инструкции для ИИ-агентов (обязательно)
 
-Этот файл задает обязательные правила работы с репозиторием `codex-k8s` а также ссылается на обязательные требования в смежных документах проекта.
+Этот файл задает обязательные правила работы с репозиторием `kodex` а также ссылается на обязательные требования в смежных документах проекта.
 
 ## Главные **требования**
 
@@ -22,8 +22,8 @@
 - Для большой задачи до открытия PR допускается несколько коммитов.
 - При устранении замечаний в открытом PR каждая итерация должна содержать ровно один commit.
 - После завершения работ агент обязан создать PR и явно сообщить пользователю, как принять результат (review/approve/merge).
-- Для любых GitHub PR-операций (`gh pr *`, комментарии, review, push в PR-ветки) использовать только `CODEXK8S_GIT_BOT_TOKEN`; `CODEXK8S_GITHUB_PAT` в PR-flow не использовать.
-- При локальной работе токен для PR/комментариев брать из `bootstrap/host/config.env` (`CODEXK8S_GIT_BOT_TOKEN`) и экспортировать в окружение перед вызовами `gh`.
+- Для любых GitHub PR-операций (`gh pr *`, комментарии, review, push в PR-ветки) использовать только `KODEX_GIT_BOT_TOKEN`; `KODEX_GITHUB_PAT` в PR-flow не использовать.
+- При локальной работе токен для PR/комментариев брать из `bootstrap/host/config.env` (`KODEX_GIT_BOT_TOKEN`) и экспортировать в окружение перед вызовами `gh`.
 - Для Go-изменений обязательно исполнять требования из `docs/design-guidelines/go/**.md`, как до правок, так и перед подготовкой PR.
 - Для frontend-изменений обязательно исполнять требования из `docs/design-guidelines/vue/**.md`.
 - Для любых изменений читать `docs/design-guidelines/common/**.md`, который содержит общие требования проектирования для всех частей системы и языков программирования.
@@ -95,7 +95,7 @@
   - при любом изменении codegen-охвата (новый сервис/app или изменение путей/целей генерации) обязательно синхронно обновлять:
     - `Makefile` (`gen-openapi-*`);
     - `tools/codegen/**`;
-    - `deploy/base/codex-k8s/codegen-check-job.yaml.tpl`;
+    - `deploy/base/kodex/codegen-check-job.yaml.tpl`;
     - `docs/design-guidelines/go/code_generation.md`.
 - Для HTTP DTO размещать модели и кастеры в `internal/transport/http/{models,casters}` (или эквивалентно по протоколу в рамках сервиса).
 - Доменные типы размещать в `internal/domain/types/{entity,value,enum,query,mixin}`; не объявлять доменные модели ad-hoc в больших service/handler файлах.
@@ -128,8 +128,8 @@
 - Для каждого frontend-сервиса обязателен отдельный манифест в `deploy/base/<service>/*.yaml.tpl`.
 - Раздутый “общий” Dockerfile для нескольких сервисов не используется как основной путь сборки/deploy.
 - Для production/CI обязательны раздельные image vars и image repositories на каждый deployable-сервис:
-  - шаблон: `CODEXK8S_<SERVICE>_IMAGE`;
-  - шаблон: `CODEXK8S_<SERVICE>_INTERNAL_IMAGE_REPOSITORY`.
+  - шаблон: `KODEX_<SERVICE>_IMAGE`;
+  - шаблон: `KODEX_<SERVICE>_INTERNAL_IMAGE_REPOSITORY`.
 - Версии образов задаются в `services.yaml` (`spec.versions`).
   При изменениях кода сервисов или общих библиотек необходимо обновлять соответствующую версию,
   иначе build/deploy пропустит пересборку и будет использовать уже существующий тег.
@@ -161,7 +161,7 @@
   с текущей реализацией GitHub и заделом под GitLab.
 - Модель процессов: webhook-driven, без GitHub Actions workflow как основного механизма выполнения.
 - Хранилище сервиса: PostgreSQL (`JSONB` + `pgvector`) как единая точка синхронизации между pod'ами.
-- MCP служебные ручки: встроенные Go-реализации в `codex-k8s`; `github.com/codex-k8s/yaml-mcp-server` остаётся расширяемым пользовательским слоем.
+- MCP служебные ручки: встроенные Go-реализации в `kodex`; `github.com/codex-k8s/yaml-mcp-server` остаётся расширяемым пользовательским слоем.
 - Апрувы/экзекьюторы MCP: использовать универсальные HTTP-контракты (Telegram/Slack/Mattermost/Jira и др. как адаптеры), без вендорной привязки в core.
 - Операционная продуктовая модель агентов/лейблов/этапов:
   `docs/product/agents_operating_model.md`, `docs/product/labels_and_trigger_policy.md`, `docs/product/stage_process_model.md`.
@@ -177,8 +177,8 @@
   состояние слотов и рантаймов — в БД.
 - Поддерживается learning mode: для задач пользователя добавляются explain-инструкции
   (почему/зачем/компромиссы), а после PR могут публиковаться образовательные комментарии.
-- Секреты платформы и настройки деплоя `codex-k8s` берутся из env.
-- Имена env/secrets/CI variables для платформы используют префикс `CODEXK8S_`
+- Секреты платформы и настройки деплоя `kodex` берутся из env.
+- Имена env/secrets/CI variables для платформы используют префикс `KODEX_`
   (исключения допускаются только для внешних контрактов, например `POSTGRES_*` внутри контейнера PostgreSQL).
 - Токены доступа к repo хранятся в БД в зашифрованном виде.
 
@@ -203,14 +203,14 @@ source bootstrap/host/config.env
 
 1. Статус pod/deploy/job в production namespace:
 
-kubectl -n "$CODEXK8S_PRODUCTION_NAMESPACE" get pods,deploy,job -o wide
+kubectl -n "$KODEX_PRODUCTION_NAMESPACE" get pods,deploy,job -o wide
 
 2. Логи основного control-plane и worker:
 
-kubectl -n "$CODEXK8S_PRODUCTION_NAMESPACE" logs deploy/codex-k8s-control-plane --tail=200
-kubectl -n "$CODEXK8S_PRODUCTION_NAMESPACE" logs deploy/codex-k8s-worker --tail=200
+kubectl -n "$KODEX_PRODUCTION_NAMESPACE" logs deploy/kodex-control-plane --tail=200
+kubectl -n "$KODEX_PRODUCTION_NAMESPACE" logs deploy/kodex-worker --tail=200
 
 3. Логи конкретной build/deploy job:
 
-kubectl -n "$CODEXK8S_PRODUCTION_NAMESPACE" logs job/<job_name> --all-containers=true --tail=200
+kubectl -n "$KODEX_PRODUCTION_NAMESPACE" logs job/<job_name> --all-containers=true --tail=200
 ```

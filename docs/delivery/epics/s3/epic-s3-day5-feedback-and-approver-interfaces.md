@@ -32,7 +32,7 @@ approvals:
 - Telegram adapter baseline с поддержкой approve/deny/option/custom.
 - Интеграция с wait queue и timeout pause/resume.
 - Контрактная политика:
-  - контракт публикуется и поддерживается платформой `codex-k8s`;
+  - контракт публикуется и поддерживается платформой `kodex`;
   - внешние команды самостоятельно реализуют совместимые адаптеры без изменений core.
 
 ### Out of scope

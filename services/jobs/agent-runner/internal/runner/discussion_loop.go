@@ -7,12 +7,12 @@ import (
 	"strings"
 	"time"
 
-	floweventdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/flowevent"
-	webhookdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/webhook"
+	floweventdomain "github.com/codex-k8s/kodex/libs/go/domain/flowevent"
+	webhookdomain "github.com/codex-k8s/kodex/libs/go/domain/webhook"
 	gh "github.com/google/go-github/v82/github"
 )
 
-const runStatusCommentMarker = "<!-- codex-k8s:run-status "
+const runStatusCommentMarker = "<!-- kodex:run-status "
 
 type discussionIssueAPIResponse struct {
 	State  string                     `json:"state"`
