@@ -1,32 +1,46 @@
 <template>
   <div class="mission-home">
-    <section class="mission-home__composer">
-      <div class="mission-home__composer-copy">
-        <div class="mission-home__eyebrow">{{ projectTitle }}</div>
-        <h2 class="mission-home__title">Что нужно запустить или решить?</h2>
-        <p class="mission-home__summary">{{ projectSummary }}</p>
+    <section class="mission-home__hero">
+      <div class="mission-home__eyebrow">{{ projectTitle }}</div>
+      <h2 class="mission-home__title">Что требует решения по проекту?</h2>
+      <p class="mission-home__summary">{{ projectSummary }}</p>
+      <div class="mission-home__hero-note">
+        Здесь показываются только живые инициативы проекта. Создание новой работы вынесено в отдельное меню, а голосовой
+        запуск остается в плавающей кнопке справа снизу.
+      </div>
+    </section>
+
+    <section v-if="selectedInitiativeTitle || selectedFilterLabel" class="mission-home__focus">
+      <div class="mission-home__focus-copy">
+        <div v-if="selectedInitiativeTitle" class="mission-home__focus-item">
+          <span>Фокус по инициативе</span>
+          <strong>{{ selectedInitiativeTitle }}</strong>
+        </div>
+        <div v-if="selectedFilterLabel" class="mission-home__focus-item">
+          <span>Быстрый фильтр</span>
+          <strong>{{ selectedFilterLabel }}</strong>
+        </div>
       </div>
 
-      <div class="mission-home__composer-surface">
-        <VTextarea
-          v-model="draftPrompt"
-          variant="outlined"
-          rows="3"
-          auto-grow
-          hide-details
-          placeholder="Опишите инициативу, задачу или желаемый результат. Можно в свободной форме."
-        />
-
-        <div class="mission-home__composer-actions">
-          <VChip size="small" variant="tonal" color="primary">Полный цикл</VChip>
-          <VChip size="small" variant="tonal" color="info">Короткая поставка</VChip>
-          <VChip size="small" variant="tonal" color="warning">Горячее исправление</VChip>
-          <VSpacer />
-          <VBtn variant="tonal" prepend-icon="mdi-microphone" @click="$emit('open-voice')">Продиктовать</VBtn>
-          <VBtn color="primary" prepend-icon="mdi-rocket-launch-outline" @click="$emit('launch-workflow')">
-            Открыть редактор workflow
-          </VBtn>
-        </div>
+      <div class="mission-home__focus-actions">
+        <VBtn
+          v-if="selectedInitiativeTitle"
+          size="small"
+          variant="text"
+          prepend-icon="mdi-close"
+          @click="$emit('clear-initiative')"
+        >
+          Сбросить инициативу
+        </VBtn>
+        <VBtn
+          v-if="selectedFilterLabel"
+          size="small"
+          variant="text"
+          prepend-icon="mdi-filter-off-outline"
+          @click="$emit('clear-filter')"
+        >
+          Сбросить фильтр
+        </VBtn>
       </div>
     </section>
 
@@ -40,18 +54,15 @@
         <div class="mission-home__attention-label">{{ card.title }}</div>
         <div class="mission-home__attention-value">{{ card.valueLabel }}</div>
         <div class="mission-home__attention-summary">{{ card.summary }}</div>
+        <div class="mission-home__attention-actions">
+          <VBtn size="small" variant="tonal" :color="toneColor(card.tone)" @click="$emit('open-attention', card.cardId)">
+            {{ card.actionLabel }}
+          </VBtn>
+        </div>
       </article>
     </section>
 
-    <section v-if="selectedInitiativeTitle" class="mission-home__focus">
-      <div>
-        <div class="mission-home__focus-label">Фокус инициативы</div>
-        <div class="mission-home__focus-title">{{ selectedInitiativeTitle }}</div>
-      </div>
-      <VBtn variant="text" prepend-icon="mdi-close" @click="$emit('clear-initiative')">Показать все инициативы</VBtn>
-    </section>
-
-    <section class="mission-home__board">
+    <section v-if="columns.length > 0" class="mission-home__board">
       <article v-for="column in columns" :key="column.columnId" class="mission-home__column">
         <div class="mission-home__column-head">
           <div>
@@ -75,33 +86,49 @@
             <div class="mission-home__initiative-title">{{ item.title }}</div>
             <div class="mission-home__initiative-summary">{{ item.summary }}</div>
 
+            <div class="mission-home__initiative-objects">
+              <div class="mission-home__object-line">
+                <span>Текущий issue</span>
+                <strong>{{ item.primaryIssueTitle }}</strong>
+              </div>
+              <div class="mission-home__object-line">
+                <span>Текущий PR</span>
+                <strong>{{ item.primaryPrTitle }}</strong>
+              </div>
+            </div>
+
             <div class="mission-home__initiative-next">
-              <span>Следующий шаг</span>
+              <span>Что сделать сейчас</span>
               <strong>{{ item.nextAction }}</strong>
             </div>
 
             <div class="mission-home__initiative-metrics">
-              <span>Исполнений: {{ item.runSummary.total }}</span>
-              <span v-if="item.runSummary.running > 0">Активных: {{ item.runSummary.running }}</span>
-              <span v-if="item.runSummary.failed > 0">Ошибок: {{ item.runSummary.failed }}</span>
+              <span>Всего исполнений: {{ item.runSummary.total }}</span>
+              <span v-if="item.runSummary.running > 0">Идут: {{ item.runSummary.running }}</span>
+              <span v-if="item.runSummary.failed > 0">Ошибки: {{ item.runSummary.failed }}</span>
             </div>
 
             <div class="mission-home__initiative-actions">
-              <VBtn size="small" variant="text" @click="$emit('select-initiative', item.initiativeId)">Сфокусировать</VBtn>
+              <VBtn size="small" variant="text" @click="$emit('select-initiative', item.initiativeId)">Фокус</VBtn>
               <VBtn size="small" color="primary" variant="tonal" @click="$emit('open-workspace', item.initiativeId)">
-                Открыть workspace
+                Открыть инициативу
               </VBtn>
             </div>
           </article>
         </div>
       </article>
     </section>
+
+    <section v-else class="mission-home__empty">
+      <div class="mission-home__empty-title">По текущему фильтру ничего не найдено</div>
+      <div class="mission-home__empty-summary">
+        Сбросьте поиск или фильтр и выберите другую инициативу из кнопки в верхней панели.
+      </div>
+    </section>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from "vue";
-
 import { missionAttentionToneColor } from "./presenters";
 import type { MissionAttentionTone, MissionHomeAttentionCard, MissionHomeColumn } from "./types";
 
@@ -111,17 +138,16 @@ defineProps<{
   attentionCards: MissionHomeAttentionCard[];
   columns: MissionHomeColumn[];
   selectedInitiativeTitle: string;
+  selectedFilterLabel: string;
 }>();
 
 defineEmits<{
-  (event: "open-voice"): void;
-  (event: "launch-workflow"): void;
+  (event: "open-attention", cardId: string): void;
   (event: "select-initiative", initiativeId: string): void;
   (event: "open-workspace", initiativeId: string): void;
   (event: "clear-initiative"): void;
+  (event: "clear-filter"): void;
 }>();
-
-const draftPrompt = ref("");
 
 function toneColor(tone: MissionAttentionTone): string {
   return missionAttentionToneColor(tone);
@@ -134,54 +160,89 @@ function toneColor(tone: MissionAttentionTone): string {
   gap: 20px;
 }
 
-.mission-home__composer {
+.mission-home__hero,
+.mission-home__focus,
+.mission-home__empty,
+.mission-home__column,
+.mission-home__attention-card {
+  border-radius: 24px;
+  border: 1px solid rgba(223, 228, 235, 0.92);
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 16px 34px rgba(26, 29, 35, 0.05);
+}
+
+.mission-home__hero {
   display: grid;
-  gap: 16px;
+  gap: 10px;
   padding: 22px;
-  border-radius: 28px;
   background:
-    radial-gradient(circle at top left, rgba(255, 210, 128, 0.35), transparent 34%),
-    linear-gradient(135deg, rgba(255, 249, 239, 0.98), rgba(255, 255, 255, 0.94));
-  border: 1px solid rgba(214, 193, 145, 0.34);
-  box-shadow: 0 22px 44px rgba(26, 29, 35, 0.06);
+    radial-gradient(circle at top left, rgba(255, 216, 142, 0.2), transparent 30%),
+    linear-gradient(140deg, rgba(255, 251, 242, 0.98), rgba(250, 251, 255, 0.94));
 }
 
 .mission-home__eyebrow {
   font-size: 0.78rem;
   font-weight: 700;
-  text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: rgb(141, 93, 31);
+  text-transform: uppercase;
+  color: rgb(138, 91, 28);
 }
 
 .mission-home__title {
   margin: 0;
-  font-size: 1.65rem;
+  font-size: 1.55rem;
   line-height: 1.2;
-  color: rgb(28, 33, 41);
+  color: rgb(30, 35, 43);
 }
 
-.mission-home__summary {
-  margin: 8px 0 0;
-  max-width: 860px;
-  font-size: 0.98rem;
+.mission-home__summary,
+.mission-home__hero-note,
+.mission-home__attention-summary,
+.mission-home__column-summary,
+.mission-home__initiative-summary,
+.mission-home__initiative-metrics,
+.mission-home__empty-summary {
+  font-size: 0.92rem;
   line-height: 1.55;
-  color: rgb(82, 91, 107);
+  color: rgb(96, 104, 118);
 }
 
-.mission-home__composer-surface {
-  display: grid;
-  gap: 14px;
-  padding: 16px;
-  border-radius: 22px;
-  background: rgba(255, 255, 255, 0.9);
-  border: 1px solid rgba(222, 226, 232, 0.82);
+.mission-home__hero-note {
+  max-width: 980px;
 }
 
-.mission-home__composer-actions {
+.mission-home__focus {
   display: flex;
-  gap: 10px;
+  justify-content: space-between;
   align-items: center;
+  gap: 16px;
+  padding: 16px 18px;
+}
+
+.mission-home__focus-copy {
+  display: flex;
+  gap: 18px;
+  flex-wrap: wrap;
+}
+
+.mission-home__focus-item {
+  display: grid;
+  gap: 4px;
+}
+
+.mission-home__focus-item span {
+  font-size: 0.78rem;
+  color: rgb(102, 111, 124);
+}
+
+.mission-home__focus-item strong {
+  font-size: 0.95rem;
+  color: rgb(30, 35, 43);
+}
+
+.mission-home__focus-actions {
+  display: flex;
+  gap: 8px;
   flex-wrap: wrap;
 }
 
@@ -191,35 +252,10 @@ function toneColor(tone: MissionAttentionTone): string {
   grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
-.mission-home__focus {
-  display: flex;
-  justify-content: space-between;
-  gap: 14px;
-  align-items: center;
-  padding: 14px 18px;
-  border-radius: 22px;
-  background: rgba(255, 255, 255, 0.88);
-  border: 1px solid rgba(223, 228, 235, 0.88);
-}
-
-.mission-home__focus-label {
-  font-size: 0.8rem;
-  color: rgb(101, 110, 124);
-}
-
-.mission-home__focus-title {
-  margin-top: 4px;
-  font-size: 1rem;
-  font-weight: 700;
-  color: rgb(30, 35, 43);
-}
-
 .mission-home__attention-card {
+  display: grid;
+  gap: 10px;
   padding: 18px;
-  border-radius: 22px;
-  background: rgba(255, 255, 255, 0.88);
-  border: 1px solid rgba(223, 228, 235, 0.86);
-  box-shadow: 0 14px 28px rgba(26, 29, 35, 0.04);
 }
 
 .mission-home__attention-card--warning {
@@ -244,36 +280,26 @@ function toneColor(tone: MissionAttentionTone): string {
 }
 
 .mission-home__attention-value {
-  margin-top: 10px;
-  font-size: 2rem;
+  font-size: 1.9rem;
   font-weight: 700;
   color: rgb(28, 33, 41);
 }
 
-.mission-home__attention-summary {
-  margin-top: 8px;
-  font-size: 0.9rem;
-  line-height: 1.45;
-  color: rgb(94, 102, 116);
+.mission-home__attention-actions {
+  display: flex;
+  justify-content: flex-start;
 }
 
 .mission-home__board {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
   gap: 16px;
-  align-items: start;
-  padding-bottom: 8px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .mission-home__column {
-  min-width: 260px;
   display: grid;
   gap: 14px;
-  padding: 16px;
-  border-radius: 24px;
-  background: rgba(252, 252, 253, 0.86);
-  border: 1px solid rgba(225, 229, 235, 0.82);
-  box-shadow: 0 16px 34px rgba(26, 29, 35, 0.04);
+  padding: 18px;
 }
 
 .mission-home__column-head {
@@ -289,13 +315,6 @@ function toneColor(tone: MissionAttentionTone): string {
   color: rgb(31, 36, 43);
 }
 
-.mission-home__column-summary {
-  margin-top: 4px;
-  font-size: 0.84rem;
-  line-height: 1.45;
-  color: rgb(103, 111, 124);
-}
-
 .mission-home__column-items {
   display: grid;
   gap: 12px;
@@ -304,12 +323,10 @@ function toneColor(tone: MissionAttentionTone): string {
 .mission-home__initiative-card {
   display: grid;
   gap: 12px;
-  width: 100%;
   padding: 16px;
-  border: 1px solid rgba(224, 228, 235, 0.9);
   border-radius: 20px;
-  background: white;
-  text-align: left;
+  background: rgba(248, 250, 252, 0.94);
+  border: 1px solid rgba(224, 229, 235, 0.92);
 }
 
 .mission-home__initiative-topline {
@@ -321,53 +338,75 @@ function toneColor(tone: MissionAttentionTone): string {
 .mission-home__initiative-title {
   font-size: 1rem;
   font-weight: 700;
-  line-height: 1.35;
-  color: rgb(28, 33, 41);
+  color: rgb(30, 35, 43);
 }
 
-.mission-home__initiative-summary {
-  font-size: 0.9rem;
-  line-height: 1.5;
-  color: rgb(86, 96, 112);
+.mission-home__initiative-objects {
+  display: grid;
+  gap: 10px;
 }
 
+.mission-home__object-line,
 .mission-home__initiative-next {
   display: grid;
   gap: 4px;
-  font-size: 0.85rem;
-  color: rgb(103, 111, 124);
 }
 
+.mission-home__object-line span,
+.mission-home__initiative-next span {
+  font-size: 0.76rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: rgb(111, 119, 133);
+}
+
+.mission-home__object-line strong,
 .mission-home__initiative-next strong {
-  color: rgb(35, 41, 50);
+  font-size: 0.92rem;
+  line-height: 1.45;
+  color: rgb(31, 36, 43);
 }
 
-.mission-home__initiative-actions,
 .mission-home__initiative-metrics {
   display: flex;
-  gap: 8px;
+  gap: 10px;
   flex-wrap: wrap;
 }
 
-.mission-home__initiative-metrics {
-  font-size: 0.8rem;
-  color: rgb(107, 115, 129);
+.mission-home__initiative-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: center;
 }
 
-@media (max-width: 1200px) {
-  .mission-home__attention {
+.mission-home__empty {
+  padding: 24px;
+}
+
+.mission-home__empty-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: rgb(31, 36, 43);
+}
+
+@media (max-width: 1260px) {
+  .mission-home__attention,
+  .mission-home__board {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
-@media (max-width: 720px) {
-  .mission-home__attention {
-    grid-template-columns: 1fr;
+@media (max-width: 900px) {
+  .mission-home__attention,
+  .mission-home__board {
+    grid-template-columns: minmax(0, 1fr);
   }
 
-  .mission-home__composer,
-  .mission-home__column {
-    padding: 16px;
+  .mission-home__focus,
+  .mission-home__initiative-actions {
+    grid-template-columns: minmax(0, 1fr);
+    display: grid;
   }
 }
 </style>

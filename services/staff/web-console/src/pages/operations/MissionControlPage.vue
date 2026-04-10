@@ -21,6 +21,30 @@
           </VBtn>
         </VBtnToggle>
 
+        <VMenu v-model="createMenuOpen" location="bottom start">
+          <template #activator="{ props: menuProps }">
+            <VBtn
+              color="primary"
+              prepend-icon="mdi-plus-circle-outline"
+              variant="tonal"
+              v-bind="menuProps"
+            >
+              Создать
+            </VBtn>
+          </template>
+
+          <VList min-width="320">
+            <VListItem
+              v-for="item in createMenuItems"
+              :key="item.mode"
+              :prepend-icon="item.icon"
+              :title="item.title"
+              :subtitle="item.subtitle"
+              @click="onOpenCreateDialog(item.mode)"
+            />
+          </VList>
+        </VMenu>
+
         <VBtn
           variant="outlined"
           prepend-icon="mdi-briefcase-search-outline"
@@ -49,11 +73,12 @@
         :attention-cards="prototype.attentionCards"
         :columns="prototype.homeColumns"
         :selected-initiative-title="homeSelectedInitiativeTitle"
-        @open-voice="voiceDialogOpen = true"
-        @launch-workflow="onOpenStudio"
+        :selected-filter-label="homeFilterLabel"
+        @open-attention="onOpenAttention"
         @select-initiative="onFocusInitiative"
         @open-workspace="onOpenInitiative"
         @clear-initiative="onClearInitiative"
+        @clear-filter="onClearHomeFilter"
       />
 
       <MissionControlPrototypeWorkspaceView
@@ -65,8 +90,6 @@
         :artifact-views="prototype.workspaceArtifacts"
         :selected-artifact="selectedArtifactView"
         :activity="prototype.currentInitiativeActivity"
-        :flow-nodes="prototype.workspaceFlowNodes"
-        :flow-relations="prototype.workspaceFlowRelations"
         @update:view="onUpdateWorkspaceView"
         @select-artifact="onSelectArtifact"
         @open-executions="onOpenExecutions"
@@ -77,8 +100,6 @@
         v-else-if="activeRouteState.screen === 'studio'"
         :workflow="prototype.currentWorkflow"
         :workflow-options="prototype.workflowOptions"
-        :nodes="prototype.studioNodes"
-        :relations="prototype.studioRelations"
         @select-workflow="onSelectWorkflow"
       />
 
@@ -134,8 +155,8 @@
         <VCardTitle>{{ t("pages.missionControlPrototype.voice.title") }}</VCardTitle>
         <VCardText class="mission-control-page__voice-sheet">
           <p class="mission-control-page__voice-copy">
-            Голосовой запуск станет центральным входом в платформу: отсюда можно создать инициативу, задачу или
-            запустить workflow по вашему описанию.
+            Голосовой запуск остается главным способом поставить работу. Агент затем создает нужные GitHub Issue и PR через
+            <code>gh</code>, а машина приемки проверяет, что в body проставлены watermark-блок и обязательные поля workflow.
           </p>
 
           <VTextarea
@@ -158,6 +179,61 @@
           <VBtn variant="text" @click="voiceDialogOpen = false">Закрыть</VBtn>
           <VBtn color="primary" prepend-icon="mdi-rocket-launch-outline" @click="onOpenStudio">
             Перейти к редактору workflow
+          </VBtn>
+        </VCardActions>
+      </VCard>
+    </VDialog>
+
+    <VDialog v-model="createDialogOpen" max-width="760">
+      <VCard rounded="xl">
+        <VCardTitle>{{ createDialogTitle }}</VCardTitle>
+        <VCardText class="mission-control-page__create-sheet">
+          <p class="mission-control-page__voice-copy">{{ createDialogSummary }}</p>
+
+          <VTextField
+            v-model="createTitle"
+            density="compact"
+            variant="outlined"
+            hide-details
+            label="Короткое название"
+          />
+
+          <VSelect
+            v-if="createMode === 'workflow' || createMode === 'hotfix'"
+            v-model="createWorkflowId"
+            :items="prototype.workflowOptions"
+            item-title="title"
+            item-value="workflowId"
+            density="compact"
+            variant="outlined"
+            hide-details
+            label="Шаблон workflow"
+          />
+
+          <VTextarea
+            v-model="createDraft"
+            variant="outlined"
+            auto-grow
+            rows="4"
+            hide-details
+            label="Что должен сделать агент"
+          />
+
+          <div class="mission-control-page__watermark-note">
+            <strong>Что будет дальше</strong>
+            <ul>
+              <li>Агент создаст нужные GitHub Issue и PR через <code>gh</code>.</li>
+              <li>Workflow добавит в prompt, какие этапы пройти и какой follow-up артефакт должен появиться дальше.</li>
+              <li>При приемке машина проверит watermark-блок и обязательные поля в body, и при нехватке данных возобновит сессию.</li>
+            </ul>
+          </div>
+        </VCardText>
+        <VCardActions>
+          <VBtn variant="text" prepend-icon="mdi-microphone" @click="onCreateByVoice">Продиктовать</VBtn>
+          <VSpacer />
+          <VBtn variant="text" @click="createDialogOpen = false">Закрыть</VBtn>
+          <VBtn color="primary" prepend-icon="mdi-shape-outline" @click="onSubmitCreateDialog">
+            {{ createDialogActionLabel }}
           </VBtn>
         </VCardActions>
       </VCard>
@@ -198,9 +274,15 @@ const { t } = useI18n({ useScope: "global" });
 const initiativePickerOpen = ref(false);
 const initiativePickerSearch = ref("");
 const voiceDialogOpen = ref(false);
+const createMenuOpen = ref(false);
+const createDialogOpen = ref(false);
 const voiceDraft = ref(
   "Собери новый workflow для инициативы Mission Control: сначала owner narrative, потом дизайн, затем фронтенд-прототип и follow-up задачу на backend.",
 );
+const createMode = ref<"issue" | "workflow" | "hotfix" | "follow-up">("issue");
+const createTitle = ref("");
+const createDraft = ref("");
+const createWorkflowId = ref("");
 const activeRouteState = ref<MissionControlPrototypeRouteState>({
   screen: "home",
   projectId: "",
@@ -208,10 +290,37 @@ const activeRouteState = ref<MissionControlPrototypeRouteState>({
   workflowId: "",
   artifactId: "",
   search: "",
+  homeFilter: "all",
   workspaceView: "overview",
 });
 
 const routeState = computed(() => normalizeMissionControlPrototypeRouteQuery(route.query));
+const createMenuItems = [
+  {
+    mode: "issue" as const,
+    icon: "mdi-clipboard-plus-outline",
+    title: "Новая задача",
+    subtitle: "Обычный GitHub Issue без полного workflow.",
+  },
+  {
+    mode: "workflow" as const,
+    icon: "mdi-rocket-launch-outline",
+    title: "Запустить workflow",
+    subtitle: "Подготовить инициативу по одному из шаблонов.",
+  },
+  {
+    mode: "hotfix" as const,
+    icon: "mdi-flash-outline",
+    title: "Горячее исправление",
+    subtitle: "Быстрый путь triage → fix → qa → release → postdeploy.",
+  },
+  {
+    mode: "follow-up" as const,
+    icon: "mdi-source-branch-plus",
+    title: "Follow-up задача",
+    subtitle: "Создать следующий этап после текущего результата.",
+  },
+];
 const screenOptions = computed(() => [
   { screen: "home" as const, label: t("pages.missionControlPrototype.screens.home") },
   { screen: "initiative" as const, label: t("pages.missionControlPrototype.screens.initiative") },
@@ -237,8 +346,47 @@ const initiativePickerLabel = computed(() => {
 const homeSelectedInitiativeTitle = computed(() =>
   activeRouteState.value.screen === "home" ? prototype.currentInitiative?.title || "" : "",
 );
+const homeFilterLabel = computed(() => {
+  switch (activeRouteState.value.homeFilter) {
+    case "needs-decision":
+      return "Нуждаются в решении";
+    case "blocked":
+      return "Есть блокеры";
+    case "release-ready":
+      return "Почти готовы к выпуску";
+    case "all":
+      return "";
+  }
+});
 const selectedArtifactView = computed(
   () => prototype.workspaceArtifacts.find((artifact) => artifact.artifactId === activeRouteState.value.artifactId) ?? null,
+);
+const createDialogTitle = computed(() => {
+  switch (createMode.value) {
+    case "issue":
+      return "Новая задача";
+    case "workflow":
+      return "Запуск workflow";
+    case "hotfix":
+      return "Горячее исправление";
+    case "follow-up":
+      return "Follow-up задача";
+  }
+});
+const createDialogSummary = computed(() => {
+  switch (createMode.value) {
+    case "issue":
+      return "Используйте этот сценарий, когда нужен одиночный GitHub Issue без отдельного шаблона процесса.";
+    case "workflow":
+      return "Workflow не создает артефакты сам по себе: он задает prompt, по которому агент через gh откроет нужные Issue и PR.";
+    case "hotfix":
+      return "Hotfix задает жесткий путь до релиза и follow-up по коренной причине. Все служебные поля будут ожидаться в body.";
+    case "follow-up":
+      return "Follow-up нужен, когда после текущего PR или issue должен появиться следующий этап: review, qa, release или backend handover.";
+  }
+});
+const createDialogActionLabel = computed(() =>
+  createMode.value === "workflow" || createMode.value === "hotfix" ? "Открыть шаблон" : "Подготовить голосовую команду",
 );
 
 watch(
@@ -323,6 +471,13 @@ function onClearInitiative(): void {
   });
 }
 
+function onClearHomeFilter(): void {
+  updateRoute({
+    homeFilter: "all",
+    screen: "home",
+  });
+}
+
 function onPickInitiative(nextInitiativeId: string): void {
   initiativePickerOpen.value = false;
   initiativePickerSearch.value = "";
@@ -350,6 +505,7 @@ function onSelectWorkflow(nextWorkflowId: string): void {
 
 function onOpenStudio(): void {
   voiceDialogOpen.value = false;
+  createDialogOpen.value = false;
   updateRoute({
     screen: "studio",
   });
@@ -377,6 +533,95 @@ function onSelectArtifact(nextArtifactId: string): void {
   updateRoute({
     artifactId: nextArtifactId,
   });
+}
+
+function onOpenAttention(cardId: string): void {
+  if (cardId === "active-runs") {
+    updateRoute({
+      screen: "executions",
+    });
+    return;
+  }
+
+  const filterMap = {
+    "needs-decision": "needs-decision",
+    blocked: "blocked",
+    "release-ready": "release-ready",
+  } as const;
+  const nextFilter = filterMap[cardId as keyof typeof filterMap];
+  if (!nextFilter) {
+    return;
+  }
+
+  updateRoute({
+    screen: "home",
+    homeFilter: nextFilter,
+  });
+}
+
+function onOpenCreateDialog(mode: "issue" | "workflow" | "hotfix" | "follow-up"): void {
+  createMenuOpen.value = false;
+  createMode.value = mode;
+  createTitle.value =
+    mode === "hotfix"
+      ? "Срочное исправление"
+      : mode === "follow-up"
+        ? "Следующий этап после текущего результата"
+        : mode === "workflow"
+          ? "Новая инициатива"
+          : "Новая задача";
+  createDraft.value =
+    mode === "hotfix"
+      ? "Опишите симптом, влияние на пользователей, желаемую срочность и что надо проверить после выкладки."
+      : mode === "follow-up"
+        ? "Опишите, какой следующий Issue должен появиться после текущего PR или этапа, и что в нем должно быть зафиксировано."
+        : mode === "workflow"
+          ? "Опишите цель инициативы, ограничения, желаемые артефакты и какой этап должен идти первым."
+          : "Опишите, что должен сделать агент и какой результат должен появиться в GitHub.";
+  createWorkflowId.value =
+    mode === "hotfix"
+      ? "workflow-hotfix"
+      : prototype.currentWorkflow?.workflowId || prototype.workflowOptions[0]?.workflowId || "";
+  createDialogOpen.value = true;
+}
+
+function buildCreatePrompt(): string {
+  const title = createTitle.value.trim();
+  const draft = createDraft.value.trim();
+  const workflowTitle =
+    prototype.workflowOptions.find((workflow) => workflow.workflowId === createWorkflowId.value)?.title || "выбранный workflow";
+
+  switch (createMode.value) {
+    case "workflow":
+      return `Запусти workflow "${workflowTitle}" для проекта "${prototype.currentProject?.title || "текущий проект"}". Название: ${title || "без названия"}. Описание: ${draft}. Агент должен создать GitHub Issue и нужные follow-up артефакты через gh, а в body добавить watermark-блок workflow, stage и expected-next-artifact.`;
+    case "hotfix":
+      return `Подготовь hotfix по шаблону "${workflowTitle}" для проекта "${prototype.currentProject?.title || "текущий проект"}". Название: ${title || "без названия"}. Описание: ${draft}. Агент должен открыть triage issue, рабочий PR и follow-up issue через gh и заполнить служебный блок в body.`;
+    case "follow-up":
+      return `Создай follow-up GitHub Issue для проекта "${prototype.currentProject?.title || "текущий проект"}". Название: ${title || "без названия"}. Описание: ${draft}. В body должны быть stage, связь с предыдущим артефактом и expected-next-artifact.`;
+    case "issue":
+      return `Создай GitHub Issue для проекта "${prototype.currentProject?.title || "текущий проект"}". Название: ${title || "без названия"}. Описание: ${draft}. В body нужно оставить служебный watermark-блок и заполнить обязательные поля приемки.`;
+  }
+}
+
+function onCreateByVoice(): void {
+  voiceDraft.value = buildCreatePrompt();
+  createDialogOpen.value = false;
+  voiceDialogOpen.value = true;
+}
+
+function onSubmitCreateDialog(): void {
+  voiceDraft.value = buildCreatePrompt();
+  if (createMode.value === "workflow" || createMode.value === "hotfix") {
+    createDialogOpen.value = false;
+    updateRoute({
+      screen: "studio",
+      workflowId: createWorkflowId.value || activeRouteState.value.workflowId,
+    });
+    return;
+  }
+
+  createDialogOpen.value = false;
+  voiceDialogOpen.value = true;
 }
 </script>
 
@@ -421,7 +666,8 @@ function onSelectArtifact(nextArtifactId: string): void {
 }
 
 .mission-control-page__initiative-sheet,
-.mission-control-page__voice-sheet {
+.mission-control-page__voice-sheet,
+.mission-control-page__create-sheet {
   display: grid;
   gap: 14px;
 }
@@ -470,6 +716,30 @@ function onSelectArtifact(nextArtifactId: string): void {
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
+}
+
+.mission-control-page__watermark-note {
+  padding: 14px 16px;
+  border-radius: 18px;
+  background: rgba(246, 248, 252, 0.92);
+  border: 1px solid rgba(223, 228, 235, 0.92);
+}
+
+.mission-control-page__watermark-note strong {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 0.92rem;
+  color: rgb(31, 36, 43);
+}
+
+.mission-control-page__watermark-note ul {
+  margin: 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 6px;
+  font-size: 0.86rem;
+  line-height: 1.5;
+  color: rgb(96, 104, 118);
 }
 
 @media (max-width: 900px) {

@@ -8,6 +8,7 @@ import type {
   MissionExecutionGroup,
   MissionHomeAttentionCard,
   MissionHomeColumn,
+  MissionHomeFilter,
   MissionHomeInitiativeCard,
   MissionInitiative,
   MissionProjectOption,
@@ -108,6 +109,41 @@ function statusToTone(status: MissionWorkflowStageStatus): MissionAttentionTone 
   }
 }
 
+function stageArtifactPriority(status: MissionArtifactStatus): number {
+  switch (status) {
+    case "active":
+      return 0;
+    case "review":
+      return 1;
+    case "blocked":
+      return 2;
+    case "draft":
+      return 3;
+    case "done":
+      return 4;
+  }
+}
+
+function primaryArtifactForKind(
+  initiative: MissionInitiative,
+  artifacts: MissionArtifact[],
+  kind: MissionArtifact["kind"],
+): MissionArtifact | null {
+  const currentStageCandidates = artifacts
+    .filter((artifact) => artifact.kind === kind && artifact.stageKey === initiative.currentStageKey)
+    .sort((left, right) => stageArtifactPriority(left.status) - stageArtifactPriority(right.status));
+
+  if (currentStageCandidates.length > 0) {
+    return currentStageCandidates[0];
+  }
+
+  const fallbackCandidates = artifacts
+    .filter((artifact) => artifact.kind === kind)
+    .sort((left, right) => stageArtifactPriority(left.status) - stageArtifactPriority(right.status));
+
+  return fallbackCandidates[0] ?? null;
+}
+
 export function missionAttentionToneColor(tone: MissionAttentionTone): string {
   switch (tone) {
     case "info":
@@ -138,14 +174,10 @@ export function missionArtifactStatusColor(status: MissionArtifactStatus): strin
 
 export function missionArtifactKindLabel(kind: MissionArtifact["kind"]): string {
   switch (kind) {
-    case "doc":
-      return "Документ";
-    case "task":
-      return "Задача";
+    case "issue":
+      return "Issue";
     case "pr":
       return "PR";
-    case "release":
-      return "Релиз";
   }
 }
 
@@ -194,6 +226,7 @@ export function buildAttentionCards(model: MissionControlPrototypeModel | null, 
       valueLabel: String(projectInitiatives.filter((initiative) => initiative.attentionTone === "warning").length),
       summary: "Инициативы, где владелец должен принять решение или задать направление.",
       tone: "warning",
+      actionLabel: "Открыть",
     },
     {
       cardId: "blocked",
@@ -203,6 +236,7 @@ export function buildAttentionCards(model: MissionControlPrototypeModel | null, 
       ),
       summary: "Работа не может двигаться дальше без устранения блокера.",
       tone: "error",
+      actionLabel: "Открыть",
     },
     {
       cardId: "active-runs",
@@ -210,6 +244,7 @@ export function buildAttentionCards(model: MissionControlPrototypeModel | null, 
       valueLabel: String(projectExecutions.filter((execution) => execution.status === "running").length),
       summary: "Технические исполнения скрыты из основного потока, но живут за артефактами.",
       tone: "info",
+      actionLabel: "К исполнению",
     },
     {
       cardId: "release-ready",
@@ -217,8 +252,22 @@ export function buildAttentionCards(model: MissionControlPrototypeModel | null, 
       valueLabel: String(projectInitiatives.filter((initiative) => stageToColumnId(initiative.currentStageKey) === "release").length),
       summary: "Инициативы на релизе, postdeploy или ops.",
       tone: "success",
+      actionLabel: "Открыть",
     },
   ];
+}
+
+function initiativeMatchesHomeFilter(initiative: MissionInitiative, homeFilter: MissionHomeFilter): boolean {
+  switch (homeFilter) {
+    case "all":
+      return true;
+    case "needs-decision":
+      return initiative.attentionTone === "warning";
+    case "blocked":
+      return initiative.attentionTone === "error" || Boolean(initiative.blockedReason);
+    case "release-ready":
+      return stageToColumnId(initiative.currentStageKey) === "release";
+  }
 }
 
 export function buildHomeColumns(
@@ -226,6 +275,7 @@ export function buildHomeColumns(
   projectId: string,
   search: string,
   selectedInitiativeId: string,
+  homeFilter: MissionHomeFilter,
 ): MissionHomeColumn[] {
   if (!model) {
     return [];
@@ -237,17 +287,18 @@ export function buildHomeColumns(
     const items: MissionHomeInitiativeCard[] = model.initiatives
       .filter((initiative) => initiative.projectId === projectId)
       .filter((initiative) => (selectedInitiativeId === "" ? true : initiative.initiativeId === selectedInitiativeId))
+      .filter((initiative) => initiativeMatchesHomeFilter(initiative, homeFilter))
       .filter((initiative) => stageToColumnId(initiative.currentStageKey) === column.columnId)
-      .filter((initiative) =>
-        initiativeMatchesSearch(
-          initiative,
-          model.artifacts.filter((artifact) => artifact.initiativeId === initiative.initiativeId),
-          search,
-        ),
-      )
+      .filter((initiative) => {
+        const initiativeArtifacts = model.artifacts.filter((artifact) => artifact.initiativeId === initiative.initiativeId);
+        return initiativeMatchesSearch(initiative, initiativeArtifacts, search);
+      })
       .map((initiative) => {
         const workflow = model.workflows.find((candidate) => candidate.workflowId === initiative.workflowId);
         const stageLabel = workflow?.stages.find((stage) => stage.stageKey === initiative.currentStageKey)?.label ?? "Этап";
+        const initiativeArtifacts = model.artifacts.filter((artifact) => artifact.initiativeId === initiative.initiativeId);
+        const primaryIssue = primaryArtifactForKind(initiative, initiativeArtifacts, "issue");
+        const primaryPr = primaryArtifactForKind(initiative, initiativeArtifacts, "pr");
 
         return {
           initiativeId: initiative.initiativeId,
@@ -258,6 +309,8 @@ export function buildHomeColumns(
           nextAction: initiative.nextAction,
           attentionLabel: initiative.attentionLabel,
           attentionTone: initiative.attentionTone,
+          primaryIssueTitle: primaryIssue?.title ?? "Issue ещё не создан",
+          primaryPrTitle: primaryPr?.title ?? "PR ещё не открыт",
           runSummary: initiative.runSummary,
           tags: initiative.tags,
         };

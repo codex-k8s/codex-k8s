@@ -1,6 +1,7 @@
 import type { LocationQuery, LocationQueryRaw } from "vue-router";
 
 import type {
+  MissionHomeFilter,
   MissionControlPrototypeRouteState,
   MissionControlScreen,
   MissionInitiativeWorkspaceView,
@@ -8,6 +9,7 @@ import type {
 
 const defaultScreen: MissionControlScreen = "home";
 const defaultWorkspaceView: MissionInitiativeWorkspaceView = "overview";
+const defaultHomeFilter: MissionHomeFilter = "all";
 
 function asQueryString(value: LocationQuery[string]): string {
   if (typeof value === "string") {
@@ -27,9 +29,14 @@ function isWorkspaceView(value: string): value is MissionInitiativeWorkspaceView
   return value === "overview" || value === "flow" || value === "artifacts" || value === "activity";
 }
 
+function isHomeFilter(value: string): value is MissionHomeFilter {
+  return value === "all" || value === "needs-decision" || value === "blocked" || value === "release-ready";
+}
+
 export function normalizeMissionControlPrototypeRouteQuery(query: LocationQuery): MissionControlPrototypeRouteState {
   const rawScreen = asQueryString(query.screen);
   const rawView = asQueryString(query.view);
+  const rawFocus = asQueryString(query.focus);
 
   return {
     screen: isScreen(rawScreen) ? rawScreen : defaultScreen,
@@ -38,6 +45,7 @@ export function normalizeMissionControlPrototypeRouteQuery(query: LocationQuery)
     workflowId: asQueryString(query.workflow),
     artifactId: asQueryString(query.artifact),
     search: asQueryString(query.q),
+    homeFilter: isHomeFilter(rawFocus) ? rawFocus : defaultHomeFilter,
     workspaceView: isWorkspaceView(rawView) ? rawView : defaultWorkspaceView,
   };
 }
@@ -57,6 +65,7 @@ export function buildMissionControlPrototypeRouteQuery(
     workflow: state.workflowId !== "" && state.workflowId !== defaults.workflowId ? state.workflowId : undefined,
     artifact: state.artifactId || undefined,
     q: state.search || undefined,
+    focus: state.homeFilter !== defaultHomeFilter ? state.homeFilter : undefined,
     view: state.workspaceView !== defaultWorkspaceView ? state.workspaceView : undefined,
   };
 }
@@ -82,6 +91,7 @@ export function missionControlPrototypeRouteStateEquals(
     left.workflowId === right.workflowId &&
     left.artifactId === right.artifactId &&
     left.search === right.search &&
+    left.homeFilter === right.homeFilter &&
     left.workspaceView === right.workspaceView
   );
 }

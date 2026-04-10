@@ -29,6 +29,7 @@ const missionControlPrototypeDefaultRouteState: MissionControlPrototypeRouteStat
   workflowId: "",
   artifactId: "",
   search: "",
+  homeFilter: "all",
   workspaceView: "overview",
 };
 
@@ -52,6 +53,7 @@ export const useMissionControlPrototypeStore = defineStore("missionControlProtot
   const workflowId = ref("");
   const artifactId = ref("");
   const search = ref("");
+  const homeFilter = ref(missionControlPrototypeDefaultRouteState.homeFilter);
   const workspaceView = ref(missionControlPrototypeDefaultRouteState.workspaceView);
 
   const defaultProjectId = computed(() => model.value?.projects[0]?.projectId ?? "");
@@ -88,7 +90,13 @@ export const useMissionControlPrototypeStore = defineStore("missionControlProtot
   );
   const attentionCards = computed(() => buildAttentionCards(model.value, projectId.value));
   const homeColumns = computed(() =>
-    buildHomeColumns(model.value, projectId.value, search.value, screen.value === "home" ? initiativeId.value : ""),
+    buildHomeColumns(
+      model.value,
+      projectId.value,
+      search.value,
+      screen.value === "home" ? initiativeId.value : "",
+      homeFilter.value,
+    ),
   );
   const workspaceStageViews = computed(() => buildWorkspaceStageViews(currentInitiative.value, currentWorkflow.value));
   const workspaceArtifacts = computed(() =>
@@ -155,6 +163,7 @@ export const useMissionControlPrototypeStore = defineStore("missionControlProtot
     artifactId.value = normalizedArtifactId;
     screen.value = nextState.screen;
     search.value = nextState.search.trim();
+    homeFilter.value = nextState.homeFilter;
     workspaceView.value = nextState.workspaceView;
 
     return {
@@ -164,6 +173,7 @@ export const useMissionControlPrototypeStore = defineStore("missionControlProtot
       workflowId: normalizedWorkflowId,
       artifactId: normalizedArtifactId,
       search: nextState.search.trim(),
+      homeFilter: nextState.homeFilter,
       workspaceView: nextState.workspaceView,
     };
   }
@@ -177,6 +187,7 @@ export const useMissionControlPrototypeStore = defineStore("missionControlProtot
     workflowId,
     artifactId,
     search,
+    homeFilter,
     workspaceView,
     defaultProjectId,
     defaultInitiativeId,

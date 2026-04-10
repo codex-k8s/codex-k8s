@@ -2,6 +2,8 @@ export type MissionControlScreen = "home" | "initiative" | "studio" | "execution
 
 export type MissionInitiativeWorkspaceView = "overview" | "flow" | "artifacts" | "activity";
 
+export type MissionHomeFilter = "all" | "needs-decision" | "blocked" | "release-ready";
+
 export type MissionProjectAccent = "amber" | "teal" | "rose";
 
 export type MissionWorkflowStageKey =
@@ -23,7 +25,7 @@ export type MissionWorkflowStageStatus = "pending" | "active" | "attention" | "b
 
 export type MissionAttentionTone = "info" | "success" | "warning" | "error";
 
-export type MissionArtifactKind = "doc" | "task" | "pr" | "release";
+export type MissionArtifactKind = "issue" | "pr";
 
 export type MissionArtifactStatus = "draft" | "active" | "review" | "blocked" | "done";
 
@@ -43,6 +45,7 @@ export type MissionControlPrototypeRouteState = {
   workflowId: string;
   artifactId: string;
   search: string;
+  homeFilter: MissionHomeFilter;
   workspaceView: MissionInitiativeWorkspaceView;
 };
 
@@ -128,6 +131,8 @@ export type MissionActivityItem = {
   summary: string;
   happenedAtLabel: string;
   actorLabel: string;
+  targetKind: "issue" | "pr" | "run" | "stage";
+  targetLabel: string;
   tone: MissionAttentionTone;
 };
 
@@ -174,6 +179,7 @@ export type MissionHomeAttentionCard = {
   valueLabel: string;
   summary: string;
   tone: MissionAttentionTone;
+  actionLabel: string;
 };
 
 export type MissionHomeInitiativeCard = {
@@ -185,6 +191,8 @@ export type MissionHomeInitiativeCard = {
   nextAction: string;
   attentionLabel: string;
   attentionTone: MissionAttentionTone;
+  primaryIssueTitle: string;
+  primaryPrTitle: string;
   runSummary: MissionRunSummary;
   tags: string[];
 };

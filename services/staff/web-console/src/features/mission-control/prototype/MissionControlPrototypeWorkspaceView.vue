@@ -30,7 +30,7 @@
       <VBtnToggle divided mandatory :model-value="workspaceView" @update:model-value="onUpdateView">
         <VBtn value="overview">Обзор</VBtn>
         <VBtn value="flow">Поток</VBtn>
-        <VBtn value="artifacts">Артефакты</VBtn>
+        <VBtn value="artifacts">Issue и PR</VBtn>
         <VBtn value="activity">Активность</VBtn>
       </VBtnToggle>
 
@@ -41,37 +41,102 @@
     </div>
 
     <section v-if="workspaceView === 'overview'" class="mission-workspace__overview">
-      <div class="mission-workspace__stage-ribbon">
-        <article
-          v-for="stage in stageViews"
-          :key="stage.stageKey"
-          class="mission-workspace__stage-pill"
-          :class="`mission-workspace__stage-pill--${stage.status}`"
-        >
-          <div class="mission-workspace__stage-pill-title">{{ stage.label }}</div>
-          <div class="mission-workspace__stage-pill-summary">{{ stage.summary }}</div>
+      <div class="mission-workspace__overview-grid">
+        <article class="mission-workspace__card mission-workspace__card--primary">
+          <div class="mission-workspace__section-label">Сейчас в работе</div>
+          <div class="mission-workspace__section-title">{{ currentStage?.label || "Этап не определен" }}</div>
+          <p class="mission-workspace__section-copy">{{ currentStage?.summary || initiative.summary }}</p>
+
+          <div class="mission-workspace__action-block">
+            <span>Что должен сделать оператор</span>
+            <strong>{{ initiative.nextAction }}</strong>
+          </div>
+
+          <div class="mission-workspace__object-grid">
+            <button
+              type="button"
+              class="mission-workspace__object-card"
+              :disabled="!currentIssue"
+              @click="focusArtifact(currentIssue?.artifactId)"
+            >
+              <span>Текущий issue</span>
+              <strong>{{ currentIssue?.title || "Issue еще не создан" }}</strong>
+            </button>
+            <button
+              type="button"
+              class="mission-workspace__object-card"
+              :disabled="!currentPr"
+              @click="focusArtifact(currentPr?.artifactId)"
+            >
+              <span>Текущий PR</span>
+              <strong>{{ currentPr?.title || "PR появится на этапе разработки" }}</strong>
+            </button>
+            <button
+              type="button"
+              class="mission-workspace__object-card"
+              :disabled="!nextFollowUp"
+              @click="focusArtifact(nextFollowUp?.artifactId)"
+            >
+              <span>Следующий follow-up</span>
+              <strong>{{ nextFollowUp?.title || "Следующий issue будет создан позже" }}</strong>
+            </button>
+          </div>
+
+          <div class="mission-workspace__quick-actions">
+            <VBtn
+              v-if="currentIssue"
+              size="small"
+              color="primary"
+              variant="tonal"
+              @click="focusArtifact(currentIssue.artifactId)"
+            >
+              К issue
+            </VBtn>
+            <VBtn v-if="currentPr" size="small" variant="tonal" @click="focusArtifact(currentPr.artifactId)">К PR</VBtn>
+            <VBtn size="small" variant="text" @click="emit('update:view', 'flow')">Показать поток</VBtn>
+          </div>
+        </article>
+
+        <article class="mission-workspace__card">
+          <div class="mission-workspace__section-label">Как это будет исполняться</div>
+          <div class="mission-workspace__section-title">Issue и PR создаются через gh</div>
+          <div class="mission-workspace__policy-list">
+            <div class="mission-workspace__policy-item">
+              Workflow добавляет в prompt этап, ожидаемый артефакт и следующий follow-up.
+            </div>
+            <div class="mission-workspace__policy-item">
+              Агент открывает GitHub Issue и PR через <code>gh</code>, а не через MCP.
+            </div>
+            <div class="mission-workspace__policy-item">
+              При приемке машина проверяет watermark-блок и обязательные поля в body.
+            </div>
+          </div>
         </article>
       </div>
 
-      <div class="mission-workspace__overview-grid">
-        <section class="mission-workspace__overview-card">
-          <div class="mission-workspace__section-title">Этапы и выходы</div>
-          <div class="mission-workspace__stage-list">
-            <article v-for="stage in stageViews" :key="stage.stageKey" class="mission-workspace__stage-row">
-              <div>
-                <div class="mission-workspace__stage-row-title">{{ stage.label }}</div>
-                <div class="mission-workspace__stage-row-summary">{{ stage.exitLabel }}</div>
-              </div>
-              <VChip size="small" :color="statusColor(stage.status)" variant="tonal">{{ statusLabel(stage.status) }}</VChip>
-            </article>
-          </div>
-        </section>
+      <article class="mission-workspace__card">
+        <div class="mission-workspace__section-label">Лента этапов</div>
+        <div class="mission-workspace__stage-strip">
+          <button
+            v-for="stage in stageViews"
+            :key="stage.stageKey"
+            type="button"
+            class="mission-workspace__stage-pill"
+            :class="`mission-workspace__stage-pill--${stage.status}`"
+            @click="focusStage(stage.stageKey)"
+          >
+            <div class="mission-workspace__stage-pill-title">{{ stage.label }}</div>
+            <div class="mission-workspace__stage-pill-summary">{{ stage.exitLabel }}</div>
+          </button>
+        </div>
+      </article>
 
-        <section class="mission-workspace__overview-card">
-          <div class="mission-workspace__section-title">Артефакты в работе</div>
+      <div class="mission-workspace__overview-grid">
+        <article class="mission-workspace__card">
+          <div class="mission-workspace__section-label">Текущие Issue и PR</div>
           <div class="mission-workspace__artifact-list">
             <button
-              v-for="artifact in artifactViews"
+              v-for="artifact in currentStageArtifacts"
               :key="artifact.artifactId"
               type="button"
               class="mission-workspace__artifact-card"
@@ -88,95 +153,105 @@
               <div class="mission-workspace__artifact-summary">{{ artifact.summary }}</div>
             </button>
           </div>
-        </section>
+        </article>
+
+        <article class="mission-workspace__card">
+          <div class="mission-workspace__section-label">Последняя активность</div>
+          <div class="mission-workspace__activity-list">
+            <article v-for="item in recentActivity" :key="item.itemId" class="mission-workspace__activity-item">
+              <div class="mission-workspace__activity-meta">
+                <VChip size="x-small" :color="toneColor(item.tone)" variant="tonal">{{ item.actorLabel }}</VChip>
+                <span>{{ item.happenedAtLabel }}</span>
+              </div>
+              <div class="mission-workspace__activity-title">{{ item.title }}</div>
+              <div class="mission-workspace__activity-summary">{{ item.summary }}</div>
+              <div class="mission-workspace__activity-target">
+                {{ activityTargetLabel(item.targetKind) }}: {{ item.targetLabel }}
+              </div>
+            </article>
+          </div>
+        </article>
       </div>
     </section>
 
     <section v-else-if="workspaceView === 'flow'" class="mission-workspace__flow">
-      <div ref="flowCanvasRef" class="mission-workspace__flow-canvas">
-        <div class="mission-workspace__float mission-workspace__float--top-left">
-          <div class="mission-workspace__float-title">Карта этапов</div>
-          <div class="mission-workspace__float-copy">
-            Этапы можно двигать. Связи остаются привязанными к нодам, а executions по-прежнему скрыты за артефактами.
+      <div class="mission-workspace__flow-toolbar">
+        <div>
+          <div class="mission-workspace__section-title">Карта этапов</div>
+          <div class="mission-workspace__section-copy">
+            Поток строится автоматически по этапам workflow. Здесь нет ручного drag-and-drop, чтобы связи не ломались.
           </div>
         </div>
-
-        <div class="mission-workspace__float mission-workspace__float--top-right">
-          <VSwitch
-            v-model="showRunSummary"
-            density="compact"
-            color="primary"
-            inset
-            hide-details
-            label="Показывать summary executions"
-          />
-        </div>
-
-        <svg class="mission-workspace__flow-svg" :viewBox="`0 0 ${flowCanvasWidth} ${flowCanvasHeight}`" preserveAspectRatio="xMinYMin meet">
-          <path
-            v-for="relation in flowRelations"
-            :key="relation.relationId"
-            :d="relationPath(relation.sourceNodeId, relation.targetNodeId)"
-            class="mission-workspace__flow-path"
-          />
-        </svg>
-
-        <article
-          v-for="node in localFlowNodes"
-          :key="node.nodeId"
-          class="mission-workspace__flow-node"
-          :class="`mission-workspace__flow-node--${node.tone}`"
-          :style="{ transform: `translate(${node.layoutX}px, ${node.layoutY}px)` }"
-        >
-          <div class="mission-workspace__flow-node-head">
-            <div class="mission-workspace__flow-node-title">{{ node.title }}</div>
-            <button
-              type="button"
-              class="mission-workspace__drag-handle"
-              aria-label="Перетащить этап"
-              @pointerdown.prevent="startFlowDrag($event, node.nodeId)"
-            >
-              <VIcon icon="mdi-drag" size="16" />
-            </button>
-          </div>
-
-          <div class="mission-workspace__flow-node-summary">{{ node.summary }}</div>
-          <div class="mission-workspace__flow-node-status">{{ node.statusLabel }}</div>
-
-          <div class="mission-workspace__flow-node-artifacts">
-            <button
-              v-for="artifact in artifactsForNode(node.artifactIds)"
-              :key="artifact.artifactId"
-              type="button"
-              class="mission-workspace__flow-artifact"
-              @click="$emit('select-artifact', artifact.artifactId)"
-            >
-              <span>{{ kindLabel(artifact.kind) }}</span>
-              <strong>{{ artifact.title }}</strong>
-              <small v-if="showRunSummary">Исполнений: {{ artifact.runSummary.total }}</small>
-            </button>
-          </div>
-        </article>
-
-        <aside v-if="selectedArtifact" class="mission-workspace__flow-inspector">
-          <div class="mission-workspace__float-title">{{ selectedArtifact.title }}</div>
-          <div class="mission-workspace__float-copy">{{ selectedArtifact.summary }}</div>
-          <div class="mission-workspace__inspector-meta">
-            <span>{{ kindLabel(selectedArtifact.kind) }}</span>
-            <span>{{ artifactStatusLabel(selectedArtifact.status) }}</span>
-            <span>{{ selectedArtifact.ownerLabel }}</span>
-          </div>
-          <VBtn block variant="tonal" prepend-icon="mdi-timeline-outline" @click="$emit('open-executions')">
-            Открыть executions
-          </VBtn>
-        </aside>
+        <VSwitch
+          v-model="showRunSummary"
+          density="compact"
+          color="primary"
+          inset
+          hide-details
+          label="Показывать summary executions"
+        />
       </div>
+
+      <div class="mission-workspace__flow-strip">
+        <div
+          v-for="(stage, index) in stageViews"
+          :key="stage.stageKey"
+          class="mission-workspace__flow-stage-wrap"
+        >
+          <button
+            type="button"
+            class="mission-workspace__flow-stage"
+            :class="`mission-workspace__flow-stage--${stage.status}`"
+            @click="focusStage(stage.stageKey)"
+          >
+            <div class="mission-workspace__flow-stage-head">
+              <div class="mission-workspace__flow-stage-title">{{ stage.label }}</div>
+              <VChip size="x-small" :color="statusColor(stage.status)" variant="tonal">{{ statusLabel(stage.status) }}</VChip>
+            </div>
+            <div class="mission-workspace__flow-stage-copy">{{ stage.summary }}</div>
+            <div class="mission-workspace__flow-stage-meta">
+              <span>Issue: {{ artifactCount(stage.stageKey, "issue") }}</span>
+              <span>PR: {{ artifactCount(stage.stageKey, "pr") }}</span>
+              <span v-if="showRunSummary">Runs: {{ stageRunCount(stage.stageKey) }}</span>
+            </div>
+
+            <div class="mission-workspace__flow-stage-artifacts">
+              <button
+                v-for="artifact in artifactsForStage(stage.stageKey)"
+                :key="artifact.artifactId"
+                type="button"
+                class="mission-workspace__flow-artifact"
+                @click.stop="$emit('select-artifact', artifact.artifactId)"
+              >
+                <span>{{ kindLabel(artifact.kind) }}</span>
+                <strong>{{ artifact.title }}</strong>
+              </button>
+            </div>
+          </button>
+
+          <div v-if="index < stageViews.length - 1" class="mission-workspace__flow-arrow">
+            <VIcon icon="mdi-arrow-right" size="18" />
+          </div>
+        </div>
+      </div>
+
+      <article v-if="selectedArtifact" class="mission-workspace__card mission-workspace__card--detail">
+        <div class="mission-workspace__section-label">Выбранный артефакт</div>
+        <div class="mission-workspace__section-title">{{ selectedArtifact.title }}</div>
+        <div class="mission-workspace__section-copy">{{ selectedArtifact.summary }}</div>
+        <div class="mission-workspace__detail-meta">
+          <span>{{ kindLabel(selectedArtifact.kind) }}</span>
+          <span>{{ artifactStatusLabel(selectedArtifact.status) }}</span>
+          <span>{{ selectedArtifact.ownerLabel }}</span>
+          <span>Исполнений: {{ selectedArtifact.runSummary.total }}</span>
+        </div>
+      </article>
     </section>
 
     <section v-else-if="workspaceView === 'artifacts'" class="mission-workspace__artifacts">
       <article v-for="stage in stageViews" :key="stage.stageKey" class="mission-workspace__artifact-section">
         <div class="mission-workspace__section-title">{{ stage.label }}</div>
-        <div class="mission-workspace__artifact-section-copy">{{ stage.summary }}</div>
+        <div class="mission-workspace__section-copy">{{ stage.summary }}</div>
 
         <div class="mission-workspace__artifact-list">
           <button
@@ -198,6 +273,7 @@
             <div class="mission-workspace__artifact-meta">
               <span>{{ artifact.ownerLabel }}</span>
               <span>{{ artifact.updatedAtLabel }}</span>
+              <span>Исполнений: {{ artifact.runSummary.total }}</span>
             </div>
           </button>
         </div>
@@ -209,16 +285,18 @@
         <div class="mission-workspace__activity-meta">
           <VChip size="x-small" :color="toneColor(item.tone)" variant="tonal">{{ item.actorLabel }}</VChip>
           <span>{{ item.happenedAtLabel }}</span>
+          <span>{{ activityTargetLabel(item.targetKind) }}</span>
         </div>
         <div class="mission-workspace__activity-title">{{ item.title }}</div>
         <div class="mission-workspace__activity-summary">{{ item.summary }}</div>
+        <div class="mission-workspace__activity-target">{{ item.targetLabel }}</div>
       </article>
     </section>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, ref, watch } from "vue";
+import { computed, ref } from "vue";
 
 import {
   missionArtifactKindLabel,
@@ -228,8 +306,6 @@ import {
 import type {
   MissionActivityItem,
   MissionArtifactStatus,
-  MissionCanvasNode,
-  MissionCanvasRelation,
   MissionInitiative,
   MissionInitiativeWorkspaceView,
   MissionWorkspaceArtifactView,
@@ -246,8 +322,6 @@ const props = defineProps<{
   artifactViews: MissionWorkspaceArtifactView[];
   selectedArtifact: MissionWorkspaceArtifactView | null;
   activity: MissionActivityItem[];
-  flowNodes: MissionCanvasNode[];
-  flowRelations: MissionCanvasRelation[];
 }>();
 
 const emit = defineEmits<{
@@ -258,21 +332,28 @@ const emit = defineEmits<{
 }>();
 
 const showRunSummary = ref(false);
-const flowCanvasRef = ref<HTMLElement | null>(null);
-const localFlowNodes = ref<MissionCanvasNode[]>([]);
-const dragState = ref<null | { nodeId: string; offsetX: number; offsetY: number }>(null);
 
-const flowNodeById = computed(() => new Map(localFlowNodes.value.map((node) => [node.nodeId, node])));
-const flowCanvasWidth = computed(() => Math.max(1420, ...localFlowNodes.value.map((node) => node.layoutX + 620)));
-const flowCanvasHeight = computed(() => 620);
-
-watch(
-  () => props.flowNodes,
-  (nextNodes) => {
-    localFlowNodes.value = nextNodes.map((node) => ({ ...node }));
-  },
-  { immediate: true, deep: true },
+const currentStage = computed(() =>
+  props.stageViews.find((stage) => stage.status === "active" || stage.status === "blocked" || stage.status === "attention") ??
+  props.stageViews[0] ??
+  null,
 );
+
+const currentStageArtifacts = computed(() =>
+  currentStage.value ? props.artifactViews.filter((artifact) => artifact.stageKey === currentStage.value?.stageKey) : [],
+);
+
+const currentIssue = computed(() => primaryArtifactForKind(currentStageArtifacts.value, props.artifactViews, "issue"));
+const currentPr = computed(() => primaryArtifactForKind(currentStageArtifacts.value, props.artifactViews, "pr"));
+const nextFollowUp = computed(
+  () =>
+    props.artifactViews.find((artifact) => artifact.status === "draft") ??
+    props.artifactViews.find(
+      (artifact) => artifact.kind === "issue" && artifact.stageKey !== currentStage.value?.stageKey && artifact.status !== "done",
+    ) ??
+    null,
+);
+const recentActivity = computed(() => props.activity.slice(0, 4));
 
 function onUpdateView(nextValue: string): void {
   if (nextValue === "overview" || nextValue === "flow" || nextValue === "artifacts" || nextValue === "activity") {
@@ -336,84 +417,63 @@ function artifactStatusLabel(status: MissionArtifactStatus): string {
   }
 }
 
+function activityTargetLabel(kind: MissionActivityItem["targetKind"]): string {
+  switch (kind) {
+    case "issue":
+      return "Issue";
+    case "pr":
+      return "PR";
+    case "run":
+      return "Run";
+    case "stage":
+      return "Этап";
+  }
+}
+
 function artifactsForStage(stageKey: MissionWorkspaceStageView["stageKey"]): MissionWorkspaceArtifactView[] {
   return props.artifactViews.filter((artifact) => artifact.stageKey === stageKey);
 }
 
-function artifactsForNode(artifactIds: string[]): MissionWorkspaceArtifactView[] {
-  const allowed = new Set(artifactIds);
-  return props.artifactViews.filter((artifact) => allowed.has(artifact.artifactId));
+function artifactCount(stageKey: MissionWorkspaceStageView["stageKey"], kind: MissionWorkspaceArtifactView["kind"]): number {
+  return props.artifactViews.filter((artifact) => artifact.stageKey === stageKey && artifact.kind === kind).length;
 }
 
-function relationPath(sourceNodeId: string, targetNodeId: string): string {
-  const source = flowNodeById.value.get(sourceNodeId);
-  const target = flowNodeById.value.get(targetNodeId);
-  if (!source || !target) {
-    return "";
-  }
-
-  const startX = source.layoutX + 212;
-  const startY = source.layoutY + 84;
-  const endX = target.layoutX + 12;
-  const endY = target.layoutY + 84;
-  const controlOffset = Math.max(64, Math.abs(endX - startX) * 0.28);
-  return `M ${startX} ${startY} C ${startX + controlOffset} ${startY}, ${endX - controlOffset} ${endY}, ${endX} ${endY}`;
+function stageRunCount(stageKey: MissionWorkspaceStageView["stageKey"]): number {
+  return props.artifactViews
+    .filter((artifact) => artifact.stageKey === stageKey)
+    .reduce((sum, artifact) => sum + artifact.runSummary.total, 0);
 }
 
-function startFlowDrag(event: PointerEvent, nodeId: string): void {
-  const node = flowNodeById.value.get(nodeId);
-  if (!node) {
+function focusArtifact(artifactId?: string): void {
+  if (!artifactId) {
     return;
   }
 
-  dragState.value = {
-    nodeId,
-    offsetX: pointerXInCanvas(event) - node.layoutX,
-    offsetY: pointerYInCanvas(event) - node.layoutY,
-  };
-  window.addEventListener("pointermove", onFlowDragMove);
-  window.addEventListener("pointerup", stopFlowDrag);
+  emit("select-artifact", artifactId);
+  emit("update:view", "artifacts");
 }
 
-function onFlowDragMove(event: PointerEvent): void {
-  if (!dragState.value) {
-    return;
+function focusStage(stageKey: MissionWorkspaceStageView["stageKey"]): void {
+  const stageArtifact = props.artifactViews.find((artifact) => artifact.stageKey === stageKey);
+  if (stageArtifact) {
+    emit("select-artifact", stageArtifact.artifactId);
   }
+}
 
-  const targetNode = localFlowNodes.value.find((node) => node.nodeId === dragState.value?.nodeId);
-  if (!targetNode) {
-    return;
-  }
-
-  targetNode.layoutX = Math.max(
-    32,
-    Math.min(flowCanvasWidth.value - 560, pointerXInCanvas(event) - dragState.value.offsetX),
-  );
-  targetNode.layoutY = Math.max(
-    110,
-    Math.min(flowCanvasHeight.value - 220, pointerYInCanvas(event) - dragState.value.offsetY),
+function primaryArtifactForKind(
+  stageArtifacts: MissionWorkspaceArtifactView[],
+  allArtifacts: MissionWorkspaceArtifactView[],
+  kind: MissionWorkspaceArtifactView["kind"],
+): MissionWorkspaceArtifactView | null {
+  return (
+    stageArtifacts.find((artifact) => artifact.kind === kind && artifact.status === "active") ??
+    stageArtifacts.find((artifact) => artifact.kind === kind && artifact.status === "review") ??
+    stageArtifacts.find((artifact) => artifact.kind === kind) ??
+    allArtifacts.find((artifact) => artifact.kind === kind && artifact.status !== "done") ??
+    allArtifacts.find((artifact) => artifact.kind === kind) ??
+    null
   );
 }
-
-function stopFlowDrag(): void {
-  dragState.value = null;
-  window.removeEventListener("pointermove", onFlowDragMove);
-  window.removeEventListener("pointerup", stopFlowDrag);
-}
-
-function pointerXInCanvas(event: PointerEvent): number {
-  const rect = flowCanvasRef.value?.getBoundingClientRect();
-  return event.clientX - (rect?.left ?? 0) + (flowCanvasRef.value?.scrollLeft ?? 0);
-}
-
-function pointerYInCanvas(event: PointerEvent): number {
-  const rect = flowCanvasRef.value?.getBoundingClientRect();
-  return event.clientY - (rect?.top ?? 0) + (flowCanvasRef.value?.scrollTop ?? 0);
-}
-
-onBeforeUnmount(() => {
-  stopFlowDrag();
-});
 </script>
 
 <style scoped>
@@ -422,66 +482,95 @@ onBeforeUnmount(() => {
   gap: 18px;
 }
 
-.mission-workspace__hero {
-  display: grid;
-  gap: 16px;
-  padding: 22px;
-  border-radius: 28px;
-  background:
-    radial-gradient(circle at top right, rgba(124, 193, 255, 0.2), transparent 32%),
-    linear-gradient(140deg, rgba(251, 248, 242, 0.96), rgba(255, 255, 255, 0.94));
-  border: 1px solid rgba(220, 225, 232, 0.88);
-  box-shadow: 0 20px 40px rgba(26, 29, 35, 0.05);
+.mission-workspace__hero,
+.mission-workspace__card,
+.mission-workspace__artifact-section,
+.mission-workspace__activity-item {
+  border-radius: 24px;
+  border: 1px solid rgba(223, 227, 233, 0.92);
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: 0 16px 34px rgba(26, 29, 35, 0.05);
 }
 
-.mission-workspace__eyebrow {
+.mission-workspace__hero {
+  display: grid;
+  gap: 12px;
+  padding: 22px;
+  background:
+    radial-gradient(circle at top right, rgba(201, 229, 255, 0.26), transparent 30%),
+    linear-gradient(145deg, rgba(252, 252, 250, 0.98), rgba(245, 248, 255, 0.94));
+}
+
+.mission-workspace__eyebrow,
+.mission-workspace__section-label {
   font-size: 0.78rem;
   text-transform: uppercase;
   letter-spacing: 0.08em;
   font-weight: 700;
-  color: rgb(79, 91, 112);
+  color: rgb(89, 98, 113);
 }
 
 .mission-workspace__title {
   margin: 0;
-  font-size: 1.6rem;
+  font-size: 1.75rem;
   line-height: 1.2;
-  color: rgb(30, 35, 42);
+  color: rgb(31, 36, 43);
 }
 
-.mission-workspace__summary {
-  margin: 0;
-  font-size: 0.96rem;
+.mission-workspace__summary,
+.mission-workspace__section-copy,
+.mission-workspace__artifact-summary,
+.mission-workspace__activity-summary,
+.mission-workspace__activity-target,
+.mission-workspace__artifact-meta,
+.mission-workspace__flow-stage-copy,
+.mission-workspace__flow-stage-meta {
+  font-size: 0.9rem;
   line-height: 1.55;
-  color: rgb(84, 94, 109);
+  color: rgb(96, 104, 118);
 }
 
 .mission-workspace__chips,
-.mission-workspace__metrics {
+.mission-workspace__quick-actions,
+.mission-workspace__detail-meta,
+.mission-workspace__artifact-meta,
+.mission-workspace__activity-meta {
   display: flex;
-  gap: 10px;
+  gap: 8px;
   flex-wrap: wrap;
+  align-items: center;
 }
 
-.mission-workspace__metric {
-  min-width: 240px;
+.mission-workspace__metrics,
+.mission-workspace__overview-grid {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: 2fr 1fr;
+}
+
+.mission-workspace__metric,
+.mission-workspace__object-card {
   display: grid;
   gap: 6px;
   padding: 14px 16px;
-  border-radius: 20px;
-  background: rgba(255, 255, 255, 0.92);
-  border: 1px solid rgba(224, 228, 235, 0.9);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(223, 228, 235, 0.92);
+  text-align: left;
 }
 
-.mission-workspace__metric span {
-  font-size: 0.8rem;
-  color: rgb(102, 111, 125);
+.mission-workspace__metric span,
+.mission-workspace__object-card span {
+  font-size: 0.76rem;
+  color: rgb(102, 111, 124);
 }
 
-.mission-workspace__metric strong {
-  font-size: 0.96rem;
+.mission-workspace__metric strong,
+.mission-workspace__object-card strong,
+.mission-workspace__section-title {
+  font-size: 1rem;
   line-height: 1.45;
-  color: rgb(32, 37, 45);
+  color: rgb(31, 36, 43);
 }
 
 .mission-workspace__modebar {
@@ -492,331 +581,236 @@ onBeforeUnmount(() => {
 }
 
 .mission-workspace__overview,
+.mission-workspace__flow,
 .mission-workspace__artifacts,
 .mission-workspace__activity {
   display: grid;
-  gap: 18px;
+  gap: 16px;
 }
 
-.mission-workspace__stage-ribbon {
+.mission-workspace__card,
+.mission-workspace__artifact-section {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 12px;
+  gap: 14px;
+  padding: 18px;
 }
 
-.mission-workspace__stage-pill,
-.mission-workspace__overview-card,
-.mission-workspace__artifact-section,
-.mission-workspace__activity-item {
-  padding: 16px;
-  border-radius: 22px;
-  border: 1px solid rgba(223, 227, 233, 0.9);
-  background: rgba(255, 255, 255, 0.92);
-  box-shadow: 0 14px 28px rgba(26, 29, 35, 0.04);
+.mission-workspace__card--primary {
+  background: linear-gradient(145deg, rgba(255, 251, 243, 0.96), rgba(255, 255, 255, 0.94));
 }
 
-.mission-workspace__stage-pill--done {
-  background: linear-gradient(180deg, rgba(238, 251, 242, 0.96), rgba(255, 255, 255, 0.92));
-}
-
-.mission-workspace__stage-pill--active,
-.mission-workspace__stage-pill--attention {
-  background: linear-gradient(180deg, rgba(255, 247, 227, 0.96), rgba(255, 255, 255, 0.92));
-}
-
-.mission-workspace__stage-pill--blocked {
-  background: linear-gradient(180deg, rgba(255, 238, 236, 0.96), rgba(255, 255, 255, 0.92));
-}
-
-.mission-workspace__stage-pill-title,
-.mission-workspace__section-title,
-.mission-workspace__activity-title {
-  font-size: 1rem;
-  font-weight: 700;
-  color: rgb(31, 36, 44);
-}
-
-.mission-workspace__stage-pill-summary,
-.mission-workspace__activity-summary,
-.mission-workspace__artifact-section-copy {
-  margin-top: 8px;
-  font-size: 0.9rem;
-  line-height: 1.5;
-  color: rgb(92, 101, 115);
-}
-
-.mission-workspace__overview-grid {
+.mission-workspace__action-block {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  gap: 18px;
-}
-
-.mission-workspace__stage-list,
-.mission-workspace__artifact-list {
-  display: grid;
-  gap: 12px;
-  margin-top: 14px;
-}
-
-.mission-workspace__stage-row {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
-  align-items: flex-start;
-  padding: 12px 14px;
-  border-radius: 16px;
+  gap: 6px;
+  padding: 14px 16px;
+  border-radius: 18px;
   background: rgba(248, 250, 252, 0.92);
 }
 
-.mission-workspace__stage-row-title,
-.mission-workspace__artifact-title {
-  font-size: 0.95rem;
-  font-weight: 700;
-  line-height: 1.4;
+.mission-workspace__action-block span {
+  font-size: 0.78rem;
+  color: rgb(102, 111, 124);
+}
+
+.mission-workspace__action-block strong {
+  font-size: 1rem;
+  line-height: 1.45;
   color: rgb(31, 36, 43);
 }
 
-.mission-workspace__stage-row-summary,
-.mission-workspace__artifact-summary {
-  margin-top: 4px;
-  font-size: 0.87rem;
-  line-height: 1.5;
-  color: rgb(97, 107, 122);
+.mission-workspace__object-grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
-.mission-workspace__artifact-card {
+.mission-workspace__object-card:disabled {
+  opacity: 0.65;
+}
+
+.mission-workspace__policy-list,
+.mission-workspace__activity-list,
+.mission-workspace__artifact-list {
+  display: grid;
+  gap: 12px;
+}
+
+.mission-workspace__policy-item {
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: rgba(248, 250, 252, 0.92);
+  border: 1px solid rgba(224, 229, 235, 0.92);
+  font-size: 0.88rem;
+  line-height: 1.5;
+  color: rgb(88, 97, 112);
+}
+
+.mission-workspace__stage-strip {
   display: grid;
   gap: 10px;
-  width: 100%;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
+.mission-workspace__stage-pill {
+  display: grid;
+  gap: 6px;
   padding: 14px;
   border-radius: 18px;
-  border: 1px solid rgba(223, 227, 233, 0.94);
-  background: white;
   text-align: left;
+  border: 1px solid rgba(224, 229, 235, 0.92);
+  background: rgba(248, 250, 252, 0.94);
 }
 
-.mission-workspace__artifact-card--selected {
-  border-color: rgba(86, 132, 255, 0.7);
-  box-shadow: 0 0 0 3px rgba(86, 132, 255, 0.12);
+.mission-workspace__stage-pill--active,
+.mission-workspace__flow-stage--active {
+  border-color: rgba(245, 173, 74, 0.72);
+  background: rgba(255, 248, 236, 0.98);
 }
 
-.mission-workspace__artifact-topline,
-.mission-workspace__artifact-meta,
-.mission-workspace__activity-meta {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  flex-wrap: wrap;
-  font-size: 0.8rem;
-  color: rgb(104, 113, 126);
+.mission-workspace__stage-pill--blocked,
+.mission-workspace__flow-stage--blocked {
+  border-color: rgba(239, 106, 94, 0.56);
+  background: rgba(255, 242, 240, 0.98);
 }
 
-.mission-workspace__flow {
-  min-height: 640px;
+.mission-workspace__stage-pill--done,
+.mission-workspace__flow-stage--done {
+  border-color: rgba(125, 201, 152, 0.56);
+  background: rgba(241, 252, 245, 0.98);
 }
 
-.mission-workspace__flow-canvas {
-  position: relative;
-  min-height: 620px;
-  overflow: auto;
-  padding: 24px 340px 40px 24px;
-  border-radius: 30px;
-  background:
-    linear-gradient(rgba(220, 225, 232, 0.34) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(220, 225, 232, 0.34) 1px, transparent 1px),
-    linear-gradient(135deg, rgb(248, 249, 251), rgb(242, 244, 247));
-  background-size: 28px 28px, 28px 28px, auto;
-  border: 1px solid rgba(220, 225, 232, 0.9);
-}
-
-.mission-workspace__float {
-  position: absolute;
-  z-index: 3;
-  max-width: 280px;
-  padding: 14px 16px;
-  border-radius: 20px;
-  background: rgba(255, 255, 255, 0.94);
-  border: 1px solid rgba(223, 227, 233, 0.92);
-  box-shadow: 0 16px 34px rgba(26, 29, 35, 0.08);
-  backdrop-filter: blur(12px);
-}
-
-.mission-workspace__float--top-left {
-  left: 18px;
-  top: 18px;
-}
-
-.mission-workspace__float--top-right {
-  right: 18px;
-  top: 18px;
-}
-
-.mission-workspace__float-title {
-  font-size: 0.95rem;
-  font-weight: 700;
-  color: rgb(30, 35, 42);
-}
-
-.mission-workspace__float-copy {
-  margin-top: 6px;
-  font-size: 0.84rem;
-  line-height: 1.45;
-  color: rgb(95, 104, 117);
-}
-
-.mission-workspace__flow-svg {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  min-width: 100%;
-  min-height: 100%;
-  z-index: 1;
-  overflow: visible;
-}
-
-.mission-workspace__flow-path {
-  fill: none;
-  stroke: rgba(73, 131, 211, 0.56);
-  stroke-width: 3;
-  stroke-linecap: round;
-}
-
-.mission-workspace__flow-node {
-  position: absolute;
-  z-index: 2;
-  width: 200px;
-  display: grid;
-  gap: 10px;
-  padding: 14px;
-  border-radius: 22px;
-  border: 1px solid rgba(223, 227, 233, 0.92);
-  background: rgba(255, 255, 255, 0.96);
-  box-shadow: 0 16px 34px rgba(26, 29, 35, 0.08);
-}
-
-.mission-workspace__flow-node--warning {
-  border-color: rgba(237, 178, 72, 0.58);
-}
-
-.mission-workspace__flow-node--error {
-  border-color: rgba(227, 122, 122, 0.58);
-}
-
-.mission-workspace__flow-node--success {
-  border-color: rgba(109, 196, 141, 0.58);
-}
-
-.mission-workspace__flow-node-head {
-  display: flex;
-  justify-content: space-between;
-  gap: 10px;
-  align-items: flex-start;
-}
-
-.mission-workspace__flow-node-title {
+.mission-workspace__stage-pill-title,
+.mission-workspace__flow-stage-title,
+.mission-workspace__artifact-title,
+.mission-workspace__activity-title {
   font-size: 0.98rem;
   font-weight: 700;
   color: rgb(31, 36, 43);
 }
 
-.mission-workspace__drag-handle {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  border: 1px solid rgba(221, 226, 233, 0.92);
+.mission-workspace__stage-pill-summary {
+  font-size: 0.84rem;
+  line-height: 1.45;
+  color: rgb(95, 104, 118);
+}
+
+.mission-workspace__artifact-card {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+  border-radius: 18px;
   background: rgba(248, 250, 252, 0.92);
-  color: rgb(96, 104, 118);
-  cursor: grab;
-}
-
-.mission-workspace__flow-node-summary,
-.mission-workspace__flow-node-status {
-  font-size: 0.82rem;
-  line-height: 1.5;
-  color: rgb(96, 105, 118);
-}
-
-.mission-workspace__flow-node-artifacts {
-  display: grid;
-  gap: 8px;
-}
-
-.mission-workspace__flow-artifact {
-  display: grid;
-  gap: 2px;
-  padding: 9px 10px;
-  border-radius: 14px;
-  border: 1px solid rgba(224, 229, 236, 0.92);
-  background: rgba(248, 250, 252, 0.9);
+  border: 1px solid rgba(224, 229, 235, 0.92);
   text-align: left;
 }
 
-.mission-workspace__flow-artifact span,
-.mission-workspace__flow-artifact small {
-  font-size: 0.76rem;
-  color: rgb(104, 113, 126);
+.mission-workspace__artifact-card--selected {
+  border-color: rgba(78, 129, 253, 0.48);
+  box-shadow: inset 0 0 0 1px rgba(78, 129, 253, 0.24);
 }
 
-.mission-workspace__flow-artifact strong {
-  font-size: 0.84rem;
-  line-height: 1.35;
-  color: rgb(35, 40, 47);
+.mission-workspace__artifact-topline {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
 }
 
-.mission-workspace__flow-inspector {
-  position: absolute;
-  right: 18px;
-  top: 96px;
-  z-index: 3;
-  width: 280px;
+.mission-workspace__flow-toolbar {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  align-items: flex-start;
+}
+
+.mission-workspace__flow-strip {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  padding-bottom: 8px;
+}
+
+.mission-workspace__flow-stage-wrap {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex: 0 0 auto;
+}
+
+.mission-workspace__flow-stage {
+  width: 260px;
   display: grid;
   gap: 12px;
   padding: 16px;
   border-radius: 22px;
-  background: rgba(255, 255, 255, 0.95);
-  border: 1px solid rgba(223, 227, 233, 0.92);
-  box-shadow: 0 20px 40px rgba(26, 29, 35, 0.12);
+  border: 1px solid rgba(223, 228, 235, 0.92);
+  background: rgba(255, 255, 255, 0.94);
+  text-align: left;
 }
 
-.mission-workspace__inspector-meta {
+.mission-workspace__flow-stage-head {
   display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.mission-workspace__flow-stage-artifacts {
+  display: grid;
+  gap: 10px;
+}
+
+.mission-workspace__flow-artifact {
+  display: grid;
+  gap: 4px;
+  padding: 10px 12px;
+  border-radius: 16px;
+  background: rgba(248, 250, 252, 0.94);
+  border: 1px solid rgba(224, 229, 235, 0.92);
+  text-align: left;
+}
+
+.mission-workspace__flow-artifact span {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: rgb(108, 116, 130);
+}
+
+.mission-workspace__flow-artifact strong {
+  font-size: 0.88rem;
+  line-height: 1.4;
+  color: rgb(31, 36, 43);
+}
+
+.mission-workspace__flow-arrow {
+  color: rgb(117, 126, 139);
+}
+
+.mission-workspace__detail-meta {
+  font-size: 0.84rem;
+  color: rgb(102, 111, 124);
+}
+
+.mission-workspace__activity-item {
+  display: grid;
   gap: 8px;
-  flex-wrap: wrap;
-  font-size: 0.8rem;
-  color: rgb(104, 113, 126);
+  padding: 16px;
 }
 
-@media (max-width: 1100px) {
-  .mission-workspace__overview-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .mission-workspace__flow-canvas {
-    padding-right: 24px;
-    padding-top: 110px;
-  }
-
-  .mission-workspace__flow-inspector {
-    position: static;
-    width: 100%;
-    margin-top: 480px;
+@media (max-width: 1180px) {
+  .mission-workspace__metrics,
+  .mission-workspace__overview-grid,
+  .mission-workspace__object-grid {
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 
-@media (max-width: 720px) {
-  .mission-workspace__hero,
-  .mission-workspace__flow-canvas {
-    padding: 16px;
-  }
-
-  .mission-workspace__float {
-    position: static;
-    max-width: none;
-    margin-bottom: 12px;
+@media (max-width: 900px) {
+  .mission-workspace__modebar,
+  .mission-workspace__flow-toolbar {
+    align-items: stretch;
+    display: grid;
   }
 }
 </style>

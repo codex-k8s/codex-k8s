@@ -12,7 +12,7 @@ import {
 } from "./presenters.ts";
 
 test("buildHomeColumns раскладывает инициативы по верхнеуровневым колонкам", () => {
-  const columns = buildHomeColumns(missionControlPrototypeModel, "project-kodex", "", "");
+  const columns = buildHomeColumns(missionControlPrototypeModel, "project-kodex", "", "", "all");
 
   const designColumn = columns.find((column) => column.columnId === "design");
   const validationColumn = columns.find((column) => column.columnId === "validation");
