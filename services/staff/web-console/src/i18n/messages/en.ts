@@ -690,6 +690,24 @@ export const en = {
         empty: "No data",
       },
     },
+    missionControlPrototype: {
+      title: "Mission Control",
+      hint:
+        "Frontend-first prototype of the new control center: Home for the initiative portfolio, Initiative for the working surface, Workflow Studio for templates, and Executions for diagnostics.",
+      screens: {
+        home: "Home",
+        initiative: "Initiative",
+        studio: "Templates",
+        executions: "Executions",
+      },
+      voice: {
+        title: "Voice command",
+      },
+      errors: {
+        modelNotReady: "Prototype model is not ready yet. Check local fixture data.",
+        unknown: "Could not build the Mission Control screen. Check local fixture data.",
+      },
+    },
     projects: {
       title: "Projects",
       createTitle: "Create / Update Project",

@@ -5,7 +5,7 @@ title: "Sprint S18 Traceability History"
 status: in-review
 owner_role: KM
 created_at: 2026-03-26
-updated_at: 2026-04-01
+updated_at: 2026-04-09
 related_issues: [470, 480, 522, 523, 524, 525, 561, 562, 563, 565, 567, 571, 573, 579, 581]
 related_prs: []
 approvals:
@@ -119,3 +119,21 @@ approvals:
 - Через `gh issue create` создана follow-up issue `#581` для stage `run:dev`.
 - Выполнены markdown-only проверки: traceability sync, `git diff --check`, локальная проверка `gh issue view 579 --json number,title,body,url`, `gh issue view 581 --json number,title,body,url`, `gh issue create --help`, `gh pr create --help`, `gh pr edit --help`; kubectl/logs/БД-запросы не выполнялись, потому что stage ограничен documentation-only scope и не требовал runtime-debug.
 - Root FR/NFR matrix в `docs/delivery/requirements_traceability.md` не менялась по существу: plan stage фиксирует execution package, handover и historical delta, не добавляя новые канонические требования в `docs/product/requirements_machine_driven.md`.
+
+## Актуализация по Issue #581 (`run:dev`, 2026-04-09)
+- Реализован frontend-only prototype package:
+  - `services/staff/web-console/src/pages/operations/MissionControlPage.vue`;
+  - `services/staff/web-console/src/features/mission-control/prototype/{types.ts,route.ts,fixtures.ts,source.ts,presenters.ts,store.ts,MissionControlPrototypeToolbar.vue,MissionControlPrototypeCanvas.vue,MissionControlPrototypeNodeCard.vue,MissionControlPrototypeDrawer.vue,presenters.test.ts}`;
+  - `services/staff/web-console/src/i18n/messages/{ru.ts,en.ts}`;
+  - `services/staff/web-console/package.json`.
+- Зафиксированы:
+  - route Mission Control больше не опирается на legacy API/realtime path и работает через explicit feature-local prototype source/store;
+  - fullscreen canvas удерживает locked baseline Sprint S18: taxonomy `Issue/PR/Run`, compact nodes, explicit relations, initiative focus chips, sticky/mobile drawer и deterministic workflow preview;
+  - workflow preview показывает только structured toggles, generated `workflow-policy block` и repo-seed refs, без prompt editor и без provider mutation semantics;
+  - backend rebuild `#563`, live sync, DB prompt editor и waves `#524/#525` остались вне scope и отображаются только как explicit deferred/gate context на canvas;
+  - для owner review подготовлен локальный localhost preview path через временный standalone helper в `.local/temp/mission-control-preview`, без Kubernetes/candidate prerequisites.
+- Выполнены проверки:
+  - `npm --prefix services/staff/web-console run test:unit`
+  - `npm --prefix services/staff/web-console run build`
+  - `git diff --check`
+- Kubectl/logs/БД-запросы не выполнялись, потому что локальная разработка временно идёт без Kubernetes server и stage ограничен isolated frontend-first prototype scope.

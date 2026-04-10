@@ -690,6 +690,24 @@ export const ru = {
         empty: "Нет данных",
       },
     },
+    missionControlPrototype: {
+      title: "Mission Control",
+      hint:
+        "Frontend-first прототип нового центра управления: главная для портфеля инициатив, экран инициативы для ведения работы, редактор workflow для шаблонов и исполнения для диагностики.",
+      screens: {
+        home: "Главная",
+        initiative: "Инициатива",
+        studio: "Шаблоны",
+        executions: "Исполнения",
+      },
+      voice: {
+        title: "Голосовая команда",
+      },
+      errors: {
+        modelNotReady: "Модель прототипа пока не готова. Проверьте локальные fixture данные.",
+        unknown: "Не удалось собрать экран Mission Control. Проверьте локальные fixture данные.",
+      },
+    },
     projects: {
       title: "Проекты",
       createTitle: "Создать / Обновить проект",

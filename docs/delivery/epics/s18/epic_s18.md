@@ -5,7 +5,7 @@ title: "Epic Catalog: Sprint S18 (Frontend-first Mission Control canvas UX on fa
 status: in-review
 owner_role: PM
 created_at: 2026-03-26
-updated_at: 2026-04-01
+updated_at: 2026-04-09
 related_issues: [470, 480, 522, 523, 524, 525, 561, 562, 563, 565, 567, 571, 573, 579, 581]
 related_prs: []
 approvals:
@@ -24,6 +24,7 @@ approvals:
 - Day4 architecture (`#571`) зафиксировал `web-console` как owner isolated fake-data prototype, explicit handover seam к backend rebuild `#563` и создал issue `#573` для `run:design`.
 - Day5 design (`#573`) зафиксировал frontend-only source/state contracts, fake-data data model, deterministic workflow preview и создал issue `#579` для `run:plan`.
 - Day6 plan (`#579`) выпустил execution package для `run:dev`: четыре последовательные implementation waves, quality gates, DoR/DoD, blockers/risks и создал follow-up issue `#581`.
+- Day7 development (`#581`) перевёл route на feature-local prototype path и собрал owner-ready fullscreen canvas, explicit relations, drawer/workflow preview, checks и localhost review path без backend/API/runtime drift.
 - Prompt policy не переоткрывается: repo-seed prompts остаются source of truth, а workflow behavior допускается только через deterministic generated `workflow-policy block`.
 - До `run:dev` Sprint S18 остаётся stage-driven frontend-first инициативой; на `run:dev` целевой результат ограничен isolated fake-data prototype в `web-console`.
 
@@ -34,7 +35,7 @@ approvals:
 - Day 4 (Architecture): `docs/delivery/epics/s18/epic-s18-day4-mission-control-frontend-first-canvas-arch.md` + `docs/architecture/initiatives/s18_mission_control_frontend_first_canvas/*` + `ADR-0018` + `ALT-0010` (Issue `#571`); stage закрепил ownership split для isolated prototype и отдельный backend handover.
 - Day 5 (Design): `docs/delivery/epics/s18/epic-s18-day5-mission-control-frontend-first-canvas-design.md` + `docs/architecture/initiatives/s18_mission_control_frontend_first_canvas/{README.md,design_doc.md,api_contract.md,data_model.md,migrations_policy.md}` (Issue `#573`); stage выпустил implementation-ready frontend-only package и создал issue `#579` для `run:plan`.
 - Day 6 (Plan): `docs/delivery/epics/s18/epic-s18-day6-mission-control-frontend-first-canvas-plan.md` (Issue `#579`); stage выпустил execution package, зафиксировал waves `Wave 1..Wave 4`, quality gates, DoR/DoD и создал issue `#581` для `run:dev`.
-- Day 7 (Development): owner-managed `run:dev` в issue `#581` должен реализовать isolated `web-console` prototype на fake data и завершить именно frontend-first инициативу без обязательного auto-continue в late stages.
+- Day 7 (Development): issue `#581` реализовала isolated `web-console` prototype на fake data, сохранила frontend-only boundary к `#563` и подготовила owner-ready PR + localhost preview без обязательного auto-continue в late stages.
 
 ## Delivery-governance правила
 - Sprint S18 идёт полной цепочкой `intake -> vision -> prd -> arch -> design -> plan -> dev`.

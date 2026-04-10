@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "vue-tsc -p tsconfig.json --noEmit && vite build",
     "preview": "vite preview",
-    "test:unit": "node --test --experimental-strip-types --experimental-specifier-resolution=node src/shared/lib/*.test.ts",
+    "test:unit": "TZ=UTC node --test --experimental-strip-types --experimental-specifier-resolution=node src/shared/lib/*.test.ts src/features/mission-control/*.test.ts src/features/mission-control/prototype/*.test.ts",
     "gen:openapi": "openapi-ts -f openapi-ts.config.ts"
   },
   "dependencies": {

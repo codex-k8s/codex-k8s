@@ -1,967 +1,757 @@
 <template>
   <div class="mission-control-page">
-    <PageHeader :title="t('pages.missionControl.title')" :hint="t('pages.missionControl.hint')">
-      <template #actions>
-        <AdaptiveBtn
-          variant="tonal"
-          icon="mdi-refresh"
-          :label="t('common.refresh')"
-          :loading="missionControl.refreshing"
-          @click="refreshWorkspace"
-        />
-      </template>
-    </PageHeader>
+    <PageHeader
+      :title="t('pages.missionControlPrototype.title')"
+      :hint="t('pages.missionControlPrototype.hint')"
+    />
 
-    <VAlert v-if="missionControl.error" type="error" variant="tonal" class="mt-4">
-      {{ t(missionControl.error.messageKey) }}
+    <VAlert v-if="prototype.error" type="error" variant="tonal" class="mt-4">
+      {{ t(prototype.error.messageKey) }}
     </VAlert>
 
-    <VAlert v-if="realtimeAlert" :type="realtimeAlert.type" variant="tonal" class="mt-4">
-      <div class="d-flex flex-column ga-2">
-        <div class="font-weight-medium">{{ t(realtimeAlert.titleKey) }}</div>
-        <div class="text-body-2">{{ realtimeAlert.text }}</div>
-        <div class="d-flex flex-wrap ga-2">
-          <AdaptiveBtn
-            variant="text"
-            icon="mdi-refresh"
-            :label="t('pages.missionControl.refreshNow')"
-            :loading="missionControl.refreshing"
-            @click="refreshWorkspace"
-          />
-          <AdaptiveBtn
-            v-if="routeState.viewMode !== 'list'"
-            variant="text"
-            icon="mdi-format-list-bulleted"
-            :label="t('pages.missionControl.listProjection')"
-            @click="updateRoute({ viewMode: 'list' })"
-          />
-        </div>
-      </div>
-    </VAlert>
-
-    <div class="mission-control-summary mt-4">
-      <VCard v-for="item in summaryCards" :key="item.key" class="mission-control-summary__card" variant="outlined">
-        <VCardText>
-          <div class="mission-control-summary__label">{{ t(item.labelKey) }}</div>
-          <div class="mission-control-summary__value">{{ item.value }}</div>
-          <div class="mission-control-summary__hint">{{ item.hint }}</div>
-        </VCardText>
-      </VCard>
+    <div v-if="prototype.loading" class="mission-control-page__loading mt-4">
+      <VSkeletonLoader type="article, article, article" />
     </div>
 
-    <VCard class="mt-4 mission-control-shell" variant="outlined">
-      <div class="mission-control-shell__toolbar">
-        <div class="mission-control-shell__filters">
-          <VChip size="small" variant="outlined">
-            {{ t("pages.missionControl.fixedFilters.openScope") }}
-          </VChip>
-          <VChip size="small" variant="outlined">
-            {{ t("pages.missionControl.fixedFilters.assignmentScope") }}
-          </VChip>
-        </div>
-
-        <VSelect
-          :model-value="routeState.statePreset"
-          class="mission-control-shell__filter"
-          density="compact"
-          variant="solo-filled"
-          hide-details
-          :label="t('pages.missionControl.filterLabel')"
-          :items="filterOptions"
-          @update:model-value="onFilterChange"
-        />
-
-        <VTextField
-          v-model="searchInput"
-          class="mission-control-shell__search"
-          density="compact"
-          variant="solo-filled"
-          hide-details
-          clearable
-          :label="t('pages.missionControl.searchLabel')"
-          prepend-inner-icon="mdi-magnify"
-          @click:clear="onSearchClear"
-          @keyup.enter="applySearch"
-        />
-
-        <VBtnToggle
-          :model-value="routeState.viewMode"
-          class="mission-control-shell__toggle"
-          color="primary"
-          density="comfortable"
-          mandatory
-        >
-          <VBtn value="graph" @click="updateRoute({ viewMode: 'graph' })">
-            <VIcon icon="mdi-graph-outline" start />
-            {{ t("pages.missionControl.viewModes.graph") }}
-          </VBtn>
-          <VBtn value="list" @click="updateRoute({ viewMode: 'list' })">
-            <VIcon icon="mdi-format-list-bulleted" start />
-            {{ t("pages.missionControl.viewModes.list") }}
+    <section v-else class="mission-control-page__shell mt-4">
+      <div class="mission-control-page__toolbar">
+        <VBtnToggle divided mandatory :model-value="activeRouteState.screen" @update:model-value="onSelectScreen">
+          <VBtn v-for="option in screenOptions" :key="option.screen" :value="option.screen">
+            {{ option.label }}
           </VBtn>
         </VBtnToggle>
 
-        <div class="mission-control-shell__status">
-          <VChip size="small" variant="tonal" :color="freshnessChip.color">
-            {{ t("pages.missionControl.freshness") }}: {{ t(freshnessChip.labelKey) }}
-          </VChip>
-          <VChip size="small" variant="tonal" :color="realtimeChip.color">
-            {{ t("pages.missionControl.realtime") }}: {{ t(realtimeChip.labelKey) }}
-          </VChip>
-        </div>
-      </div>
-
-      <div class="mission-control-shell__body">
-        <div class="mission-control-shell__canvas">
-          <div class="mission-control-shell__canvas-head">
-            <div>
-              <div class="text-overline">{{ t("pages.missionControl.primaryWorkspace") }}</div>
-              <div class="text-h6">{{ t(canvasTitleKey) }}</div>
-              <div class="text-body-2 text-medium-emphasis mt-1">
-                {{
-                  t("pages.missionControl.rootsVisible", {
-                    count: missionControl.snapshot?.root_groups.length ?? 0,
-                    total: missionControl.snapshot?.summary.root_count ?? 0,
-                  })
-                }}
-              </div>
-            </div>
-          </div>
-
-          <div v-if="workspaceWatermarks.length" class="mission-control-shell__watermarks">
-            <VChip
-              v-for="watermark in workspaceWatermarks"
-              :key="watermark.watermark_kind + ':' + watermark.observed_at"
-              size="small"
+        <VMenu v-model="createMenuOpen" location="bottom start">
+          <template #activator="{ props: menuProps }">
+            <VBtn
+              color="primary"
+              prepend-icon="mdi-plus-circle-outline"
               variant="tonal"
-              :color="missionControlWatermarkColor(watermark.status)"
+              v-bind="menuProps"
             >
-              {{ t(missionControlWatermarkLabelKey(watermark.watermark_kind)) }} · {{ watermark.summary }}
-            </VChip>
-          </div>
-
-          <div v-if="missionControl.loading" class="mission-control-loading">
-            <VSkeletonLoader type="article, article, article" />
-          </div>
-
-          <template v-else-if="hasWorkspaceContent">
-            <div v-if="routeState.viewMode === 'graph'" class="mission-control-graph">
-              <MissionControlRootGroupLane
-                v-for="rootGroup in rootGroups"
-                :key="rootGroup.root_node_kind + ':' + rootGroup.root_node_public_id"
-                :root-group="rootGroup"
-                :nodes="workspaceNodes"
-                :selected-ref="missionControl.selectedRef"
-                :locale="locale"
-                @select-node="openNodeRef"
-              />
-            </div>
-
-            <div v-else class="mission-control-list">
-              <VTable density="comfortable" fixed-header>
-                <thead>
-                  <tr>
-                    <th>{{ t("pages.missionControl.columns.kind") }}</th>
-                    <th>{{ t("pages.missionControl.columns.title") }}</th>
-                    <th>{{ t("pages.missionControl.columns.state") }}</th>
-                    <th>{{ t("pages.missionControl.columns.continuity") }}</th>
-                    <th>{{ t("pages.missionControl.columns.visibility") }}</th>
-                    <th>{{ t("pages.missionControl.columns.root") }}</th>
-                    <th>{{ t("pages.missionControl.columns.updated") }}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr
-                    v-for="node in listNodes"
-                    :key="node.node_kind + ':' + node.node_public_id"
-                    class="mission-control-list__row"
-                    :class="{ 'mission-control-list__row--selected': selectedNodeKey === node.node_kind + ':' + node.node_public_id }"
-                    @click="openNodeRef({ node_kind: node.node_kind, node_public_id: node.node_public_id })"
-                  >
-                    <td>
-                      <VChip size="x-small" variant="tonal" :color="missionControlStateColor(node.active_state)">
-                        {{ t(missionControlNodeKindLabelKey(node.node_kind)) }}
-                      </VChip>
-                    </td>
-                    <td>
-                      <div class="font-weight-medium">{{ node.title }}</div>
-                      <div class="text-body-2 text-medium-emphasis mono">
-                        {{ node.provider_reference?.external_id || node.node_public_id }}
-                      </div>
-                    </td>
-                    <td>{{ t(`pages.missionControl.states.${node.active_state}`) }}</td>
-                    <td>{{ t(`pages.missionControl.continuity.${node.continuity_status}`) }}</td>
-                    <td>{{ t(`pages.missionControl.visibility.${node.visibility_tier}`) }}</td>
-                    <td class="mono">{{ node.root_node_public_id }}</td>
-                    <td class="mono">{{ formatCompactDateTime(node.last_activity_at, locale) }}</td>
-                  </tr>
-                </tbody>
-              </VTable>
-            </div>
-
-            <div v-if="missionControl.hasMore" class="mt-4 d-flex justify-center">
-              <AdaptiveBtn
-                variant="text"
-                icon="mdi-chevron-down"
-                :label="t('pages.missionControl.loadMore')"
-                :loading="missionControl.loadingMore"
-                @click="missionControl.loadSnapshot({ append: true })"
-              />
-            </div>
+              Создать
+            </VBtn>
           </template>
 
-          <div v-else class="mission-control-empty">
-            <VIcon icon="mdi-radar" size="48" class="mb-4 text-medium-emphasis" />
-            <div class="text-h6">{{ t("pages.missionControl.emptyTitle") }}</div>
-            <div class="text-body-2 text-medium-emphasis mt-2">
-              {{ t("pages.missionControl.emptyText") }}
-            </div>
-          </div>
-        </div>
+          <VList min-width="320">
+            <VListItem
+              v-for="item in createMenuItems"
+              :key="item.mode"
+              :prepend-icon="item.icon"
+              :title="item.title"
+              :subtitle="item.subtitle"
+              @click="onOpenCreateDialog(item.mode)"
+            />
+          </VList>
+        </VMenu>
 
-        <div v-if="missionControl.selectedRef && !display.mobile.value" class="mission-control-shell__drawer">
-          <MissionControlSidePanel
-            :details="missionControl.selectedDetails"
-            :loading="missionControl.selectedLoading"
-            :error="missionControl.selectedDetailsError"
-            :activity="missionControl.selectedActivity"
-            :activity-error="missionControl.selectedActivityError"
-            :activity-loading="missionControl.selectedActivityLoading"
-            :has-more-activity="missionControl.hasSelectedActivityMore"
-            :locale="locale"
-            @close="closeNode"
-            @select-node="openNodeRef"
-            @load-more-activity="missionControl.loadSelectedActivity({ append: true })"
-            @open-preview="openPreview"
-          />
-        </div>
-      </div>
-    </VCard>
+        <VBtn
+          variant="outlined"
+          prepend-icon="mdi-briefcase-search-outline"
+          class="mission-control-page__initiative-button"
+          @click="initiativePickerOpen = true"
+        >
+          {{ initiativePickerLabel }}
+        </VBtn>
 
-    <VDialog v-model="mobilePanelOpen" fullscreen transition="dialog-bottom-transition">
-      <VCard>
-        <MissionControlSidePanel
-          :details="missionControl.selectedDetails"
-          :loading="missionControl.selectedLoading"
-          :error="missionControl.selectedDetailsError"
-          :activity="missionControl.selectedActivity"
-          :activity-error="missionControl.selectedActivityError"
-          :activity-loading="missionControl.selectedActivityLoading"
-          :has-more-activity="missionControl.hasSelectedActivityMore"
-          :locale="locale"
-          @close="closeNode"
-          @select-node="openNodeRef"
-          @load-more-activity="missionControl.loadSelectedActivity({ append: true })"
-          @open-preview="openPreview"
+        <VTextField
+          :model-value="activeRouteState.search"
+          density="compact"
+          variant="outlined"
+          hide-details
+          prepend-inner-icon="mdi-magnify"
+          label="Поиск по инициативам, артефактам и executions"
+          class="mission-control-page__search"
+          @update:model-value="onUpdateSearch"
         />
+      </div>
+
+      <MissionControlPrototypeHomeView
+        v-if="activeRouteState.screen === 'home'"
+        :project-title="prototype.currentProject?.title || ''"
+        :project-summary="prototype.currentProject?.summary || ''"
+        :attention-cards="prototype.attentionCards"
+        :columns="prototype.homeColumns"
+        :selected-initiative-title="homeSelectedInitiativeTitle"
+        :selected-filter-label="homeFilterLabel"
+        @open-attention="onOpenAttention"
+        @select-initiative="onFocusInitiative"
+        @open-workspace="onOpenInitiative"
+        @clear-initiative="onClearInitiative"
+        @clear-filter="onClearHomeFilter"
+      />
+
+      <MissionControlPrototypeWorkspaceView
+        v-else-if="activeRouteState.screen === 'initiative'"
+        :initiative="prototype.currentInitiative"
+        :workflow="prototype.currentWorkflow"
+        :workspace-view="activeRouteState.workspaceView"
+        :stage-views="prototype.workspaceStageViews"
+        :artifact-views="prototype.workspaceArtifacts"
+        :selected-artifact="selectedArtifactView"
+        :activity="prototype.currentInitiativeActivity"
+        @update:view="onUpdateWorkspaceView"
+        @select-artifact="onSelectArtifact"
+        @open-executions="onOpenExecutions"
+        @open-studio="onOpenStudio"
+      />
+
+      <MissionControlPrototypeWorkflowStudioView
+        v-else-if="activeRouteState.screen === 'studio'"
+        :workflow="prototype.currentWorkflow"
+        :workflow-options="prototype.workflowOptions"
+        @select-workflow="onSelectWorkflow"
+      />
+
+      <MissionControlPrototypeExecutionsView
+        v-else
+        :groups="prototype.executionGroups"
+      />
+    </section>
+
+    <MissionControlPrototypeVoiceFab @click="voiceDialogOpen = true" />
+
+    <VDialog v-model="initiativePickerOpen" max-width="760">
+      <VCard rounded="xl">
+        <VCardTitle>Выбор инициативы</VCardTitle>
+        <VCardText class="mission-control-page__initiative-sheet">
+          <VTextField
+            v-model="initiativePickerSearch"
+            density="compact"
+            variant="outlined"
+            hide-details
+            prepend-inner-icon="mdi-magnify"
+            label="Поиск по инициативам"
+          />
+
+          <div v-if="activeRouteState.screen === 'home'" class="mission-control-page__initiative-actions">
+            <VBtn variant="text" prepend-icon="mdi-format-list-bulleted" @click="onPickAllInitiatives">
+              Все инициативы проекта
+            </VBtn>
+          </div>
+
+          <div class="mission-control-page__initiative-list">
+            <button
+              v-for="initiative in filteredInitiatives"
+              :key="initiative.initiativeId"
+              type="button"
+              class="mission-control-page__initiative-option"
+              @click="onPickInitiative(initiative.initiativeId)"
+            >
+              <div class="mission-control-page__initiative-option-title">{{ initiative.title }}</div>
+              <div class="mission-control-page__initiative-option-summary">{{ initiative.summary }}</div>
+            </button>
+          </div>
+        </VCardText>
+        <VCardActions>
+          <VSpacer />
+          <VBtn variant="text" @click="initiativePickerOpen = false">Закрыть</VBtn>
+        </VCardActions>
       </VCard>
     </VDialog>
 
-    <MissionControlLaunchPreviewDialog
-      :open="previewDialogOpen"
-      :loading="previewLoading"
-      :error="previewError"
-      :preview="previewResult"
-      :command-template="previewCommandTemplate"
-      :node-title="previewNodeTitle"
-      :known-gaps="missionControl.selectedDetails?.continuity_gaps ?? []"
-      @close="closePreview"
-    />
+    <VDialog v-model="voiceDialogOpen" max-width="760">
+      <VCard rounded="xl">
+        <VCardTitle>{{ t("pages.missionControlPrototype.voice.title") }}</VCardTitle>
+        <VCardText class="mission-control-page__voice-sheet">
+          <p class="mission-control-page__voice-copy">
+            Голосовой запуск остается главным способом поставить работу. Агент затем создает нужные GitHub Issue и PR через
+            <code>gh</code>, а машина приемки проверяет, что в body проставлены watermark-блок и обязательные поля workflow.
+          </p>
+
+          <VTextarea
+            v-model="voiceDraft"
+            variant="outlined"
+            auto-grow
+            rows="4"
+            hide-details
+            label="Распознанная команда"
+          />
+
+          <div class="mission-control-page__voice-chips">
+            <VChip size="small" variant="tonal" color="primary">Запуск workflow</VChip>
+            <VChip size="small" variant="tonal" color="info">Создать задачу</VChip>
+            <VChip size="small" variant="tonal" color="warning">Запустить агента</VChip>
+          </div>
+        </VCardText>
+        <VCardActions>
+          <VSpacer />
+          <VBtn variant="text" @click="voiceDialogOpen = false">Закрыть</VBtn>
+          <VBtn color="primary" prepend-icon="mdi-rocket-launch-outline" @click="onOpenStudio">
+            Перейти к редактору workflow
+          </VBtn>
+        </VCardActions>
+      </VCard>
+    </VDialog>
+
+    <VDialog v-model="createDialogOpen" max-width="760">
+      <VCard rounded="xl">
+        <VCardTitle>{{ createDialogTitle }}</VCardTitle>
+        <VCardText class="mission-control-page__create-sheet">
+          <p class="mission-control-page__voice-copy">{{ createDialogSummary }}</p>
+
+          <VTextField
+            v-model="createTitle"
+            density="compact"
+            variant="outlined"
+            hide-details
+            label="Короткое название"
+          />
+
+          <VSelect
+            v-if="createMode === 'workflow' || createMode === 'hotfix'"
+            v-model="createWorkflowId"
+            :items="prototype.workflowOptions"
+            item-title="title"
+            item-value="workflowId"
+            density="compact"
+            variant="outlined"
+            hide-details
+            label="Шаблон workflow"
+          />
+
+          <VTextarea
+            v-model="createDraft"
+            variant="outlined"
+            auto-grow
+            rows="4"
+            hide-details
+            label="Что должен сделать агент"
+          />
+
+          <div class="mission-control-page__watermark-note">
+            <strong>Что будет дальше</strong>
+            <ul>
+              <li>Агент создаст нужные GitHub Issue и PR через <code>gh</code>.</li>
+              <li>Workflow добавит в prompt, какие этапы пройти и какой follow-up артефакт должен появиться дальше.</li>
+              <li>При приемке машина проверит watermark-блок и обязательные поля в body, и при нехватке данных возобновит сессию.</li>
+            </ul>
+          </div>
+        </VCardText>
+        <VCardActions>
+          <VBtn variant="text" prepend-icon="mdi-microphone" @click="onCreateByVoice">Продиктовать</VBtn>
+          <VSpacer />
+          <VBtn variant="text" @click="createDialogOpen = false">Закрыть</VBtn>
+          <VBtn color="primary" prepend-icon="mdi-shape-outline" @click="onSubmitCreateDialog">
+            {{ createDialogActionLabel }}
+          </VBtn>
+        </VCardActions>
+      </VCard>
+    </VDialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, ref, watch } from "vue";
+import { computed, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
-import { useDisplay } from "vuetify";
 
-import { normalizeApiError, type ApiError } from "../../shared/api/errors";
-import { formatCompactDateTime } from "../../shared/lib/datetime";
-import { bindRealtimePageLifecycle } from "../../shared/ws/lifecycle";
-import { previewMissionControlLaunch } from "../../features/mission-control/api";
-import MissionControlEntityCard from "../../features/mission-control/MissionControlEntityCard.vue";
-import MissionControlLaunchPreviewDialog from "../../features/mission-control/MissionControlLaunchPreviewDialog.vue";
-import MissionControlRootGroupLane from "../../features/mission-control/MissionControlRootGroupLane.vue";
-import MissionControlSidePanel from "../../features/mission-control/MissionControlSidePanel.vue";
+import MissionControlPrototypeExecutionsView from "../../features/mission-control/prototype/MissionControlPrototypeExecutionsView.vue";
+import MissionControlPrototypeHomeView from "../../features/mission-control/prototype/MissionControlPrototypeHomeView.vue";
+import MissionControlPrototypeVoiceFab from "../../features/mission-control/prototype/MissionControlPrototypeVoiceFab.vue";
+import MissionControlPrototypeWorkflowStudioView from "../../features/mission-control/prototype/MissionControlPrototypeWorkflowStudioView.vue";
+import MissionControlPrototypeWorkspaceView from "../../features/mission-control/prototype/MissionControlPrototypeWorkspaceView.vue";
 import {
-  buildMissionControlRouteQuery,
-  missionControlRouteStateEquals,
-  normalizeMissionControlRouteQuery,
-  patchMissionControlRouteState,
-} from "../../features/mission-control/lib";
-import {
-  missionControlNodeKindLabelKey,
-  missionControlStateColor,
-  missionControlWatermarkColor,
-  missionControlWatermarkLabelKey,
-} from "../../features/mission-control/presenters";
-import { subscribeMissionControlRealtime } from "../../features/mission-control/realtime";
-import { useMissionControlStore } from "../../features/mission-control/store";
+  buildMissionControlPrototypeRouteQuery,
+  missionControlPrototypeRouteStateEquals,
+  normalizeMissionControlPrototypeRouteQuery,
+  patchMissionControlPrototypeRouteState,
+} from "../../features/mission-control/prototype/route";
+import { useMissionControlPrototypeStore } from "../../features/mission-control/prototype/store";
 import type {
-  MissionControlLaunchPreview,
-  MissionControlLaunchSurface,
-  MissionControlRealtimeNotice,
-  MissionControlRouteState,
-  MissionControlSelectedNodeRef,
-  MissionControlStageNextStepTemplate,
-  MissionControlWorkspaceFreshnessStatus,
-} from "../../features/mission-control/types";
-import AdaptiveBtn from "../../shared/ui/AdaptiveBtn.vue";
+  MissionControlPrototypeRouteState,
+  MissionInitiativeWorkspaceView,
+} from "../../features/mission-control/prototype/types";
+import { useUiContextStore } from "../../features/ui-context/store";
 import PageHeader from "../../shared/ui/PageHeader.vue";
 
 const route = useRoute();
 const router = useRouter();
-const display = useDisplay();
-const missionControl = useMissionControlStore();
-const { t, locale } = useI18n({ useScope: "global" });
+const prototype = useMissionControlPrototypeStore();
+const uiContext = useUiContextStore();
+const { t } = useI18n({ useScope: "global" });
 
-const mobilePanelOpen = ref(false);
-const searchInput = ref("");
-const searchDebounceTimer = ref<number | null>(null);
-const realtimeRefreshTimer = ref<number | null>(null);
-const stopRealtimeRef = ref<(() => void) | null>(null);
-const stopLifecycleBindingRef = ref<(() => void) | null>(null);
-const activeRouteState = ref<MissionControlRouteState | null>(null);
-
-const previewDialogOpen = ref(false);
-const previewLoading = ref(false);
-const previewError = ref<ApiError | null>(null);
-const previewResult = ref<MissionControlLaunchPreview | null>(null);
-const previewCommandTemplate = ref<MissionControlStageNextStepTemplate | null>(null);
-const previewNodeTitle = ref("");
-
-const routeState = computed(() => normalizeMissionControlRouteQuery(route.query));
-const workspaceWatermarks = computed(() => missionControl.snapshot?.workspace_watermarks ?? []);
-const workspaceNodes = computed(() => missionControl.snapshot?.nodes ?? []);
-const rootGroups = computed(() => missionControl.snapshot?.root_groups ?? []);
-const hasWorkspaceContent = computed(() => rootGroups.value.length > 0 || workspaceNodes.value.length > 0);
-const selectedNodeKey = computed(() =>
-  missionControl.selectedRef ? `${missionControl.selectedRef.node_kind}:${missionControl.selectedRef.node_public_id}` : "",
+const initiativePickerOpen = ref(false);
+const initiativePickerSearch = ref("");
+const voiceDialogOpen = ref(false);
+const createMenuOpen = ref(false);
+const createDialogOpen = ref(false);
+const voiceDraft = ref(
+  "Собери новый workflow для инициативы Mission Control: сначала owner narrative, потом дизайн, затем фронтенд-прототип и follow-up задачу на backend.",
 );
-
-const listNodes = computed(() =>
-  [...workspaceNodes.value].sort((left, right) => {
-    if ((left.last_activity_at || "") === (right.last_activity_at || "")) {
-      return left.title.localeCompare(right.title);
-    }
-    return String(left.last_activity_at || "") < String(right.last_activity_at || "") ? 1 : -1;
-  }),
-);
-
-const summaryCards = computed(() => {
-  const summary = missionControl.snapshot?.summary;
-  return [
-    { key: "roots", labelKey: "pages.missionControl.summary.roots", value: summary?.root_count ?? 0, hint: t("pages.missionControl.summaryHints.roots") },
-    { key: "nodes", labelKey: "pages.missionControl.summary.nodes", value: summary?.node_count ?? 0, hint: t("pages.missionControl.summaryHints.nodes") },
-    {
-      key: "blocking",
-      labelKey: "pages.missionControl.summary.blocking_gaps",
-      value: summary?.blocking_gap_count ?? 0,
-      hint: t("pages.missionControl.summaryHints.blocking_gaps"),
-    },
-    {
-      key: "warning",
-      labelKey: "pages.missionControl.summary.warning_gaps",
-      value: summary?.warning_gap_count ?? 0,
-      hint: t("pages.missionControl.summaryHints.warning_gaps"),
-    },
-    {
-      key: "recent_closed",
-      labelKey: "pages.missionControl.summary.recent_closed_context",
-      value: summary?.recent_closed_context_count ?? 0,
-      hint: t("pages.missionControl.summaryHints.recent_closed_context"),
-    },
-    { key: "review", labelKey: "pages.missionControl.summary.review", value: summary?.review_count ?? 0, hint: t("pages.missionControl.summaryHints.review") },
-  ];
+const createMode = ref<"issue" | "workflow" | "hotfix" | "follow-up">("issue");
+const createTitle = ref("");
+const createDraft = ref("");
+const createWorkflowId = ref("");
+const activeRouteState = ref<MissionControlPrototypeRouteState>({
+  screen: "home",
+  projectId: "",
+  initiativeId: "",
+  workflowId: "",
+  artifactId: "",
+  search: "",
+  homeFilter: "all",
+  workspaceView: "overview",
 });
 
-const filterOptions = computed(() => [
-  { title: t("pages.missionControl.filters.all_active"), value: "all_active" },
-  { title: t("pages.missionControl.filters.working"), value: "working" },
-  { title: t("pages.missionControl.filters.waiting"), value: "waiting" },
-  { title: t("pages.missionControl.filters.blocked"), value: "blocked" },
-  { title: t("pages.missionControl.filters.review"), value: "review" },
-  { title: t("pages.missionControl.filters.recent_critical_updates"), value: "recent_critical_updates" },
+const routeState = computed(() => normalizeMissionControlPrototypeRouteQuery(route.query));
+const createMenuItems = [
+  {
+    mode: "issue" as const,
+    icon: "mdi-clipboard-plus-outline",
+    title: "Новая задача",
+    subtitle: "Обычный GitHub Issue без полного workflow.",
+  },
+  {
+    mode: "workflow" as const,
+    icon: "mdi-rocket-launch-outline",
+    title: "Запустить workflow",
+    subtitle: "Подготовить инициативу по одному из шаблонов.",
+  },
+  {
+    mode: "hotfix" as const,
+    icon: "mdi-flash-outline",
+    title: "Горячее исправление",
+    subtitle: "Быстрый путь triage → fix → qa → release → postdeploy.",
+  },
+  {
+    mode: "follow-up" as const,
+    icon: "mdi-source-branch-plus",
+    title: "Follow-up задача",
+    subtitle: "Создать следующий этап после текущего результата.",
+  },
+];
+const screenOptions = computed(() => [
+  { screen: "home" as const, label: t("pages.missionControlPrototype.screens.home") },
+  { screen: "initiative" as const, label: t("pages.missionControlPrototype.screens.initiative") },
+  { screen: "studio" as const, label: t("pages.missionControlPrototype.screens.studio") },
+  { screen: "executions" as const, label: t("pages.missionControlPrototype.screens.executions") },
 ]);
-
-const freshnessChip = computed(() => {
-  switch (missionControl.effectiveFreshnessStatus) {
-    case "stale":
-      return { color: "warning", labelKey: "pages.missionControl.freshnessStates.stale" };
-    case "degraded":
-      return { color: "error", labelKey: "pages.missionControl.freshnessStates.degraded" };
-    case "fresh":
-      return { color: "success", labelKey: "pages.missionControl.freshnessStates.fresh" };
-    default:
-      return { color: "secondary", labelKey: "pages.missionControl.freshnessStates.unknown" };
+const filteredInitiatives = computed(() => {
+  const needle = initiativePickerSearch.value.trim().toLowerCase();
+  if (needle === "") {
+    return prototype.projectInitiatives;
   }
-});
 
-const realtimeChip = computed(() => {
-  switch (missionControl.realtimeState) {
-    case "connected":
-      return { color: "success", labelKey: "pages.missionControl.realtimeStates.connected" };
-    case "reconnecting":
-      return { color: "warning", labelKey: "pages.missionControl.realtimeStates.reconnecting" };
-    case "connecting":
-      return { color: "secondary", labelKey: "pages.missionControl.realtimeStates.connecting" };
-    default:
-      return { color: "secondary", labelKey: "pages.missionControl.realtimeStates.disconnected" };
+  return prototype.projectInitiatives.filter((initiative) =>
+    [initiative.title, initiative.summary, ...initiative.tags].some((part) => part.toLowerCase().includes(needle)),
+  );
+});
+const initiativePickerLabel = computed(() => {
+  if (activeRouteState.value.screen === "home" && activeRouteState.value.initiativeId === "") {
+    return "Все инициативы проекта";
   }
+  return prototype.currentInitiative?.title || "Выбрать инициативу";
 });
-
-const canvasTitleKey = computed(() =>
-  routeState.value.viewMode === "graph" ? "pages.missionControl.graphTitle" : "pages.missionControl.listTitle",
+const homeSelectedInitiativeTitle = computed(() =>
+  activeRouteState.value.screen === "home" ? prototype.currentInitiative?.title || "" : "",
 );
-
-const realtimeAlert = computed(() => buildRealtimeAlert(missionControl.realtimeNotice, missionControl.effectiveFreshnessStatus));
-
-watch(
-  routeState,
-  async (next) => {
-    searchInput.value = next.search;
-    const previous = activeRouteState.value;
-    activeRouteState.value = next;
-
-    const queryChanged =
-      !previous ||
-      next.viewMode !== previous.viewMode ||
-      next.statePreset !== previous.statePreset ||
-      next.search !== previous.search;
-    if (queryChanged) {
-      missionControl.configureQuery({
-        viewMode: next.viewMode,
-        statePreset: next.statePreset,
-        search: next.search,
-      });
-      await missionControl.loadSnapshot();
-      restartRealtime();
-    }
-
-    const nodeChanged =
-      !previous ||
-      next.nodeKind !== previous.nodeKind ||
-      next.nodePublicId !== previous.nodePublicId;
-    if (nodeChanged) {
-      if (next.nodeKind && next.nodePublicId) {
-        await missionControl.loadSelectedNode({
-          node_kind: next.nodeKind,
-          node_public_id: next.nodePublicId,
-        });
-        if (display.mobile.value) {
-          mobilePanelOpen.value = true;
-        }
-      } else {
-        missionControl.clearSelectedNode();
-        mobilePanelOpen.value = false;
-      }
-    }
-  },
-  { deep: true, immediate: true },
+const homeFilterLabel = computed(() => {
+  switch (activeRouteState.value.homeFilter) {
+    case "needs-decision":
+      return "Нуждаются в решении";
+    case "blocked":
+      return "Есть блокеры";
+    case "release-ready":
+      return "Почти готовы к выпуску";
+    case "all":
+      return "";
+  }
+});
+const selectedArtifactView = computed(
+  () => prototype.workspaceArtifacts.find((artifact) => artifact.artifactId === activeRouteState.value.artifactId) ?? null,
+);
+const createDialogTitle = computed(() => {
+  switch (createMode.value) {
+    case "issue":
+      return "Новая задача";
+    case "workflow":
+      return "Запуск workflow";
+    case "hotfix":
+      return "Горячее исправление";
+    case "follow-up":
+      return "Follow-up задача";
+  }
+});
+const createDialogSummary = computed(() => {
+  switch (createMode.value) {
+    case "issue":
+      return "Используйте этот сценарий, когда нужен одиночный GitHub Issue без отдельного шаблона процесса.";
+    case "workflow":
+      return "Workflow не создает артефакты сам по себе: он задает prompt, по которому агент через gh откроет нужные Issue и PR.";
+    case "hotfix":
+      return "Hotfix задает жесткий путь до релиза и follow-up по коренной причине. Все служебные поля будут ожидаться в body.";
+    case "follow-up":
+      return "Follow-up нужен, когда после текущего PR или issue должен появиться следующий этап: review, qa, release или backend handover.";
+  }
+});
+const createDialogActionLabel = computed(() =>
+  createMode.value === "workflow" || createMode.value === "hotfix" ? "Открыть шаблон" : "Подготовить голосовую команду",
 );
 
 watch(
-  () => display.mobile.value,
-  (isMobile) => {
-    if (!isMobile) {
-      mobilePanelOpen.value = false;
+  [routeState, () => uiContext.projectId],
+  async ([nextState, selectedProjectId]) => {
+    const requestedState = {
+      ...nextState,
+      projectId: typeof selectedProjectId === "string" && selectedProjectId !== "" ? selectedProjectId : nextState.projectId,
+    };
+    const normalizedState = await prototype.syncRouteState(requestedState);
+    activeRouteState.value = normalizedState;
+
+    if (!missionControlPrototypeRouteStateEquals(requestedState, normalizedState)) {
+      await replaceRoute(normalizedState);
     }
   },
-  { immediate: true },
+  { immediate: true, deep: true },
 );
 
-watch(searchInput, () => {
-  scheduleSearch();
-});
-
-function clearSearchDebounce(): void {
-  if (searchDebounceTimer.value !== null) {
-    window.clearTimeout(searchDebounceTimer.value);
-    searchDebounceTimer.value = null;
-  }
-}
-
-function clearRealtimeRefreshTimer(): void {
-  if (realtimeRefreshTimer.value !== null) {
-    window.clearTimeout(realtimeRefreshTimer.value);
-    realtimeRefreshTimer.value = null;
-  }
-}
-
-function scheduleSearch(): void {
-  clearSearchDebounce();
-  searchDebounceTimer.value = window.setTimeout(() => {
-    applySearch();
-    searchDebounceTimer.value = null;
-  }, 350);
-}
-
-function scheduleRealtimeRefresh(delayMs = 500): void {
-  if (realtimeRefreshTimer.value !== null) {
-    return;
-  }
-  realtimeRefreshTimer.value = window.setTimeout(() => {
-    realtimeRefreshTimer.value = null;
-    void refreshWorkspace();
-  }, delayMs);
-}
-
-function updateRoute(patch: Partial<MissionControlRouteState>): void {
-  const nextState = patchMissionControlRouteState(routeState.value, patch);
-
-  if (missionControlRouteStateEquals(nextState, routeState.value)) {
-    return;
-  }
-
-  void router.replace({
+async function replaceRoute(nextState: MissionControlPrototypeRouteState): Promise<void> {
+  await router.replace({
     name: "mission-control",
-    query: buildMissionControlRouteQuery(nextState),
+    query: buildMissionControlPrototypeRouteQuery(nextState, {
+      projectId: prototype.defaultProjectId || nextState.projectId,
+      initiativeId: prototype.defaultInitiativeId || nextState.initiativeId,
+      workflowId: prototype.defaultWorkflowId || nextState.workflowId,
+    }),
   });
 }
 
-function applySearch(): void {
-  const trimmed = searchInput.value.trim();
-  if (trimmed === routeState.value.search) {
+function updateRoute(patch: Partial<MissionControlPrototypeRouteState>): void {
+  const nextState = patchMissionControlPrototypeRouteState(activeRouteState.value, patch);
+  if (missionControlPrototypeRouteStateEquals(activeRouteState.value, nextState)) {
     return;
   }
-  updateRoute({ search: trimmed });
+  void replaceRoute(nextState);
 }
 
-function onSearchClear(): void {
-  searchInput.value = "";
-  updateRoute({ search: "" });
-}
-
-function onFilterChange(value: string): void {
-  if (value === routeState.value.statePreset) {
-    return;
-  }
-  updateRoute({
-    statePreset: value as MissionControlRouteState["statePreset"],
-  });
-}
-
-function openNodeRef(ref: MissionControlSelectedNodeRef): void {
-  updateRoute({
-    nodeKind: ref.node_kind,
-    nodePublicId: ref.node_public_id,
-  });
-}
-
-function closeNode(): void {
-  mobilePanelOpen.value = false;
-  updateRoute({
-    nodeKind: "",
-    nodePublicId: "",
-  });
-}
-
-function stopRealtime(): void {
-  stopRealtimeRef.value?.();
-  stopRealtimeRef.value = null;
-  missionControl.setRealtimeState("closed");
-}
-
-function restartRealtime(): void {
-  stopRealtime();
-  const resumeToken = String(missionControl.snapshot?.resume_token || "").trim();
-  if (resumeToken === "") {
-    return;
-  }
-
-  missionControl.setRealtimeState("connecting");
-  stopRealtimeRef.value = subscribeMissionControlRealtime({
-    resumeToken,
-    onMessage: (message) => {
-      missionControl.setRealtimeState("connected");
-      if (
-        message.event_kind === "connected" &&
-        (message.payload.snapshot_freshness_status === "fresh" || missionControl.realtimeNotice?.kind === "error")
-      ) {
-        missionControl.clearRealtimeNotice();
-      }
-
-      switch (message.event_kind) {
-        case "connected":
-          missionControl.setConnectedFreshnessStatus(message.payload.snapshot_freshness_status);
-          return;
-        case "delta":
-          scheduleRealtimeRefresh();
-          return;
-        case "invalidate":
-          missionControl.applyRealtimeNotice({
-            kind: "invalidate",
-            reason: message.payload.reason,
-            refreshScope: message.payload.refresh_scope,
-            affectedCount: message.payload.affected_count,
-            occurredAt: message.occurred_at,
-          });
-          scheduleRealtimeRefresh(200);
-          return;
-        case "stale":
-          missionControl.applyRealtimeNotice({
-            kind: "stale",
-            reason: message.payload.reason,
-            staleSince: message.payload.stale_since,
-            suggestedRefresh: message.payload.suggested_refresh,
-            occurredAt: message.occurred_at,
-          });
-          return;
-        case "degraded":
-          missionControl.applyRealtimeNotice({
-            kind: "degraded",
-            reason: message.payload.reason,
-            fallbackMode: message.payload.fallback_mode,
-            affectedCapabilities: message.payload.affected_capabilities,
-            occurredAt: message.occurred_at,
-          });
-          return;
-        case "resync_required":
-          missionControl.applyRealtimeNotice({
-            kind: "resync_required",
-            reason: message.payload.reason,
-            requiredSnapshotId: message.payload.required_snapshot_id,
-            droppedEventCount: message.payload.dropped_event_count,
-            occurredAt: message.occurred_at,
-          });
-          scheduleRealtimeRefresh(0);
-          return;
-        case "error":
-          missionControl.applyRealtimeNotice({
-            kind: "error",
-            code: message.payload.code,
-            message: message.payload.message,
-            retryable: message.payload.retryable,
-            occurredAt: message.occurred_at,
-          });
-          return;
-        case "heartbeat":
-          return;
-      }
-    },
-    onStateChange: (state) => {
-      missionControl.setRealtimeState(state);
-    },
-    onInitialMessageTimeout: () => {
-      missionControl.applyRealtimeNotice({
-        kind: "error",
-        code: "realtime_timeout",
-        message: "realtime_initial_timeout",
-        retryable: true,
-        occurredAt: new Date().toISOString(),
-      });
-    },
-  });
-}
-
-async function refreshWorkspace(): Promise<void> {
-  clearRealtimeRefreshTimer();
-  await missionControl.refreshSnapshot();
-  restartRealtime();
-}
-
-async function openPreview(surface: MissionControlLaunchSurface): Promise<void> {
-  const details = missionControl.selectedDetails;
-  const template = surface.command_template;
-  if (!details || !template) {
-    return;
-  }
-
-  previewDialogOpen.value = true;
-  previewLoading.value = true;
-  previewError.value = null;
-  previewResult.value = null;
-  previewCommandTemplate.value = template;
-  previewNodeTitle.value = details.node.title;
-
-  try {
-    previewResult.value = await previewMissionControlLaunch({
-      nodeKind: details.node.node_kind,
-      nodePublicId: details.node.node_public_id,
-      threadKind: template.thread_kind,
-      threadNumber: template.thread_number,
-      targetLabel: template.target_label,
-      removedLabels: template.removed_labels,
-      expectedProjectionVersion: details.node.projection_version,
+function onSelectScreen(nextScreen: string): void {
+  if (nextScreen === "home" || nextScreen === "initiative" || nextScreen === "studio" || nextScreen === "executions") {
+    updateRoute({
+      screen: nextScreen,
+      artifactId: nextScreen === "executions" ? activeRouteState.value.artifactId : "",
     });
-  } catch (error) {
-    previewError.value = normalizeApiError(error);
-  } finally {
-    previewLoading.value = false;
   }
 }
 
-function closePreview(): void {
-  previewDialogOpen.value = false;
-  previewLoading.value = false;
-  previewError.value = null;
-  previewResult.value = null;
-  previewCommandTemplate.value = null;
-  previewNodeTitle.value = "";
+function onSelectInitiative(nextInitiativeId: string | null): void {
+  if (!nextInitiativeId) {
+    return;
+  }
+  updateRoute({
+    initiativeId: nextInitiativeId,
+    workflowId: "",
+    artifactId: "",
+    screen: "initiative",
+  });
 }
 
-function buildRealtimeAlert(
-  notice: MissionControlRealtimeNotice | null,
-  freshnessStatus: MissionControlWorkspaceFreshnessStatus,
-): { type: "info" | "warning" | "error"; titleKey: string; text: string } | null {
-  if (!notice) {
-    if (freshnessStatus === "stale") {
-      return {
-        type: "warning",
-        titleKey: "pages.missionControl.alerts.staleTitle",
-        text: t("pages.missionControl.alerts.snapshotStaleText"),
-      };
-    }
-    if (freshnessStatus === "degraded") {
-      return {
-        type: "error",
-        titleKey: "pages.missionControl.alerts.degradedTitle",
-        text: t("pages.missionControl.alerts.snapshotDegradedText"),
-      };
-    }
-    return null;
+function onOpenInitiative(nextInitiativeId: string): void {
+  updateRoute({
+    initiativeId: nextInitiativeId,
+    workflowId: "",
+    screen: "initiative",
+    workspaceView: "overview",
+  });
+}
+
+function onFocusInitiative(nextInitiativeId: string): void {
+  updateRoute({
+    initiativeId: nextInitiativeId,
+    artifactId: "",
+    screen: "home",
+  });
+}
+
+function onClearInitiative(): void {
+  updateRoute({
+    initiativeId: "",
+    artifactId: "",
+    screen: "home",
+  });
+}
+
+function onClearHomeFilter(): void {
+  updateRoute({
+    homeFilter: "all",
+    screen: "home",
+  });
+}
+
+function onPickInitiative(nextInitiativeId: string): void {
+  initiativePickerOpen.value = false;
+  initiativePickerSearch.value = "";
+
+  if (activeRouteState.value.screen === "home") {
+    onFocusInitiative(nextInitiativeId);
+    return;
   }
 
-  switch (notice.kind) {
-    case "invalidate":
-      return {
-        type: "info",
-        titleKey: "pages.missionControl.alerts.invalidateTitle",
-        text: t("pages.missionControl.alerts.invalidateText", {
-          reason: notice.reason,
-          scope: notice.refreshScope,
-          count: notice.affectedCount,
-        }),
-      };
-    case "stale":
-      return {
-        type: "warning",
-        titleKey: "pages.missionControl.alerts.staleTitle",
-        text: t("pages.missionControl.alerts.staleText", {
-          reason: notice.reason,
-          since: formatCompactDateTime(notice.staleSince, locale.value),
-        }),
-      };
-    case "degraded":
-      return {
-        type: "error",
-        titleKey: "pages.missionControl.alerts.degradedTitle",
-        text: t("pages.missionControl.alerts.degradedText", {
-          reason: notice.reason,
-          fallback: notice.fallbackMode,
-          capabilities: notice.affectedCapabilities.join(", "),
-        }),
-      };
-    case "resync_required":
-      return {
-        type: "warning",
-        titleKey: "pages.missionControl.alerts.resyncTitle",
-        text: t("pages.missionControl.alerts.resyncText", {
-          reason: notice.reason,
-          dropped: notice.droppedEventCount,
-        }),
-      };
-    case "error":
-      return {
-        type: "error",
-        titleKey: "pages.missionControl.alerts.errorTitle",
-        text: t("pages.missionControl.alerts.errorText", {
-          code: notice.code,
-          message: notice.message,
-        }),
-      };
+  onSelectInitiative(nextInitiativeId);
+}
+
+function onPickAllInitiatives(): void {
+  initiativePickerOpen.value = false;
+  initiativePickerSearch.value = "";
+  onClearInitiative();
+}
+
+function onSelectWorkflow(nextWorkflowId: string): void {
+  updateRoute({
+    workflowId: nextWorkflowId,
+    screen: "studio",
+  });
+}
+
+function onOpenStudio(): void {
+  voiceDialogOpen.value = false;
+  createDialogOpen.value = false;
+  updateRoute({
+    screen: "studio",
+  });
+}
+
+function onOpenExecutions(): void {
+  updateRoute({
+    screen: "executions",
+  });
+}
+
+function onUpdateSearch(nextSearch: string | null): void {
+  updateRoute({
+    search: nextSearch || "",
+  });
+}
+
+function onUpdateWorkspaceView(nextView: MissionInitiativeWorkspaceView): void {
+  updateRoute({
+    workspaceView: nextView,
+  });
+}
+
+function onSelectArtifact(nextArtifactId: string): void {
+  updateRoute({
+    artifactId: nextArtifactId,
+  });
+}
+
+function onOpenAttention(cardId: string): void {
+  if (cardId === "active-runs") {
+    updateRoute({
+      screen: "executions",
+    });
+    return;
+  }
+
+  const filterMap = {
+    "needs-decision": "needs-decision",
+    blocked: "blocked",
+    "release-ready": "release-ready",
+  } as const;
+  const nextFilter = filterMap[cardId as keyof typeof filterMap];
+  if (!nextFilter) {
+    return;
+  }
+
+  updateRoute({
+    screen: "home",
+    homeFilter: nextFilter,
+  });
+}
+
+function onOpenCreateDialog(mode: "issue" | "workflow" | "hotfix" | "follow-up"): void {
+  createMenuOpen.value = false;
+  createMode.value = mode;
+  createTitle.value =
+    mode === "hotfix"
+      ? "Срочное исправление"
+      : mode === "follow-up"
+        ? "Следующий этап после текущего результата"
+        : mode === "workflow"
+          ? "Новая инициатива"
+          : "Новая задача";
+  createDraft.value =
+    mode === "hotfix"
+      ? "Опишите симптом, влияние на пользователей, желаемую срочность и что надо проверить после выкладки."
+      : mode === "follow-up"
+        ? "Опишите, какой следующий Issue должен появиться после текущего PR или этапа, и что в нем должно быть зафиксировано."
+        : mode === "workflow"
+          ? "Опишите цель инициативы, ограничения, желаемые артефакты и какой этап должен идти первым."
+          : "Опишите, что должен сделать агент и какой результат должен появиться в GitHub.";
+  createWorkflowId.value =
+    mode === "hotfix"
+      ? "workflow-hotfix"
+      : prototype.currentWorkflow?.workflowId || prototype.workflowOptions[0]?.workflowId || "";
+  createDialogOpen.value = true;
+}
+
+function buildCreatePrompt(): string {
+  const title = createTitle.value.trim();
+  const draft = createDraft.value.trim();
+  const workflowTitle =
+    prototype.workflowOptions.find((workflow) => workflow.workflowId === createWorkflowId.value)?.title || "выбранный workflow";
+
+  switch (createMode.value) {
+    case "workflow":
+      return `Запусти workflow "${workflowTitle}" для проекта "${prototype.currentProject?.title || "текущий проект"}". Название: ${title || "без названия"}. Описание: ${draft}. Агент должен создать GitHub Issue и нужные follow-up артефакты через gh, а в body добавить watermark-блок workflow, stage и expected-next-artifact.`;
+    case "hotfix":
+      return `Подготовь hotfix по шаблону "${workflowTitle}" для проекта "${prototype.currentProject?.title || "текущий проект"}". Название: ${title || "без названия"}. Описание: ${draft}. Агент должен открыть triage issue, рабочий PR и follow-up issue через gh и заполнить служебный блок в body.`;
+    case "follow-up":
+      return `Создай follow-up GitHub Issue для проекта "${prototype.currentProject?.title || "текущий проект"}". Название: ${title || "без названия"}. Описание: ${draft}. В body должны быть stage, связь с предыдущим артефактом и expected-next-artifact.`;
+    case "issue":
+      return `Создай GitHub Issue для проекта "${prototype.currentProject?.title || "текущий проект"}". Название: ${title || "без названия"}. Описание: ${draft}. В body нужно оставить служебный watermark-блок и заполнить обязательные поля приемки.`;
   }
 }
 
-stopLifecycleBindingRef.value = bindRealtimePageLifecycle({
-  onResume: () => {
-    void refreshWorkspace();
-  },
-  onSuspend: () => {
-    stopRealtime();
-  },
-});
+function onCreateByVoice(): void {
+  voiceDraft.value = buildCreatePrompt();
+  createDialogOpen.value = false;
+  voiceDialogOpen.value = true;
+}
 
-onBeforeUnmount(() => {
-  clearSearchDebounce();
-  clearRealtimeRefreshTimer();
-  stopRealtime();
-  stopLifecycleBindingRef.value?.();
-  stopLifecycleBindingRef.value = null;
-});
+function onSubmitCreateDialog(): void {
+  voiceDraft.value = buildCreatePrompt();
+  if (createMode.value === "workflow" || createMode.value === "hotfix") {
+    createDialogOpen.value = false;
+    updateRoute({
+      screen: "studio",
+      workflowId: createWorkflowId.value || activeRouteState.value.workflowId,
+    });
+    return;
+  }
+
+  createDialogOpen.value = false;
+  voiceDialogOpen.value = true;
+}
 </script>
 
 <style scoped>
-.mission-control-summary {
+.mission-control-page {
   display: grid;
-  gap: 14px;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
 }
 
-.mission-control-summary__card {
-  border-radius: 24px;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(246, 248, 252, 0.98)),
-    radial-gradient(260px 150px at 100% 0%, rgba(214, 238, 255, 0.6), transparent 60%);
-}
-
-.mission-control-summary__label {
-  font-size: 0.82rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: rgba(15, 23, 42, 0.56);
-}
-
-.mission-control-summary__value {
-  margin-top: 10px;
-  font-size: 2rem;
-  font-weight: 800;
-  line-height: 1;
-  color: rgb(15, 23, 42);
-}
-
-.mission-control-summary__hint {
-  margin-top: 8px;
-  color: rgba(15, 23, 42, 0.66);
-}
-
-.mission-control-shell {
+.mission-control-page__shell {
+  display: grid;
+  gap: 18px;
+  padding: 20px;
   border-radius: 32px;
-  overflow: hidden;
+  background:
+    radial-gradient(circle at top left, rgba(255, 232, 186, 0.18), transparent 28%),
+    radial-gradient(circle at top right, rgba(201, 229, 255, 0.2), transparent 26%),
+    linear-gradient(180deg, rgba(249, 248, 245, 0.96), rgba(245, 246, 249, 0.96));
+  border: 1px solid rgba(223, 228, 235, 0.94);
 }
 
-.mission-control-shell__toolbar {
+.mission-control-page__toolbar {
   display: flex;
   gap: 12px;
   align-items: center;
   flex-wrap: wrap;
-  padding: 18px 20px;
-  border-bottom: 1px solid rgba(15, 23, 42, 0.08);
-  background:
-    linear-gradient(180deg, rgba(250, 252, 255, 0.98), rgba(242, 247, 250, 0.96)),
-    radial-gradient(240px 160px at 0% 0%, rgba(251, 191, 36, 0.14), transparent 60%);
 }
 
-.mission-control-shell__filters {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
+.mission-control-page__initiative-button {
+  min-width: 300px;
+  justify-content: flex-start;
 }
 
-.mission-control-shell__filter {
-  max-width: 280px;
+.mission-control-page__search {
+  min-width: 320px;
+  flex: 1;
 }
 
-.mission-control-shell__search {
-  min-width: 280px;
-  flex: 1 1 320px;
-}
-
-.mission-control-shell__toggle :deep(.v-btn) {
-  text-transform: none;
-}
-
-.mission-control-shell__status {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-  margin-left: auto;
-}
-
-.mission-control-shell__body {
-  display: grid;
-  grid-template-columns: minmax(0, 1.7fr) minmax(340px, 0.9fr);
-  min-height: 720px;
-}
-
-.mission-control-shell__canvas {
-  padding: 22px;
-  background:
-    linear-gradient(180deg, rgba(245, 247, 250, 0.98), rgba(255, 255, 255, 0.98)),
-    radial-gradient(360px 220px at 100% 0%, rgba(186, 230, 253, 0.22), transparent 65%);
-}
-
-.mission-control-shell__canvas-head {
-  display: flex;
-  justify-content: space-between;
-  gap: 16px;
-  flex-wrap: wrap;
-}
-
-.mission-control-shell__watermarks {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 16px;
-}
-
-.mission-control-shell__drawer {
+.mission-control-page__loading {
   padding: 18px;
-  border-left: 1px solid rgba(15, 23, 42, 0.08);
-  background: rgba(249, 250, 251, 0.88);
+  border-radius: 28px;
+  background: rgba(255, 255, 255, 0.88);
 }
 
-.mission-control-loading {
-  padding: 20px 0;
+.mission-control-page__initiative-sheet,
+.mission-control-page__voice-sheet,
+.mission-control-page__create-sheet {
+  display: grid;
+  gap: 14px;
 }
 
-.mission-control-graph {
+.mission-control-page__initiative-actions {
   display: flex;
-  flex-direction: column;
-  gap: 16px;
-  margin-top: 18px;
+  justify-content: flex-start;
 }
 
-.mission-control-list {
-  margin-top: 18px;
-  overflow-x: auto;
+.mission-control-page__initiative-list {
+  display: grid;
+  gap: 10px;
+  max-height: 440px;
+  overflow: auto;
 }
 
-.mission-control-list__row {
-  cursor: pointer;
+.mission-control-page__initiative-option {
+  display: grid;
+  gap: 6px;
+  padding: 14px;
+  border-radius: 18px;
+  border: 1px solid rgba(223, 228, 235, 0.9);
+  background: rgba(248, 250, 252, 0.94);
+  text-align: left;
 }
 
-.mission-control-list__row--selected {
-  background: rgba(8, 145, 178, 0.08);
+.mission-control-page__initiative-option-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: rgb(33, 38, 46);
 }
 
-.mission-control-empty {
-  min-height: 420px;
+.mission-control-page__initiative-option-summary,
+.mission-control-page__voice-copy {
+  font-size: 0.86rem;
+  line-height: 1.5;
+  color: rgb(96, 104, 118);
+}
+
+.mission-control-page__voice-copy {
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.mission-control-page__voice-chips {
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
-.mono {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+.mission-control-page__watermark-note {
+  padding: 14px 16px;
+  border-radius: 18px;
+  background: rgba(246, 248, 252, 0.92);
+  border: 1px solid rgba(223, 228, 235, 0.92);
 }
 
-@media (max-width: 1280px) {
-  .mission-control-shell__body {
-    grid-template-columns: 1fr;
-  }
-
-  .mission-control-shell__drawer {
-    display: none;
-  }
+.mission-control-page__watermark-note strong {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 0.92rem;
+  color: rgb(31, 36, 43);
 }
 
-@media (max-width: 960px) {
-  .mission-control-shell__toolbar,
-  .mission-control-shell__canvas {
-    padding: 16px;
+.mission-control-page__watermark-note ul {
+  margin: 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 6px;
+  font-size: 0.86rem;
+  line-height: 1.5;
+  color: rgb(96, 104, 118);
+}
+
+@media (max-width: 900px) {
+  .mission-control-page__shell {
+    padding: 14px;
   }
 
-  .mission-control-shell__status {
-    margin-left: 0;
-  }
-
-  .mission-control-shell__search {
+  .mission-control-page__initiative-button,
+  .mission-control-page__search {
+    width: 100%;
     min-width: 0;
-    flex-basis: 100%;
+    max-width: none;
   }
 }
 </style>

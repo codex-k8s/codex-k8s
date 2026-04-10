@@ -143,7 +143,7 @@
     </VNavigationDrawer>
 
     <VMain class="main-bg">
-      <VContainer class="content" fluid>
+      <VContainer :class="['content', { 'content--mission-control': route.name === 'mission-control' }]" fluid>
         <VProgressLinear v-if="auth.status === 'loading'" indeterminate color="primary" />
 
         <VCard v-else-if="auth.status === 'anon'" class="mx-auto mt-10" max-width="720" variant="outlined">
@@ -373,6 +373,11 @@ const breadcrumbs = computed(() => {
   max-width: 1800px;
   margin: 0 auto;
   padding: 16px;
+}
+
+.content--mission-control {
+  max-width: none;
+  padding-inline: 20px;
 }
 .main-bg {
   background: radial-gradient(1200px 600px at 15% 0%, rgba(255, 246, 229, 0.8), transparent 55%),

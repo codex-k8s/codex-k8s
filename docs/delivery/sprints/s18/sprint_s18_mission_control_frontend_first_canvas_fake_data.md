@@ -5,7 +5,7 @@ title: "Sprint S18: Frontend-first Mission Control canvas UX on fake data (Issue
 status: in-review
 owner_role: PM
 created_at: 2026-03-26
-updated_at: 2026-04-01
+updated_at: 2026-04-09
 related_issues: [470, 480, 522, 523, 524, 525, 561, 562, 563, 565, 567, 571, 573, 579, 581]
 related_prs: []
 approvals:
@@ -24,6 +24,7 @@ approvals:
 - Architecture stage в issue `#571` закрепил `web-console` как owner isolated fake-data prototype, отделил Sprint S18 от backend rebuild `#563` и создал continuity issue `#573` для `run:design`.
 - Design stage в issue `#573` зафиксировал frontend-only source/state contracts, fake-data data model, workflow preview semantics и отсутствие API/DB/runtime migrations; continuity issue `#579` создана для `run:plan`.
 - Plan stage в issue `#579` выпустил execution package для `run:dev`: четыре последовательные implementation waves, quality gates, DoR/DoD, blockers/risks и continuity issue `#581`.
+- Development stage в issue `#581` реализовал isolated Mission Control canvas prototype: route переведён на feature-local prototype source/store, на fullscreen canvas появились scenario selector, initiative focus, compact nodes, explicit relations, drawer/timeline/workflow preview и localhost review path без backend/API/schema изменений.
 - Sprint S18 намеренно не продолжает старый S16 baseline `lane/column` и не пытается “подкрасить” отклонённый graph shell.
 - Prompt policy не меняется: repo-seed prompts остаются каноничными, workflow logic допускается только как deterministic generated `workflow-policy block`, без DB prompt editor.
 - Backend follow-up `#563` остаётся отдельной задачей после owner approval результата Sprint S18, а следующий owner-managed handover идёт через issue `#581` на `run:dev`.
@@ -68,7 +69,7 @@ approvals:
 | Architecture (`#571`) | Prototype isolation, ownership split, future handover в backend rebuild | `sa` | Подтверждены архитектурные границы и создана issue `#573` для `run:design` |
 | Design (`#573`) | UI/data/interaction/design package для fake-data prototype | `sa` + `qa` | Подготовлен implementation-ready design package и создана issue `#579` для `run:plan` |
 | Plan (`#579`) | Delivery waves, feedback loops, DoR/DoD, quality gates и owner-managed `run:dev` handover | `em` + `km` | Сформирован execution package и создана issue `#581` для isolated prototype |
-| Development (`#581`) | Isolated `web-console` prototype на fake data | `dev` | Открыт PR с prototype-реализацией; дальнейшие backend/late-stage задачи остаются отдельными initiative flows |
+| Development (`#581`) | Isolated `web-console` prototype на fake data | `dev` | Реализованы prototype source/store, fullscreen canvas, explicit relations, drawer/workflow preview, unit tests/build и localhost review path; backend/late-stage задачи остаются отдельными initiative flows |
 
 ## Guardrails спринта
 - Fullscreen canvas обязателен; возврат к lane/column shell или обязательной `root-group/column/stack` иерархии не допускается без нового owner-решения.
@@ -105,7 +106,7 @@ approvals:
   - `docs/architecture/adr/ADR-0018-mission-control-frontend-first-prototype-and-backend-handover-boundary.md`;
   - `docs/architecture/alternatives/ALT-0010-mission-control-frontend-first-prototype-boundaries.md`;
   - `docs/delivery/traceability/s18_mission_control_frontend_first_canvas_history.md`.
-- Следующий stage: `run:dev` через issue `#581`.
+- Текущий code stage: `run:dev` через issue `#581`, результат подготовлен к owner review через PR package и localhost preview.
 - До завершения следующего stage нельзя потерять следующие Day1/Day2/Day3 decisions:
   - сначала утверждается UX baseline на fake data, потом backend rebuild;
   - fullscreen свободный canvas без lane/column shell;
